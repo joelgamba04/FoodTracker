@@ -1,36 +1,22 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, FlatList } from 'react-native';
 import { Food, FoodLogEntry } from '@/models/models';
-
-// Placeholder foods for demo
-const sampleFoods: Food[] = [
-  {
-    id: '1',
-    name: 'Apple',
-    servingSize: '1 medium',
-    nutrients: [
-      { name: 'Calories', unit: 'kcal', amount: 95 },
-      { name: 'Carbs', unit: 'g', amount: 25 },
-      { name: 'Fiber', unit: 'g', amount: 4.4 },
-      { name: 'Vitamin C', unit: 'mg', amount: 8.4 },
-    ],
-  },
-  {
-    id: '2',
-    name: 'Egg',
-    servingSize: '1 large',
-    nutrients: [
-      { name: 'Calories', unit: 'kcal', amount: 78 },
-      { name: 'Protein', unit: 'g', amount: 6 },
-      { name: 'Fat', unit: 'g', amount: 5 },
-    ],
-  },
-];
+import { searchFoods } from '@/utils/foodApi';
 
 export default function LogScreen() {
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState('1');
   const [log, setLog] = useState<FoodLogEntry[]>([]);
+  const [search, setSearch] = useState('');
+  const [results, setResults] = useState<Food[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const handleSearch = async () => {
+    setLoading(true);
+    const foods = await searchFoods(search);
+    setResults(foods);
+    setLoading(false);
+  };
 
   const addFoodToLog = () => {
     if (selectedFood) {
@@ -43,8 +29,15 @@ export default function LogScreen() {
   return (
     <View style={{ flex: 1, padding: 16 }}>
       <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Log Food</Text>
+      <TextInput
+        value={search}
+        onChangeText={setSearch}
+        placeholder="Search for food..."
+        style={{ borderWidth: 1, padding: 8, marginVertical: 8 }}
+      />
+      <Button title="Search" onPress={handleSearch} disabled={loading} />
       <FlatList
-        data={sampleFoods}
+        data={results}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
           <Button title={item.name} onPress={() => setSelectedFood(item)} />
