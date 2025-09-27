@@ -4,6 +4,7 @@ import { Food, FoodLogEntry } from '@/models/models';
 import { searchFoods } from '@/utils/foodApi';
 import { useFoodLog } from '@/context/FoodLogContext';
 
+export default function LogScreen() {
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState('1');
   const [search, setSearch] = useState('');

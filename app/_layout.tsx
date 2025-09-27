@@ -10,6 +10,9 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
+import { useColorScheme } from '@/hooks/use-color-scheme';
+
+export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
