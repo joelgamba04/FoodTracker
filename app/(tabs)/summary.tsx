@@ -1,14 +1,12 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { FoodLogEntry, Nutrient } from '@/models/models';
+import { Nutrient } from '@/models/models';
+import { useFoodLog } from '@/context/FoodLogContext';
 
-// This would be replaced by context or state in a real app
-const todayLog: FoodLogEntry[] = [];
-
-function calculateTotals(log: FoodLogEntry[]): Nutrient[] {
+function calculateTotals(log: any[]): Nutrient[] {
   const totals: { [key: string]: Nutrient } = {};
   log.forEach(entry => {
-    entry.food.nutrients.forEach(nutrient => {
+    entry.food.nutrients.forEach((nutrient: Nutrient) => {
       if (!totals[nutrient.name]) {
         totals[nutrient.name] = { ...nutrient, amount: 0 };
       }
@@ -19,7 +17,8 @@ function calculateTotals(log: FoodLogEntry[]): Nutrient[] {
 }
 
 export default function SummaryScreen() {
-  const totals = calculateTotals(todayLog);
+  const { log } = useFoodLog();
+  const totals = calculateTotals(log);
 
   return (
     <View style={{ flex: 1, padding: 16 }}>

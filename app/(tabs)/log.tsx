@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, FlatList } from 'react-native';
 import { Food, FoodLogEntry } from '@/models/models';
 import { searchFoods } from '@/utils/foodApi';
+import { useFoodLog } from '@/context/FoodLogContext';
 
-export default function LogScreen() {
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState('1');
-  const [log, setLog] = useState<FoodLogEntry[]>([]);
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<Food[]>([]);
   const [loading, setLoading] = useState(false);
+  const { log, addEntry } = useFoodLog();
 
   const handleSearch = async () => {
     setLoading(true);
@@ -20,7 +20,7 @@ export default function LogScreen() {
 
   const addFoodToLog = () => {
     if (selectedFood) {
-      setLog([...log, { food: selectedFood, quantity: Number(quantity) }]);
+      addEntry({ food: selectedFood, quantity: Number(quantity) });
       setSelectedFood(null);
       setQuantity('1');
     }

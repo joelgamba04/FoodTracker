@@ -1,15 +1,13 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { RecommendedIntake, Nutrient, FoodLogEntry } from '@/models/models';
+import { useFoodLog } from '@/context/FoodLogContext';
 import { USDA_RDI } from '@/constants/usdaRDI';
+import { Nutrient, RecommendedIntake } from '@/models/models';
 
-// This would be replaced by context or state in a real app
-const todayLog: FoodLogEntry[] = [];
-
-function calculateTotals(log: FoodLogEntry[]): Nutrient[] {
+function calculateTotals(log: any[]): Nutrient[] {
   const totals: { [key: string]: Nutrient } = {};
   log.forEach(entry => {
-    entry.food.nutrients.forEach(nutrient => {
+    entry.food.nutrients.forEach((nutrient: Nutrient) => {
       if (!totals[nutrient.name]) {
         totals[nutrient.name] = { ...nutrient, amount: 0 };
       }
@@ -34,7 +32,8 @@ function getExcessiveNutrients(totals: Nutrient[], recommended: RecommendedIntak
 }
 
 export default function RecommendationsScreen() {
-  const totals = calculateTotals(todayLog);
+  const { log } = useFoodLog();
+  const totals = calculateTotals(log);
   const lacking = getLackingNutrients(totals, USDA_RDI);
   const excessive = getExcessiveNutrients(totals, USDA_RDI);
 
