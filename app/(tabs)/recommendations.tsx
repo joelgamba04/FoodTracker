@@ -39,16 +39,16 @@ export default function RecommendationsScreen() {
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
-      <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Nutrient Recommendations</Text>
+  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2' }}>Nutrient Recommendations</Text>
       {lacking.length === 0 && excessive.length === 0 ? (
-        <Text>You've met all recommended intakes today!</Text>
+  <Text style={{ color: '#388e3c' }}>You've met all recommended intakes today!</Text>
       ) : (
         <>
           {lacking.length > 0 && (
             <>
-              <Text style={{ fontWeight: 'bold', marginTop: 8 }}>You need more of:</Text>
+              <Text style={{ fontWeight: 'bold', marginTop: 8, color: '#fbc02d' }}>You need more of:</Text>
               {lacking.map(nutrient => (
-                <Text key={nutrient.nutrient}>
+                <Text key={nutrient.nutrient} style={{ color: '#fbc02d' }}>
                   {nutrient.nutrient} ({nutrient.amount} {nutrient.unit} recommended)
                 </Text>
               ))}
@@ -56,9 +56,9 @@ export default function RecommendationsScreen() {
           )}
           {excessive.length > 0 && (
             <>
-              <Text style={{ fontWeight: 'bold', marginTop: 8 }}>You are exceeding:</Text>
+              <Text style={{ fontWeight: 'bold', marginTop: 8, color: '#d32f2f' }}>You are exceeding:</Text>
               {excessive.map(nutrient => (
-                <Text key={nutrient.nutrient}>
+                <Text key={nutrient.nutrient} style={{ color: '#d32f2f' }}>
                   {nutrient.nutrient} ({nutrient.amount} {nutrient.unit} recommended)
                 </Text>
               ))}

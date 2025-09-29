@@ -29,7 +29,7 @@ export default function LogScreen() {
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
-      <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Log Food</Text>
+  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2' }}>Log Food</Text>
       <TextInput
         value={search}
         onChangeText={setSearch}
@@ -46,7 +46,7 @@ export default function LogScreen() {
       />
       {selectedFood && (
         <View style={{ marginTop: 16 }}>
-          <Text>Selected: {selectedFood.name}</Text>
+          <Text style={{ color: '#388e3c' }}>Selected: {selectedFood.name}</Text>
           <TextInput
             value={quantity}
             onChangeText={setQuantity}
@@ -57,12 +57,12 @@ export default function LogScreen() {
           <Button title="Add to Log" onPress={addFoodToLog} />
         </View>
       )}
-      <Text style={{ marginTop: 24, fontWeight: 'bold' }}>Today's Log:</Text>
+  <Text style={{ marginTop: 24, fontWeight: 'bold', color: '#d32f2f' }}>Today's Log:</Text>
       <FlatList
         data={log}
         keyExtractor={(_, idx) => idx.toString()}
         renderItem={({ item }) => (
-          <Text>
+          <Text style={{ color: '#333' }}>
             {item.quantity} x {item.food.name} ({item.food.servingSize})
           </Text>
         )}

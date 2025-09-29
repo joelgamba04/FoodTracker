@@ -22,12 +22,12 @@ export default function SummaryScreen() {
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
-      <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Today's Nutrient Summary</Text>
+  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2' }}>Today's Nutrient Summary</Text>
       {totals.length === 0 ? (
-        <Text>No foods logged yet.</Text>
+  <Text style={{ color: '#757575' }}>No foods logged yet.</Text>
       ) : (
         totals.map(nutrient => (
-          <Text key={nutrient.name}>
+          <Text key={nutrient.name} style={{ color: '#333' }}>
             {nutrient.name}: {nutrient.amount} {nutrient.unit}
           </Text>
         ))
