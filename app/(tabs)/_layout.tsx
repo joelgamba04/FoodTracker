@@ -24,17 +24,10 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="summary"
+          name="nutrition"
           options={{
-            title: 'Summary',
+            title: 'Nutrition',
             tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="recommendations"
-          options={{
-            title: 'Recommendations',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="star.fill" color={color} />,
           }}
         />
     </Tabs>

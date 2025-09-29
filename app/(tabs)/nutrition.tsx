@@ -4,6 +4,7 @@ import { useFoodLog } from '@/context/FoodLogContext';
 import { Nutrient } from '@/models/models';
 
 const ARBITRARY_RDI: Record<string, Nutrient> = {
+  Calories: { name: 'Calories', amount: 2000, unit: 'kcal' },
   Protein: { name: 'Protein', amount: 50, unit: 'g' },
   Carbohydrate: { name: 'Carbohydrate', amount: 300, unit: 'g' },
   Fat: { name: 'Fat', amount: 70, unit: 'g' },
@@ -31,24 +32,25 @@ function getBarColor(percent: number) {
   return '#388e3c'; // Normal
 }
 
-export default function RecommendationsScreen() {
+export default function NutritionScreen() {
   const { log } = useFoodLog();
   const totals = calculateTotals(log);
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.heading}>Nutrient Intake vs Recommendation</Text>
-      {Object.keys(ARBITRARY_RDI).map(name => {
-        const recommended = ARBITRARY_RDI[name].amount;
-        const consumed = totals.find(n => n.name === name)?.amount || 0;
+      <Text style={styles.heading}>Today's Nutrition Summary & Recommendations</Text>
+      {/* Calories Bar Chart */}
+      <Text style={styles.sectionHeading}>Calories</Text>
+      {(() => {
+        const recommended = ARBITRARY_RDI['Calories'].amount;
+        const consumed = totals.find(n => n.name === 'Calories')?.amount || 0;
         const percent = consumed / recommended;
-        const barWidth = Math.min(percent, 2) * 200; // Max bar width
+        const barWidth = Math.min(percent, 2) * 200;
         const color = getBarColor(percent);
-
         return (
-          <View key={name} style={styles.nutrientRow}>
+          <View style={styles.nutrientRow}>
             <Text style={styles.nutrientLabel}>
-              {name}: {consumed.toFixed(1)}/{recommended} {ARBITRARY_RDI[name].unit}
+              {consumed.toFixed(0)}/{recommended} kcal
             </Text>
             <View style={styles.barBackground}>
               <View
@@ -60,7 +62,6 @@ export default function RecommendationsScreen() {
                   },
                 ]}
               />
-              {/* Marker for recommended value */}
               <View
                 style={[
                   styles.marker,
@@ -76,7 +77,51 @@ export default function RecommendationsScreen() {
             )}
           </View>
         );
-      })}
+      })()}
+      {/* Nutrients Summary */}
+      <Text style={styles.sectionHeading}>Nutrients</Text>
+      {totals.length === 0 ? (
+        <Text style={styles.emptyText}>No foods logged yet.</Text>
+      ) : (
+        Object.keys(ARBITRARY_RDI).filter(n => n !== 'Calories').map(name => {
+          const recommended = ARBITRARY_RDI[name].amount;
+          const consumed = totals.find(nutrient => nutrient.name === name)?.amount || 0;
+          const percent = consumed / recommended;
+          const barWidth = Math.min(percent, 2) * 200;
+          const color = getBarColor(percent);
+
+          return (
+            <View key={name} style={styles.nutrientRow}>
+              <Text style={styles.nutrientLabel}>
+                {name}: {consumed.toFixed(1)}/{recommended} {ARBITRARY_RDI[name].unit}
+              </Text>
+              <View style={styles.barBackground}>
+                <View
+                  style={[
+                    styles.bar,
+                    {
+                      width: barWidth,
+                      backgroundColor: color,
+                    },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.marker,
+                    { left: 200 },
+                  ]}
+                />
+              </View>
+              {percent > 1.2 && (
+                <Text style={styles.excessiveText}>Over recommended!</Text>
+              )}
+              {percent < 0.6 && (
+                <Text style={styles.lackingText}>Severely lacking!</Text>
+              )}
+            </View>
+          );
+        })
+      )}
     </ScrollView>
   );
 }
@@ -90,7 +135,14 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#1976d2',
-    marginBottom: 12,
+    marginBottom: 16,
+  },
+  sectionHeading: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#388e3c',
+    marginTop: 16,
+    marginBottom: 8,
   },
   nutrientRow: {
     marginBottom: 32,
@@ -133,5 +185,9 @@ const styles = StyleSheet.create({
     color: '#fbc02d',
     fontWeight: 'bold',
     marginTop: 2,
+  },
+  emptyText: {
+    color: '#757575',
+    marginTop: 8,
   },
 });
