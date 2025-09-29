@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Nutrient } from '@/models/models';
 import { useFoodLog } from '@/context/FoodLogContext';
 
@@ -21,13 +21,13 @@ export default function SummaryScreen() {
   const totals = calculateTotals(log);
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
-  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2' }}>Today's Nutrient Summary</Text>
+    <View style={styles.container}>
+      <Text style={styles.heading}>Today's Nutrient Summary</Text>
       {totals.length === 0 ? (
-  <Text style={{ color: '#757575' }}>No foods logged yet.</Text>
+        <Text style={styles.emptyText}>No foods logged yet.</Text>
       ) : (
         totals.map(nutrient => (
-          <Text key={nutrient.name} style={{ color: '#333' }}>
+          <Text key={nutrient.name} style={styles.nutrientText}>
             {nutrient.name}: {nutrient.amount} {nutrient.unit}
           </Text>
         ))
@@ -35,3 +35,23 @@ export default function SummaryScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+  },
+  heading: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1976d2',
+    marginBottom: 12,
+  },
+  emptyText: {
+    color: '#757575',
+  },
+  nutrientText: {
+    color: '#333',
+    marginBottom: 4,
+  },
+});

@@ -1,8 +1,45 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useFoodLog } from '@/context/FoodLogContext';
-import { USDA_RDI } from '@/constants/usdaRDI';
-import { Nutrient, RecommendedIntake } from '@/models/models';
+import { Nutrient } from '@/models/models';
+
+// Arbitrary recommended daily intake values
+const ARBITRARY_RDI: Record<string, Nutrient> = {
+  Protein: { name: 'Protein', amount: 50, unit: 'g' },
+  Carbohydrate: { name: 'Carbohydrate', amount: 300, unit: 'g' },
+  Fat: { name: 'Fat', amount: 70, unit: 'g' },
+  Fiber: { name: 'Fiber', amount: 30, unit: 'g' },
+  Calcium: { name: 'Calcium', amount: 1000, unit: 'mg' },
+  Iron: { name: 'Iron', amount: 18, unit: 'mg' },
+};
+
+function getLackingNutrients(totals: Nutrient[], rdi: Record<string, Nutrient>) {
+  return Object.keys(rdi)
+    .filter(name => {
+      const total = totals.find(n => n.name === name);
+      return !total || total.amount < rdi[name].amount;
+    })
+    .map(name => ({
+      name,
+      recommended: rdi[name].amount,
+      unit: rdi[name].unit,
+      consumed: totals.find(n => n.name === name)?.amount || 0,
+    }));
+}
+
+function getExcessiveNutrients(totals: Nutrient[], rdi: Record<string, Nutrient>) {
+  return Object.keys(rdi)
+    .filter(name => {
+      const total = totals.find(n => n.name === name);
+      return total && total.amount > rdi[name].amount;
+    })
+    .map(name => ({
+      name,
+      recommended: rdi[name].amount,
+      unit: rdi[name].unit,
+      consumed: totals.find(n => n.name === name)?.amount || 0,
+    }));
+}
 
 function calculateTotals(log: any[]): Nutrient[] {
   const totals: { [key: string]: Nutrient } = {};
@@ -17,49 +54,35 @@ function calculateTotals(log: any[]): Nutrient[] {
   return Object.values(totals);
 }
 
-function getLackingNutrients(totals: Nutrient[], recommended: RecommendedIntake[]) {
-  return recommended.filter(rec => {
-    const total = totals.find(n => n.name === rec.nutrient);
-    return !total || total.amount < rec.amount;
-  });
-}
-
-function getExcessiveNutrients(totals: Nutrient[], recommended: RecommendedIntake[]) {
-  return recommended.filter(rec => {
-    const total = totals.find(n => n.name === rec.nutrient);
-    return total && total.amount > rec.amount;
-  });
-}
-
 export default function RecommendationsScreen() {
   const { log } = useFoodLog();
   const totals = calculateTotals(log);
-  const lacking = getLackingNutrients(totals, USDA_RDI);
-  const excessive = getExcessiveNutrients(totals, USDA_RDI);
+  const lacking = getLackingNutrients(totals, ARBITRARY_RDI);
+  const excessive = getExcessiveNutrients(totals, ARBITRARY_RDI);
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
-  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2' }}>Nutrient Recommendations</Text>
+    <View style={styles.container}>
+      <Text style={styles.heading}>Nutrient Recommendations</Text>
       {lacking.length === 0 && excessive.length === 0 ? (
-  <Text style={{ color: '#388e3c' }}>You've met all recommended intakes today!</Text>
+        <Text style={styles.normalText}>You're meeting all recommended daily intakes!</Text>
       ) : (
         <>
           {lacking.length > 0 && (
             <>
-              <Text style={{ fontWeight: 'bold', marginTop: 8, color: '#fbc02d' }}>You need more of:</Text>
+              <Text style={styles.lackingHeading}>Lacking Nutrients:</Text>
               {lacking.map(nutrient => (
-                <Text key={nutrient.nutrient} style={{ color: '#fbc02d' }}>
-                  {nutrient.nutrient} ({nutrient.amount} {nutrient.unit} recommended)
+                <Text key={nutrient.name} style={styles.lackingText}>
+                  {nutrient.name}: {nutrient.consumed}/{nutrient.recommended} {nutrient.unit}
                 </Text>
               ))}
             </>
           )}
           {excessive.length > 0 && (
             <>
-              <Text style={{ fontWeight: 'bold', marginTop: 8, color: '#d32f2f' }}>You are exceeding:</Text>
+              <Text style={styles.excessiveHeading}>Excessive Nutrients:</Text>
               {excessive.map(nutrient => (
-                <Text key={nutrient.nutrient} style={{ color: '#d32f2f' }}>
-                  {nutrient.nutrient} ({nutrient.amount} {nutrient.unit} recommended)
+                <Text key={nutrient.name} style={styles.excessiveText}>
+                  {nutrient.name}: {nutrient.consumed}/{nutrient.recommended} {nutrient.unit}
                 </Text>
               ))}
             </>
@@ -69,3 +92,37 @@ export default function RecommendationsScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+  },
+  heading: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1976d2',
+    marginBottom: 12,
+  },
+  normalText: {
+    color: '#388e3c',
+  },
+  lackingHeading: {
+    marginTop: 12,
+    fontWeight: 'bold',
+    color: '#fbc02d',
+  },
+  lackingText: {
+    color: '#fbc02d',
+    marginBottom: 4,
+  },
+  excessiveHeading: {
+    marginTop: 12,
+    fontWeight: 'bold',
+    color: '#d32f2f',
+  },
+  excessiveText: {
+    color: '#d32f2f',
+    marginBottom: 4,
+  },
+});
