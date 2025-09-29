@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useFoodLog } from '@/context/FoodLogContext';
 import { Nutrient } from '@/models/models';
 
-// Arbitrary recommended daily intake values
 const ARBITRARY_RDI: Record<string, Nutrient> = {
   Protein: { name: 'Protein', amount: 50, unit: 'g' },
   Carbohydrate: { name: 'Carbohydrate', amount: 300, unit: 'g' },
@@ -12,34 +11,6 @@ const ARBITRARY_RDI: Record<string, Nutrient> = {
   Calcium: { name: 'Calcium', amount: 1000, unit: 'mg' },
   Iron: { name: 'Iron', amount: 18, unit: 'mg' },
 };
-
-function getLackingNutrients(totals: Nutrient[], rdi: Record<string, Nutrient>) {
-  return Object.keys(rdi)
-    .filter(name => {
-      const total = totals.find(n => n.name === name);
-      return !total || total.amount < rdi[name].amount;
-    })
-    .map(name => ({
-      name,
-      recommended: rdi[name].amount,
-      unit: rdi[name].unit,
-      consumed: totals.find(n => n.name === name)?.amount || 0,
-    }));
-}
-
-function getExcessiveNutrients(totals: Nutrient[], rdi: Record<string, Nutrient>) {
-  return Object.keys(rdi)
-    .filter(name => {
-      const total = totals.find(n => n.name === name);
-      return total && total.amount > rdi[name].amount;
-    })
-    .map(name => ({
-      name,
-      recommended: rdi[name].amount,
-      unit: rdi[name].unit,
-      consumed: totals.find(n => n.name === name)?.amount || 0,
-    }));
-}
 
 function calculateTotals(log: any[]): Nutrient[] {
   const totals: { [key: string]: Nutrient } = {};
@@ -54,42 +25,59 @@ function calculateTotals(log: any[]): Nutrient[] {
   return Object.values(totals);
 }
 
+function getBarColor(percent: number) {
+  if (percent > 1.2) return '#d32f2f'; // Overeating
+  if (percent < 0.6) return '#fbc02d'; // Severely lacking
+  return '#388e3c'; // Normal
+}
+
 export default function RecommendationsScreen() {
   const { log } = useFoodLog();
   const totals = calculateTotals(log);
-  const lacking = getLackingNutrients(totals, ARBITRARY_RDI);
-  const excessive = getExcessiveNutrients(totals, ARBITRARY_RDI);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Nutrient Recommendations</Text>
-      {lacking.length === 0 && excessive.length === 0 ? (
-        <Text style={styles.normalText}>You're meeting all recommended daily intakes!</Text>
-      ) : (
-        <>
-          {lacking.length > 0 && (
-            <>
-              <Text style={styles.lackingHeading}>Lacking Nutrients:</Text>
-              {lacking.map(nutrient => (
-                <Text key={nutrient.name} style={styles.lackingText}>
-                  {nutrient.name}: {nutrient.consumed}/{nutrient.recommended} {nutrient.unit}
-                </Text>
-              ))}
-            </>
-          )}
-          {excessive.length > 0 && (
-            <>
-              <Text style={styles.excessiveHeading}>Excessive Nutrients:</Text>
-              {excessive.map(nutrient => (
-                <Text key={nutrient.name} style={styles.excessiveText}>
-                  {nutrient.name}: {nutrient.consumed}/{nutrient.recommended} {nutrient.unit}
-                </Text>
-              ))}
-            </>
-          )}
-        </>
-      )}
-    </View>
+    <ScrollView style={styles.container}>
+      <Text style={styles.heading}>Nutrient Intake vs Recommendation</Text>
+      {Object.keys(ARBITRARY_RDI).map(name => {
+        const recommended = ARBITRARY_RDI[name].amount;
+        const consumed = totals.find(n => n.name === name)?.amount || 0;
+        const percent = consumed / recommended;
+        const barWidth = Math.min(percent, 2) * 200; // Max bar width
+        const color = getBarColor(percent);
+
+        return (
+          <View key={name} style={styles.nutrientRow}>
+            <Text style={styles.nutrientLabel}>
+              {name}: {consumed.toFixed(1)}/{recommended} {ARBITRARY_RDI[name].unit}
+            </Text>
+            <View style={styles.barBackground}>
+              <View
+                style={[
+                  styles.bar,
+                  {
+                    width: barWidth,
+                    backgroundColor: color,
+                  },
+                ]}
+              />
+              {/* Marker for recommended value */}
+              <View
+                style={[
+                  styles.marker,
+                  { left: 200 },
+                ]}
+              />
+            </View>
+            {percent > 1.2 && (
+              <Text style={styles.excessiveText}>Over recommended!</Text>
+            )}
+            {percent < 0.6 && (
+              <Text style={styles.lackingText}>Severely lacking!</Text>
+            )}
+          </View>
+        );
+      })}
+    </ScrollView>
   );
 }
 
@@ -104,25 +92,46 @@ const styles = StyleSheet.create({
     color: '#1976d2',
     marginBottom: 12,
   },
-  normalText: {
-    color: '#388e3c',
+  nutrientRow: {
+    marginBottom: 32,
   },
-  lackingHeading: {
-    marginTop: 12,
+  nutrientLabel: {
     fontWeight: 'bold',
-    color: '#fbc02d',
+    marginBottom: 4,
+    color: '#333',
   },
-  lackingText: {
-    color: '#fbc02d',
+  barBackground: {
+    width: 220,
+    height: 20,
+    backgroundColor: '#eee',
+    borderRadius: 10,
+    position: 'relative',
+    overflow: 'hidden',
     marginBottom: 4,
   },
-  excessiveHeading: {
-    marginTop: 12,
-    fontWeight: 'bold',
-    color: '#d32f2f',
+  bar: {
+    height: 20,
+    borderRadius: 10,
+    position: 'absolute',
+    left: 0,
+    top: 0,
+  },
+  marker: {
+    position: 'absolute',
+    top: 0,
+    width: 2,
+    height: 20,
+    backgroundColor: '#1976d2',
+    borderRadius: 1,
   },
   excessiveText: {
     color: '#d32f2f',
-    marginBottom: 4,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  lackingText: {
+    color: '#fbc02d',
+    fontWeight: 'bold',
+    marginTop: 2,
   },
 });
