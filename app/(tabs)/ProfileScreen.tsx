@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
-// ...existing imports...
 
 const DEFAULT_RDI = {
   Calories: { name: 'Calories', amount: 2000, unit: 'kcal' },
@@ -10,6 +9,21 @@ const DEFAULT_RDI = {
   Fiber: { name: 'Fiber', amount: 30, unit: 'g' },
   Calcium: { name: 'Calcium', amount: 1000, unit: 'mg' },
   Iron: { name: 'Iron', amount: 18, unit: 'mg' },
+  Sodium: { name: 'Sodium', amount: 2300, unit: 'mg' },
+  Potassium: { name: 'Potassium', amount: 4700, unit: 'mg' },
+};
+
+const illnesses = [
+  'None',
+  'Diabetes',
+  'Hypertension',
+  'Kidney Disease',
+];
+
+const illnessRdiAdjustments: Record<string, Partial<Record<keyof typeof DEFAULT_RDI, number>>> = {
+  Diabetes: { Carbohydrate: 200 },
+  Hypertension: { Sodium: 1500 },
+  'Kidney Disease': { Protein: 40, Sodium: 1200 },
 };
 
 type NutrientKey = keyof typeof DEFAULT_RDI;
