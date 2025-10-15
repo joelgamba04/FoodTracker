@@ -1,193 +1,365 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useFoodLog } from '@/context/FoodLogContext';
-import { Nutrient } from '@/models/models';
+import { useFoodLog } from "@/context/FoodLogContext";
+import { Nutrient } from "@/models/models";
+import React from "react";
+import {
+  DimensionValue,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
+// --- Theme Constants ---
+const PRIMARY_BLUE = "#007AFF"; // Used for headers and markers
+const ACCENT_GREEN = "#4CD964"; // Used for normal/on-track progress
+const WARNING_YELLOW = "#FFCC00"; // Used for lacking progress
+const DANGER_RED = "#FF3B30"; // Used for excessive progress
+const GRAY_LIGHT = "#e8e8e8"; // Background for bars
+const BACKGROUND_COLOR = "#f4f7f9"; // Screen background
+
+// --- RDI Data (Kept as is) ---
 const ARBITRARY_RDI: Record<string, Nutrient> = {
-  Calories: { name: 'Calories', amount: 2000, unit: 'kcal' },
-  Protein: { name: 'Protein', amount: 50, unit: 'g' },
-  Carbohydrate: { name: 'Carbohydrate', amount: 300, unit: 'g' },
-  Fat: { name: 'Fat', amount: 70, unit: 'g' },
-  Fiber: { name: 'Fiber', amount: 30, unit: 'g' },
-  Calcium: { name: 'Calcium', amount: 1000, unit: 'mg' },
-  Iron: { name: 'Iron', amount: 18, unit: 'mg' },
+  Calories: { name: "Calories", amount: 2000, unit: "kcal" },
+  Protein: { name: "Protein", amount: 50, unit: "g" },
+  Carbohydrate: { name: "Carbohydrate", amount: 300, unit: "g" },
+  Fat: { name: "Fat", amount: 70, unit: "g" },
+  Fiber: { name: "Fiber", amount: 30, unit: "g" },
+  Calcium: { name: "Calcium", amount: 1000, unit: "mg" },
+  Iron: { name: "Iron", amount: 18, unit: "mg" },
 };
 
+// --- Helper Functions (Kept as is, but logic is fine) ---
 function calculateTotals(log: any[]): Nutrient[] {
   const totals: { [key: string]: Nutrient } = {};
-  log.forEach(entry => {
-    entry.food.nutrients.forEach((nutrient: Nutrient) => {
-      if (!totals[nutrient.name]) {
-        totals[nutrient.name] = { ...nutrient, amount: 0 };
-      }
-      totals[nutrient.name].amount += nutrient.amount * entry.quantity;
-    });
+  log.forEach((entry) => {
+    // Check if food and nutrients exist before iterating
+    if (entry.food && entry.food.nutrients) {
+      entry.food.nutrients.forEach((nutrient: Nutrient) => {
+        if (!totals[nutrient.name]) {
+          totals[nutrient.name] = { ...nutrient, amount: 0 };
+        }
+        totals[nutrient.name].amount += nutrient.amount * entry.quantity;
+      });
+    }
   });
   return Object.values(totals);
 }
 
 function getBarColor(percent: number) {
-  if (percent > 1.2) return '#d32f2f'; // Overeating
-  if (percent < 0.6) return '#fbc02d'; // Severely lacking
-  return '#388e3c'; // Normal
+  if (percent > 1.2) return DANGER_RED; // Overeating
+  if (percent < 0.6) return WARNING_YELLOW; // Severely lacking
+  return ACCENT_GREEN; // Normal
 }
 
+// --- Reusable Nutrient Card Component ---
+interface NutrientCardProps {
+  name: string;
+  consumed: number;
+  recommended: number;
+  unit: string;
+  isMacro?: boolean; // Highlight Macros (Protein, Carbs, Fat)
+}
+
+const NutrientCard: React.FC<NutrientCardProps> = ({
+  name,
+  consumed,
+  recommended,
+  unit,
+  isMacro = false,
+}) => {
+  const percent = consumed / recommended;
+  // Set a max width for the bar to visually represent "too much" (e.g., 150%)
+  const MAX_BAR_PERCENT = 1.5;
+  // 1. Calculate the percentage of the RDI consumed, capped at MAX_VISUAL_PERCENT
+  const cappedPercent = Math.min(percent, MAX_BAR_PERCENT);
+
+  // 2. Map the capped percent to a percentage width of the parent container (barBackground).
+  // Example: If consumed is 100% (percent=1), the bar should fill (1 / 1.5) * 100 = 66.67% of the background width.
+  const visualWidthPercent = (cappedPercent / MAX_BAR_PERCENT) * 100;
+
+  const barWidth: DimensionValue = `${visualWidthPercent}%`;
+  const color = getBarColor(percent);
+
+  // The 100% RDI marker should always be at (1 / MAX_VISUAL_PERCENT) * 100% of the barBackground.
+  const markerPosition = `${(1 / MAX_BAR_PERCENT) * 100}%`;
+
+  return (
+    <View style={[styles.card, isMacro && styles.macroCard]}>
+      <View style={styles.cardHeader}>
+        <Text style={[styles.cardTitle, isMacro && styles.macroTitle]}>
+          {name}
+        </Text>
+        <Text style={styles.cardGoal}>
+          Goal: {recommended.toFixed(0)}
+          {unit}
+        </Text>
+      </View>
+
+      <View style={styles.barContainer}>
+        <View style={styles.barBackground}>
+          <View
+            style={[
+              styles.bar,
+              {
+                // CORRECTED: Use the calculated percentage width
+                width: barWidth,
+                backgroundColor: color,
+              },
+            ]}
+          />
+          {/* CORRECTED: Marker is now positioned using percentage */}
+          <View style={[styles.marker, { left: markerPosition }]} />
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.consumedText}>
+            Consumed:{" "}
+            <Text style={{ color }}>
+              {consumed.toFixed(name === "Calories" ? 0 : 1)}
+            </Text>
+            {unit}
+          </Text>
+          {percent > 1.2 ? (
+            <Text style={styles.statusTextRed}>⚠️ Over Target</Text>
+          ) : percent < 0.6 ? (
+            <Text style={styles.statusTextYellow}>📉 Lacking</Text>
+          ) : (
+            <Text style={styles.statusTextGreen}>✅ On Track</Text>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+};
+
+// --- Main Screen Component ---
 export default function NutritionScreen() {
   const { log } = useFoodLog();
   const totals = calculateTotals(log);
 
-  return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.heading}>Today's Nutrition Summary & Recommendations</Text>
-      {/* Calories Bar Chart */}
-      <Text style={styles.sectionHeading}>Calories</Text>
-      {(() => {
-        const recommended = ARBITRARY_RDI['Calories'].amount;
-        const consumed = totals.find(n => n.name === 'Calories')?.amount || 0;
-        const percent = consumed / recommended;
-        const barWidth = Math.min(percent, 2) * 200;
-        const color = getBarColor(percent);
-        return (
-          <View style={styles.nutrientRow}>
-            <Text style={styles.nutrientLabel}>
-              {consumed.toFixed(0)}/{recommended} kcal
-            </Text>
-            <View style={styles.barBackground}>
-              <View
-                style={[
-                  styles.bar,
-                  {
-                    width: barWidth,
-                    backgroundColor: color,
-                  },
-                ]}
-              />
-              <View
-                style={[
-                  styles.marker,
-                  { left: 200 },
-                ]}
-              />
-            </View>
-            {percent > 1.2 && (
-              <Text style={styles.excessiveText}>Over recommended!</Text>
-            )}
-            {percent < 0.6 && (
-              <Text style={styles.lackingText}>Severely lacking!</Text>
-            )}
-          </View>
-        );
-      })()}
-      {/* Nutrients Summary */}
-      <Text style={styles.sectionHeading}>Nutrients</Text>
-      {totals.length === 0 ? (
-        <Text style={styles.emptyText}>No foods logged yet.</Text>
-      ) : (
-        Object.keys(ARBITRARY_RDI).filter(n => n !== 'Calories').map(name => {
-          const recommended = ARBITRARY_RDI[name].amount;
-          const consumed = totals.find(nutrient => nutrient.name === name)?.amount || 0;
-          const percent = consumed / recommended;
-          const barWidth = Math.min(percent, 2) * 200;
-          const color = getBarColor(percent);
+  if (totals.length === 0) {
+    return (
+      <SafeAreaView
+        style={[
+          styles.container,
+          { alignItems: "center", justifyContent: "center" },
+        ]}
+      >
+        <Text style={styles.emptyHeading}>📊 Nutrition Overview</Text>
+        <Text style={styles.emptyText}>Nothing to analyze yet!</Text>
+        <Text style={styles.emptyText}>
+          Log some food to see your daily totals and progress.
+        </Text>
+      </SafeAreaView>
+    );
+  }
 
-          return (
-            <View key={name} style={styles.nutrientRow}>
-              <Text style={styles.nutrientLabel}>
-                {name}: {consumed.toFixed(1)}/{recommended} {ARBITRARY_RDI[name].unit}
-              </Text>
-              <View style={styles.barBackground}>
-                <View
-                  style={[
-                    styles.bar,
-                    {
-                      width: barWidth,
-                      backgroundColor: color,
-                    },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.marker,
-                    { left: 200 },
-                  ]}
-                />
-              </View>
-              {percent > 1.2 && (
-                <Text style={styles.excessiveText}>Over recommended!</Text>
-              )}
-              {percent < 0.6 && (
-                <Text style={styles.lackingText}>Severely lacking!</Text>
-              )}
-            </View>
-          );
-        })
-      )}
-    </ScrollView>
+  const calorieData = totals.find((n) => n.name === "Calories") || {
+    name: "Calories",
+    amount: 0,
+    unit: "kcal",
+  };
+  const macroNutrients = ["Protein", "Carbohydrate", "Fat"];
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+      <ScrollView style={styles.container}>
+        <Text style={styles.mainHeading}>📊 Daily Nutrition Summary</Text>
+        {/* --- CALORIES SECTION (Big Card) --- */}
+        <Text style={styles.sectionTitle}>Calories Goal</Text>
+        <NutrientCard
+          name={calorieData.name}
+          consumed={calorieData.amount}
+          recommended={ARBITRARY_RDI["Calories"].amount}
+          unit={ARBITRARY_RDI["Calories"].unit}
+        />
+        {/* --- MACRO NUTRIENTS SECTION --- */}
+        <Text style={styles.sectionTitle}>Macronutrients</Text>
+        <View style={styles.macroContainer}>
+          {macroNutrients.map((name) => {
+            const recommended = ARBITRARY_RDI[name].amount;
+            const consumed =
+              totals.find((nutrient) => nutrient.name === name)?.amount || 0;
+            const unit = ARBITRARY_RDI[name].unit;
+
+            return (
+              <NutrientCard
+                key={name}
+                name={name}
+                consumed={consumed}
+                recommended={recommended}
+                unit={unit}
+                isMacro={true}
+              />
+            );
+          })}
+        </View>
+        {/* --- MICRO NUTRIENTS SECTION --- */}
+        <Text style={styles.sectionTitle}>Micronutrients & Fiber</Text>
+        {Object.keys(ARBITRARY_RDI)
+          .filter((name) => !["Calories", ...macroNutrients].includes(name))
+          .map((name) => {
+            const recommended = ARBITRARY_RDI[name].amount;
+            const consumed =
+              totals.find((nutrient) => nutrient.name === name)?.amount || 0;
+            const unit = ARBITRARY_RDI[name].unit;
+
+            return (
+              <NutrientCard
+                key={name}
+                name={name}
+                consumed={consumed}
+                recommended={recommended}
+                unit={unit}
+              />
+            );
+          })}
+        <View style={{ height: 50 }} /> {/* Spacer for end of scroll */}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
+// --- Stylesheet ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    backgroundColor: BACKGROUND_COLOR,
   },
-  heading: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1976d2',
-    marginBottom: 16,
+  mainHeading: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: PRIMARY_BLUE,
+    marginBottom: 20,
+    textAlign: "left",
   },
-  sectionHeading: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#388e3c',
-    marginTop: 16,
-    marginBottom: 8,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+    marginTop: 15,
+    marginBottom: 10,
   },
-  nutrientRow: {
-    marginBottom: 32,
+
+  // --- Card Styles (Reusable Component) ---
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
   },
-  nutrientLabel: {
-    fontWeight: 'bold',
-    marginBottom: 4,
-    color: '#333',
+  macroCard: {
+    // Style specific to macro cards if needed (e.g., a subtle border)
+    borderLeftWidth: 4,
+    borderLeftColor: PRIMARY_BLUE,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    marginBottom: 10,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  macroTitle: {
+    color: PRIMARY_BLUE,
+  },
+  cardGoal: {
+    fontSize: 14,
+    color: "#888",
+    fontWeight: "500",
+  },
+
+  // --- Bar and Progress Styles ---
+  barContainer: {
+    marginTop: 5,
   },
   barBackground: {
-    width: 220,
-    height: 20,
-    backgroundColor: '#eee',
-    borderRadius: 10,
-    position: 'relative',
-    overflow: 'hidden',
-    marginBottom: 4,
+    height: 12, // Thinner bar for a modern look
+    backgroundColor: GRAY_LIGHT,
+    borderRadius: 6,
+    position: "relative",
+    overflow: "hidden",
+    width: "100%",
   },
   bar: {
-    height: 20,
-    borderRadius: 10,
-    position: 'absolute',
+    height: "100%",
+    borderRadius: 6,
+    position: "absolute",
     left: 0,
     top: 0,
   },
   marker: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     width: 2,
-    height: 20,
-    backgroundColor: '#1976d2',
+    height: "100%",
+    backgroundColor: PRIMARY_BLUE,
     borderRadius: 1,
+    zIndex: 10, // Ensure marker is always visible on top
   },
-  excessiveText: {
-    color: '#d32f2f',
-    fontWeight: 'bold',
-    marginTop: 2,
+
+  // --- Summary Text Styles ---
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
+    alignItems: "center",
   },
-  lackingText: {
-    color: '#fbc02d',
-    fontWeight: 'bold',
-    marginTop: 2,
+  consumedText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#333",
+  },
+  statusTextGreen: {
+    color: ACCENT_GREEN,
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  statusTextYellow: {
+    color: WARNING_YELLOW,
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  statusTextRed: {
+    color: DANGER_RED,
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+
+  // --- Empty State Styles ---
+  emptyHeading: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: PRIMARY_BLUE,
+    marginBottom: 40,
   },
   emptyText: {
-    color: '#757575',
-    marginTop: 8,
+    fontSize: 16,
+    color: "#757575",
+    textAlign: "center",
+    marginHorizontal: 40,
+    lineHeight: 24,
+  },
+  macroContainer: {
+    // You can wrap macros in a container if you want them side-by-side on large screens
+    // For now, keep them stacked for mobile screens (default Flow)
   },
 });
