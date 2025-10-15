@@ -4,12 +4,12 @@ import React from "react";
 import {
   DimensionValue,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // --- Theme Constants ---
 const PRIMARY_BLUE = "#007AFF"; // Used for headers and markers

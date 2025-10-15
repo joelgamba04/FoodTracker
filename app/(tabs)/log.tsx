@@ -3,7 +3,6 @@ import {
   ActivityIndicator, // Used for better buttons/list items
   FlatList, // To handle notches and safe areas
   Platform, // To show loading state
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
@@ -14,6 +13,7 @@ import {
 import { useFoodLog } from "@/context/FoodLogContext";
 import { Food, FoodLogEntry } from "@/models/models";
 import { searchFoods } from "@/utils/foodApi";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type FoodResultItemProps = {
   item: Food;

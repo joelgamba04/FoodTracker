@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   Platform, // For shadow styles
-  SafeAreaView,
   ScrollView, // Used for custom buttons
   StyleSheet,
   Text,
@@ -9,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // --- Theme Constants ---
 const PRIMARY_BLUE = "#007AFF";

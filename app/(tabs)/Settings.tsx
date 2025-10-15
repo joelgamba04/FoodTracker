@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   Platform,
-  SafeAreaView,
   ScrollView, // For the save button
   StyleSheet,
   Text,
@@ -9,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // --- Theme Constants (Matching previous screens) ---
 const PRIMARY_BLUE = "#007AFF";
