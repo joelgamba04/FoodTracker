@@ -60,15 +60,12 @@ export default function TabLayout() {
         },
       }}
     >
-      {/* UX Improvement: Use the 'house' icon for a Home/Dashboard feel 
-        and give the Log Food button a more action-oriented icon.
-      */}
       <Tabs.Screen
         name="log"
         options={{
           title: "Dashboard",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={26} name="house.fill" color={color} />
+            <IconSymbol size={26} name="home" color={color} />
           ),
         }}
       />
@@ -79,7 +76,7 @@ export default function TabLayout() {
           title: "Summary", // Food Log is the core action
           tabBarIcon: ({ color }) => (
             // Use a bold, clear icon for logging food/tracking
-            <IconSymbol size={26} name="plus.square" color={color} />
+            <IconSymbol size={26} name="stats-chart" color={color} />
           ),
         }}
       />
@@ -89,7 +86,7 @@ export default function TabLayout() {
         options={{
           title: "RDI", // Use a more user-friendly, descriptive name
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={26} name="chart.bar.fill" color={color} />
+            <IconSymbol size={26} name="settings" color={color} />
           ),
         }}
       />
@@ -100,11 +97,7 @@ export default function TabLayout() {
           title: "Profile",
           tabBarIcon: ({ color }) => (
             // Use a specific person/user icon for the profile
-            <IconSymbol
-              size={26}
-              name="person.crop.circle.fill"
-              color={color}
-            />
+            <IconSymbol size={26} name="person-circle" color={color} />
           ),
         }}
       />
