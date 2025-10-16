@@ -1,32 +1,60 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator, // Used for better buttons/list items
-  FlatList, // To handle notches and safe areas
+  ActivityIndicator,
   Platform,
-  ScrollView, // To show loading state
+  ScrollView, // Using ScrollView for main content
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-// Assuming Food, FoodLogEntry, searchFoods, and useFoodLog are correctly imported
-import { useFoodLog } from "@/context/FoodLogContext";
-import { Food, FoodLogEntry } from "@/models/models";
-import { searchFoods } from "@/utils/foodApi";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+// =================================================================
+// ⚠️ EXTERNAL IMPORTS (Ensure these are correctly set up)
+import { useFoodLog } from "@/context/FoodLogContext";
+import { Food, FoodLogEntry } from "@/models/models";
+import { getFavoriteFoods, searchFoods } from "@/utils/foodApi";
+// =================================================================
+
+// --- QuickLog Component (Styles moved to main StyleSheet) ---
+interface QuickLogProps {
+  favorites: Food[];
+  onQuickAdd: (food: Food) => void;
+}
+
+const QuickLog: React.FC<QuickLogProps> = ({ favorites, onQuickAdd }) => (
+  <View style={styles.quickLogContainer}>
+    <Text style={styles.quickLogHeading}>⚡ Quick Log</Text>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.quickLogScrollViewContent}
+    >
+      {favorites.map((food) => (
+        <TouchableOpacity
+          key={food.id}
+          style={styles.pill}
+          onPress={() => onQuickAdd(food)}
+        >
+          <Text style={styles.pillText}>{food.name}</Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  </View>
+);
+
+// --- FoodResultItem Component ---
 type FoodResultItemProps = {
   item: Food;
   onPress: (food: Food) => void;
 };
 
-// --- Component for a single food item in the search results ---
 const FoodResultItem: React.FC<FoodResultItemProps> = ({ item, onPress }) => (
   <TouchableOpacity style={styles.resultItem} onPress={() => onPress(item)}>
     <View>
       <Text style={styles.resultItemName}>{item.name}</Text>
-      {/* Assuming item.servingSize exists */}
       <Text style={styles.resultItemDetails}>
         Serving: {item.servingSize || "N/A"}
       </Text>
@@ -35,153 +63,63 @@ const FoodResultItem: React.FC<FoodResultItemProps> = ({ item, onPress }) => (
   </TouchableOpacity>
 );
 
+// --- LoggedItem Component ---
 type LoggedItemProps = {
   item: FoodLogEntry;
 };
 
-// Mock Data (Replace with real user favorites later)
-const MOCK_FAVORITE_FOODS = [
-  {
-    id: "fav1",
-    name: "Coffee (Black)",
-    servingSize: "1 cup",
-    nutrients: [
-      { name: "Calories", amount: 2, unit: "kcal" },
-      { name: "Protein", amount: 0.3, unit: "g" },
-    ],
-  },
-  {
-    id: "fav2",
-    name: "Scrambled Eggs",
-    servingSize: "2 large",
-    nutrients: [
-      { name: "Calories", amount: 180, unit: "kcal" },
-      { name: "Protein", amount: 12, unit: "g" },
-      { name: "Fat", amount: 14, unit: "g" },
-      { name: "Carbs", amount: 2, unit: "g" },
-    ],
-  },
-  {
-    id: "fav3",
-    name: "Oats",
-    servingSize: "1/2 cup dry",
-    nutrients: [
-      { name: "Calories", amount: 150, unit: "kcal" },
-      { name: "Carbs", amount: 27, unit: "g" },
-      { name: "Fiber", amount: 4, unit: "g" },
-      { name: "Protein", amount: 5, unit: "g" },
-    ],
-  },
-  {
-    id: "fav4",
-    name: "Chicken Breast",
-    servingSize: "4 oz",
-    nutrients: [
-      { name: "Calories", amount: 165, unit: "kcal" },
-      { name: "Protein", amount: 31, unit: "g" },
-      { name: "Fat", amount: 3.6, unit: "g" },
-      { name: "Carbs", amount: 0, unit: "g" },
-    ],
-  },
-  {
-    id: "fav5",
-    name: "Protein Shake",
-    servingSize: "1 serving",
-    nutrients: [
-      { name: "Calories", amount: 150, unit: "kcal" },
-      { name: "Protein", amount: 25, unit: "g" },
-    ],
-  },
-];
-
-// Inside LogScreen.tsx, define this component:
-
-interface QuickLogProps {
-  favorites: Food[];
-  onQuickAdd: (food: Food) => void;
-}
-
-const QuickLog: React.FC<QuickLogProps> = ({ favorites, onQuickAdd }) => (
-  <View style={quickLogStyles.container}>
-    <Text style={quickLogStyles.heading}>⚡ Quick Log</Text>
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={quickLogStyles.scrollViewContent}
-    >
-      {favorites.map((food) => (
-        <TouchableOpacity
-          key={food.id}
-          style={quickLogStyles.pill}
-          onPress={() => onQuickAdd(food)}
-        >
-          <Text style={quickLogStyles.pillText}>{food.name}</Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
-  </View>
-);
-
-const quickLogStyles = StyleSheet.create({
-  container: {
-    paddingTop: 10,
-    paddingBottom: 5,
-    backgroundColor: "#fff", // Match screen background
-  },
-  heading: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 10,
-    paddingHorizontal: 16, // Match screen padding
-  },
-  scrollViewContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 5,
-  },
-  pill: {
-    backgroundColor: "#E0E7FF", // A light, friendly color
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: "#C5D0FF",
-  },
-  pillText: {
-    color: "#0055FF", // A darker shade of blue
-    fontWeight: "600",
-    fontSize: 14,
-  },
-});
-
-// --- Component for a single logged item ---
 const LoggedItem: React.FC<LoggedItemProps> = ({ item }) => (
   <View style={styles.logItemContainer}>
     <Text style={styles.logItemText}>
       <Text style={styles.logItemQuantity}>{item.quantity}x </Text>
       {item.food.name}
     </Text>
-    {/* Assuming item.food.servingSize exists */}
     <Text style={styles.logItemDetails}>{item.food.servingSize}</Text>
   </View>
 );
 
+// =================================================================
 // --- Main Screen Component ---
+// =================================================================
 export default function LogScreen() {
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState("1");
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<Food[]>([]);
   const [loading, setLoading] = useState(false);
+  const [favorites, setFavorites] = useState<Food[]>([]);
   const { log, addEntry } = useFoodLog();
 
+  useEffect(() => {
+    async function loadFavorites() {
+      try {
+        const favs = await getFavoriteFoods();
+        setFavorites(favs);
+      } catch (error) {
+        console.error("Failed to load favorites:", error);
+      }
+    }
+    loadFavorites();
+  }, []); // Empty dependency array ensures it runs only once
+
+  // --- NEW Quantity Handlers ---
+  const handleQuantityChange = (text: string) => {
+    // Allow only digits and a single decimal point
+    const cleanedText = text.replace(/[^0-9.]/g, "");
+    setQuantity(cleanedText);
+  };
+
+  const adjustQuantity = (delta: number) => {
+    const currentQ = Number(quantity) || 0;
+    // Don't go below 0 (or 1, depends on app logic; we'll use 1 for food items)
+    const newQ = Math.max(1, currentQ + delta);
+    setQuantity(String(newQ));
+  };
+
   const handleSearch = async () => {
-    if (!search.trim()) return; // Prevent empty search
+    if (!search.trim()) return;
     setLoading(true);
-    // Clear old results while searching
     setResults([]);
-    // Ensure the selection view is hidden when starting a new search
     setSelectedFood(null);
 
     try {
@@ -189,7 +127,6 @@ export default function LogScreen() {
       setResults(foods);
     } catch (error) {
       console.error("Search failed:", error);
-      // Optionally show a user-friendly error message
     } finally {
       setLoading(false);
     }
@@ -198,7 +135,10 @@ export default function LogScreen() {
   const addFoodToLog = () => {
     const qty = Number(quantity);
     if (selectedFood && qty > 0) {
+      // NOTE: Ensure your addEntry function can accept a timestamp if needed,
+      // otherwise, you can just pass { food: selectedFood, quantity: qty }
       addEntry({ food: selectedFood, quantity: qty });
+
       // Reset after successful log
       setSelectedFood(null);
       setQuantity("1");
@@ -207,18 +147,18 @@ export default function LogScreen() {
     }
   };
 
-  const handleSelectFood = (food: Food) => {
-    setSelectedFood(food);
-    // You might want to scroll to the selection area here
-  };
-
-  // --- NEW: Function to handle food selection from either search or quick log ---
-  const handleFoodSelect = useCallback((foodItem: Food) => {
-    // If we're selecting a new food (either from search or quick log)
+  // Unified handler for QuickLog and SearchResult tap
+  const handleSelectFood = useCallback((foodItem: Food) => {
     setSelectedFood(foodItem);
-    setResults([]); // Clear search results
-    setSearch(""); // Clear search term
+    setQuantity("1"); // Reset quantity when new food is selected
+    setResults([]);
+    setSearch("");
   }, []);
+
+  // Determine which main content area to show
+  const isSearching = !!search.trim() && !loading;
+  const isShowingResults = results.length > 0 && !selectedFood;
+  const isShowingLoggedFood = log.length > 0;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f4f7f9" }}>
@@ -233,7 +173,7 @@ export default function LogScreen() {
             placeholder="Search for food, e.g., 'apple', 'egg'"
             placeholderTextColor="#888"
             style={styles.input}
-            onSubmitEditing={handleSearch} // Search on keyboard 'Go'
+            onSubmitEditing={handleSearch}
           />
           <TouchableOpacity
             style={styles.searchButton}
@@ -249,79 +189,113 @@ export default function LogScreen() {
         </View>
 
         {/* --- QUICK LOG INTEGRATION --- */}
-        <QuickLog
-          favorites={MOCK_FAVORITE_FOODS as Food[]} // Cast mock data to Food type
-          onQuickAdd={handleFoodSelect}
-        />
+        {!isSearching && !selectedFood && (
+          <QuickLog favorites={favorites} onQuickAdd={handleSelectFood} />
+        )}
 
-        {/* --- Search Results List --- */}
-        <FlatList
-          data={results}
-          keyExtractor={(item) => item.id}
-          ListEmptyComponent={() => {
-            if (loading) return null;
-            if (search.trim() && results.length === 0) {
-              return (
-                <Text style={styles.listEmptyText}>
-                  No results found. Try a different query.
-                </Text>
-              );
-            }
-            return null;
-          }}
-          renderItem={({ item }) => (
-            <FoodResultItem item={item} onPress={handleSelectFood} />
-          )}
-          style={styles.resultsList}
-        />
+        {/* --- Main Scrollable Content Area --- */}
+        <ScrollView
+          style={styles.contentScroll}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* --- Selected Food & Quantity Input Section --- */}
+          {selectedFood && (
+            <View style={styles.selectedFoodContainer}>
+              <Text style={styles.selectedFoodTitle}>
+                Add {selectedFood.name}
+              </Text>
+              <Text style={styles.selectedFoodDetails}>
+                Serving: {selectedFood.servingSize}
+              </Text>
 
-        {/* --- Selected Food & Quantity Input Section --- */}
-        {selectedFood && (
-          <View style={styles.selectedContainer}>
-            <Text style={styles.selectedHeading}>Log Quantity for:</Text>
-            <Text style={styles.selectedFoodName}>{selectedFood.name}</Text>
+              {/* QUANTITY CONTROL SECTION - MODIFIED */}
+              <View style={styles.quantityControl}>
+                {/* Minus Button */}
+                <TouchableOpacity
+                  style={styles.quantityButton}
+                  onPress={() => adjustQuantity(-1)}
+                  disabled={Number(quantity) <= 1} // Disable when quantity is 1
+                >
+                  <Text style={styles.quantityButtonText}>-</Text>
+                </TouchableOpacity>
 
-            <View style={styles.quantityInputGroup}>
-              <TextInput
-                value={quantity}
-                onChangeText={(text) =>
-                  setQuantity(text.replace(/[^0-9.]/g, ""))
-                } // Only allow numbers
-                keyboardType="numeric"
-                style={styles.quantityInput}
-                placeholder="Qty"
-                maxLength={4}
-              />
+                {/* Quantity Input */}
+                <TextInput
+                  style={styles.quantityInput}
+                  keyboardType="numeric"
+                  value={quantity}
+                  onChangeText={handleQuantityChange}
+                  maxLength={4}
+                />
+
+                {/* Plus Button */}
+                <TouchableOpacity
+                  style={styles.quantityButton}
+                  onPress={() => adjustQuantity(1)}
+                >
+                  <Text style={styles.quantityButtonText}>+</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* NUTRIENT PREVIEW (You'll need to re-add the component definition) */}
+              {/* <NutrientPreview
+                                food={selectedFood}
+                                quantity={Number(quantity) || 1}
+                            />
+                            */}
+
+              {/* Log Button */}
               <TouchableOpacity
-                style={styles.addButton}
+                style={styles.logButton}
                 onPress={addFoodToLog}
                 disabled={Number(quantity) <= 0}
               >
-                <Text style={styles.addButtonText}>➕ Add to Log</Text>
+                <Text style={styles.logButtonText}>
+                  Log {selectedFood.name}
+                </Text>
               </TouchableOpacity>
             </View>
-          </View>
-        )}
-
-        {/* --- Today's Log Section --- */}
-        <Text style={styles.logHeading}>📝 Today's Log</Text>
-        <FlatList
-          data={log}
-          keyExtractor={(_, idx) => idx.toString()}
-          ListEmptyComponent={() => (
-            <Text style={styles.listEmptyText}>
-              Nothing logged yet. Start searching above!
-            </Text>
           )}
-          renderItem={({ item }) => <LoggedItem item={item} />}
-          style={styles.logList}
-        />
+
+          {/* --- Search Results List --- */}
+          {isShowingResults && (
+            <>
+              <Text style={styles.logHeading}>Search Results</Text>
+              {results.map((item) => (
+                <FoodResultItem
+                  key={item.id}
+                  item={item}
+                  onPress={handleSelectFood}
+                />
+              ))}
+            </>
+          )}
+
+          {/* --- Today's Log Section (Default view) --- */}
+          {!isShowingResults && !selectedFood && (
+            <>
+              <Text style={styles.logHeading}>📝 Today's Log</Text>
+              {isShowingLoggedFood ? (
+                log.map((item, idx) => <LoggedItem key={idx} item={item} />)
+              ) : (
+                <Text style={styles.listEmptyText}>
+                  Nothing logged yet. Start searching or use Quick Log!
+                </Text>
+              )}
+            </>
+          )}
+
+          <View style={{ height: 30 }} />
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
 }
 
+// =================================================================
 // --- Stylesheet ---
+// =================================================================
+
 const PRIMARY_COLOR = "#007AFF"; // Blue
 const ACCENT_COLOR = "#4CD964"; // Green
 const GRAY_LIGHT = "#e8e8e8";
@@ -333,7 +307,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
-    backgroundColor: "#f4f7f9", // Light gray background for the screen
+    backgroundColor: "#f4f7f9",
+  },
+  contentScroll: {
+    flex: 1,
   },
   heading: {
     fontSize: 26,
@@ -356,9 +333,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
       },
-      android: {
-        elevation: 3,
-      },
+      android: { elevation: 3 },
     }),
   },
   input: {
@@ -367,7 +342,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     fontSize: 16,
     color: "#333",
-    // No border here, the container provides the style
   },
   searchButton: {
     backgroundColor: PRIMARY_COLOR,
@@ -383,9 +357,39 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
+  // --- Quick Log Styles ---
+  quickLogContainer: {
+    paddingTop: 5,
+    paddingBottom: 5,
+    backgroundColor: "#f4f7f9",
+  },
+  quickLogHeading: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 10,
+  },
+  quickLogScrollViewContent: {
+    paddingBottom: 5,
+  },
+  pill: {
+    backgroundColor: "#E0E7FF",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "#C5D0FF",
+  },
+  pillText: {
+    color: "#0055FF",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+
   // --- Search Results List Styles ---
   resultsList: {
-    maxHeight: 200, // Constrain height for better layout
+    maxHeight: 200,
     marginBottom: 15,
   },
   resultItem: {
@@ -420,79 +424,93 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
 
-  // --- Selected Food Section Styles ---
-  selectedContainer: {
-    padding: 15,
+  // --- Selected Food & Quantity Control Styles ---
+  selectedFoodContainer: {
+    padding: 16,
     backgroundColor: "#fff",
-    borderRadius: 10,
-    marginBottom: 20,
-    borderLeftWidth: 5,
-    borderLeftColor: ACCENT_COLOR,
+    borderRadius: 12,
+    marginVertical: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
     ...Platform.select({
       ios: {
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
+        shadowOpacity: 0.1,
         shadowRadius: 3,
       },
-      android: {
-        elevation: 2,
-      },
+      android: { elevation: 2 },
     }),
   },
-  selectedHeading: {
-    fontSize: 14,
-    color: GRAY_DARK,
-    marginBottom: 5,
-  },
-  selectedFoodName: {
+  selectedFoodTitle: {
     fontSize: 20,
-    fontWeight: "700",
-    color: ACCENT_COLOR,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 4,
+  },
+  selectedFoodDetails: {
+    fontSize: 14,
+    color: "#888",
     marginBottom: 15,
   },
-  quantityInputGroup: {
+  // New Styles for Quantity Control
+  quantityControl: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
   },
-  quantityInput: {
-    width: 60,
-    borderWidth: 1,
-    borderColor: GRAY_LIGHT,
-    borderRadius: 8,
-    padding: 8,
-    textAlign: "center",
-    fontSize: 16,
-    marginRight: 10,
-    color: "#333",
-  },
-  addButton: {
-    flex: 1,
-    backgroundColor: ACCENT_COLOR,
-    paddingVertical: 10,
-    borderRadius: 8,
+  quantityButton: {
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    backgroundColor: PRIMARY_COLOR,
     justifyContent: "center",
     alignItems: "center",
+    marginHorizontal: 10,
   },
-  addButtonText: {
+  quantityButtonText: {
+    fontSize: 24,
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "300",
+  },
+  quantityInput: {
+    width: 70,
+    height: 45,
+    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#333",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 5,
   },
 
-  // --- Log List Styles ---
+  // Log Button Style
+  logButton: {
+    backgroundColor: ACCENT_COLOR,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginTop: 20,
+    alignItems: "center",
+  },
+  logButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+
+  // --- Today's Log Styles ---
   logHeading: {
     fontSize: 18,
     fontWeight: "700",
     color: "#333",
-    marginTop: 10,
+    marginTop: 15,
     marginBottom: 10,
     paddingBottom: 5,
     borderBottomWidth: 1,
     borderBottomColor: GRAY_LIGHT,
-  },
-  logList: {
-    flex: 1, // Take up remaining space
   },
   logItemContainer: {
     flexDirection: "row",
@@ -510,9 +528,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 2,
       },
-      android: {
-        elevation: 1,
-      },
+      android: { elevation: 1 },
     }),
   },
   logItemText: {
