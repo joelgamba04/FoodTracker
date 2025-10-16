@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator, // Used for better buttons/list items
   FlatList, // To handle notches and safe areas
-  Platform, // To show loading state
+  Platform,
+  ScrollView, // To show loading state
   StyleSheet,
   Text,
   TextInput,
@@ -37,6 +38,122 @@ const FoodResultItem: React.FC<FoodResultItemProps> = ({ item, onPress }) => (
 type LoggedItemProps = {
   item: FoodLogEntry;
 };
+
+// Mock Data (Replace with real user favorites later)
+const MOCK_FAVORITE_FOODS = [
+  {
+    id: "fav1",
+    name: "Coffee (Black)",
+    servingSize: "1 cup",
+    nutrients: [
+      { name: "Calories", amount: 2, unit: "kcal" },
+      { name: "Protein", amount: 0.3, unit: "g" },
+    ],
+  },
+  {
+    id: "fav2",
+    name: "Scrambled Eggs",
+    servingSize: "2 large",
+    nutrients: [
+      { name: "Calories", amount: 180, unit: "kcal" },
+      { name: "Protein", amount: 12, unit: "g" },
+      { name: "Fat", amount: 14, unit: "g" },
+      { name: "Carbs", amount: 2, unit: "g" },
+    ],
+  },
+  {
+    id: "fav3",
+    name: "Oats",
+    servingSize: "1/2 cup dry",
+    nutrients: [
+      { name: "Calories", amount: 150, unit: "kcal" },
+      { name: "Carbs", amount: 27, unit: "g" },
+      { name: "Fiber", amount: 4, unit: "g" },
+      { name: "Protein", amount: 5, unit: "g" },
+    ],
+  },
+  {
+    id: "fav4",
+    name: "Chicken Breast",
+    servingSize: "4 oz",
+    nutrients: [
+      { name: "Calories", amount: 165, unit: "kcal" },
+      { name: "Protein", amount: 31, unit: "g" },
+      { name: "Fat", amount: 3.6, unit: "g" },
+      { name: "Carbs", amount: 0, unit: "g" },
+    ],
+  },
+  {
+    id: "fav5",
+    name: "Protein Shake",
+    servingSize: "1 serving",
+    nutrients: [
+      { name: "Calories", amount: 150, unit: "kcal" },
+      { name: "Protein", amount: 25, unit: "g" },
+    ],
+  },
+];
+
+// Inside LogScreen.tsx, define this component:
+
+interface QuickLogProps {
+  favorites: Food[];
+  onQuickAdd: (food: Food) => void;
+}
+
+const QuickLog: React.FC<QuickLogProps> = ({ favorites, onQuickAdd }) => (
+  <View style={quickLogStyles.container}>
+    <Text style={quickLogStyles.heading}>⚡ Quick Log</Text>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={quickLogStyles.scrollViewContent}
+    >
+      {favorites.map((food) => (
+        <TouchableOpacity
+          key={food.id}
+          style={quickLogStyles.pill}
+          onPress={() => onQuickAdd(food)}
+        >
+          <Text style={quickLogStyles.pillText}>{food.name}</Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  </View>
+);
+
+const quickLogStyles = StyleSheet.create({
+  container: {
+    paddingTop: 10,
+    paddingBottom: 5,
+    backgroundColor: "#fff", // Match screen background
+  },
+  heading: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 10,
+    paddingHorizontal: 16, // Match screen padding
+  },
+  scrollViewContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 5,
+  },
+  pill: {
+    backgroundColor: "#E0E7FF", // A light, friendly color
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "#C5D0FF",
+  },
+  pillText: {
+    color: "#0055FF", // A darker shade of blue
+    fontWeight: "600",
+    fontSize: 14,
+  },
+});
 
 // --- Component for a single logged item ---
 const LoggedItem: React.FC<LoggedItemProps> = ({ item }) => (
@@ -95,6 +212,14 @@ export default function LogScreen() {
     // You might want to scroll to the selection area here
   };
 
+  // --- NEW: Function to handle food selection from either search or quick log ---
+  const handleFoodSelect = useCallback((foodItem: Food) => {
+    // If we're selecting a new food (either from search or quick log)
+    setSelectedFood(foodItem);
+    setResults([]); // Clear search results
+    setSearch(""); // Clear search term
+  }, []);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f4f7f9" }}>
       <View style={styles.container}>
@@ -122,6 +247,12 @@ export default function LogScreen() {
             )}
           </TouchableOpacity>
         </View>
+
+        {/* --- QUICK LOG INTEGRATION --- */}
+        <QuickLog
+          favorites={MOCK_FAVORITE_FOODS as Food[]} // Cast mock data to Food type
+          onQuickAdd={handleFoodSelect}
+        />
 
         {/* --- Search Results List --- */}
         <FlatList
