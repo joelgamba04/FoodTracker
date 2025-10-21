@@ -137,7 +137,7 @@ export default function LogScreen() {
     if (selectedFood && qty > 0) {
       // NOTE: Ensure your addEntry function can accept a timestamp if needed,
       // otherwise, you can just pass { food: selectedFood, quantity: qty }
-      addEntry({ food: selectedFood, quantity: qty });
+      addEntry({ food: selectedFood, quantity: qty, timestamp: new Date() } as FoodLogEntry);
 
       // Reset after successful log
       setSelectedFood(null);

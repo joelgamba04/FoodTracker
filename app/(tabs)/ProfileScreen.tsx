@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Platform, // For shadow styles
   ScrollView, // Used for custom buttons
@@ -55,32 +55,43 @@ export default function ProfileScreen() {
 
   const [rdi, setRdi] = useState(DEFAULT_RDI);
 
-  const handleProfileChange = (field: ProfileField, value: string) => {
-    setProfile((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  // Wrap with useCallback
+  const handleProfileChange = useCallback(
+    (field: ProfileField, value: string) => {
+      setProfile((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    },
+    []
+  ); // Empty dependency array as setProfile is stable
 
+  // Corrected handleIllnessChange function:
   const handleIllnessChange = (illness: string) => {
     setProfile((prev) => ({
       ...prev,
       illness,
     }));
 
-    // Adjust RDI based on illness (Keep logic as is)
+    // Start with a copy of the default RDI every time
+    let newRdi = { ...DEFAULT_RDI };
+
+    // Adjust RDI based on the selected illness
     if (illness !== "None" && illnessRdiAdjustments[illness]) {
-      setRdi((prevRdi) => {
-        const adjustments = illnessRdiAdjustments[illness];
-        const newRdi = { ...prevRdi };
-        (Object.keys(adjustments) as NutrientKey[]).forEach((nutrient) => {
-          if (newRdi[nutrient]) {
-            newRdi[nutrient].amount = adjustments[nutrient]!;
-          }
-        });
-        return newRdi;
+      const adjustments = illnessRdiAdjustments[illness];
+
+      (Object.keys(adjustments) as NutrientKey[]).forEach((nutrient) => {
+        if (newRdi[nutrient]) {
+          // Apply the adjustment to the new RDI object
+          newRdi[nutrient] = {
+            ...newRdi[nutrient], // Copy existing properties
+            amount: adjustments[nutrient]!, // Overwrite 'amount'
+          };
+        }
       });
+      setRdi(newRdi as typeof DEFAULT_RDI); // Apply the fully calculated RDI
     } else {
+      // If "None" is selected, just set the default RDI
       setRdi(DEFAULT_RDI);
     }
   };
@@ -314,7 +325,6 @@ const styles = StyleSheet.create({
   illnessPillsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
     marginTop: 5,
   },
   pill: {
@@ -322,6 +332,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 2,
+    marginRight: 10,
+    marginBottom: 10,
   },
   pillActive: {
     backgroundColor: PRIMARY_BLUE,

@@ -15,6 +15,7 @@ export interface Food {
 }
 
 export interface FoodLogEntry {
+  timestamp: any;
   food: Food;
   quantity: number; // number of servings
 }

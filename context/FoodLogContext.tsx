@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { FoodLogEntry } from '@/models/models';
+import { FoodLogEntry } from "@/models/models";
+import React, { createContext, ReactNode, useContext, useState } from "react";
 
 interface FoodLogContextType {
   log: FoodLogEntry[];
@@ -12,7 +12,7 @@ const FoodLogContext = createContext<FoodLogContextType | undefined>(undefined);
 export function FoodLogProvider({ children }: { children: ReactNode }) {
   const [log, setLog] = useState<FoodLogEntry[]>([]);
 
-  const addEntry = (entry: FoodLogEntry) => setLog(prev => [...prev, entry]);
+  const addEntry = (entry: FoodLogEntry) => setLog((prev) => [...prev, entry]);
   const clearLog = () => setLog([]);
 
   return (
@@ -22,8 +22,10 @@ export function FoodLogProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useFoodLog() {
+export const useFoodLog = () => {
   const context = useContext(FoodLogContext);
-  if (!context) throw new Error('useFoodLog must be used within FoodLogProvider');
+  if (context === undefined) {
+    throw new Error("useFoodLog must be used within a FoodLogProvider");
+  }
   return context;
-}
+};
