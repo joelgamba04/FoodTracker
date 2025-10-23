@@ -84,6 +84,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="Settings"
         options={{
+          href: null, // Hides the tab
           title: "RDI", // Use a more user-friendly, descriptive name
           tabBarIcon: ({ color }) => (
             <IconSymbol size={26} name="settings" color={color} />
