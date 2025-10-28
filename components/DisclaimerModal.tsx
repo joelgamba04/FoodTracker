@@ -2,14 +2,14 @@ import { DISCLAIMER_ACCEPTED_KEY } from "@/constants/storageKeys";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface DisclaimerModalProps {
@@ -22,16 +22,14 @@ const DisclaimerModal: React.FC<DisclaimerModalProps> = ({ onAccept }) => {
 
   // Check storage on component mount
   useEffect(() => {
-
     if (Platform.OS === "web") {
-        console.log("Web platform detected");
+      console.log("Web platform detected");
       // Assume accepted on web for development/prototyping purposes
       setIsLoading(false);
       setIsVisible(true);
-      onAccept(); // Proceed to render the main app immediately
       return; // Stop execution for web
     }
-    
+
     const checkDisclaimerStatus = async () => {
       try {
         const value = await AsyncStorage.getItem(DISCLAIMER_ACCEPTED_KEY);
