@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,9 +21,6 @@ const DEFAULT_RDI = {
   Protein: { name: "Protein", amount: 50, unit: "g" },
   Carbohydrate: { name: "Carbohydrate", amount: 300, unit: "g" },
   Fat: { name: "Fat", amount: 70, unit: "g" },
-  Fiber: { name: "Fiber", amount: 30, unit: "g" },
-  Calcium: { name: "Calcium", amount: 1000, unit: "mg" },
-  Iron: { name: "Iron", amount: 18, unit: "mg" },
 };
 
 type RdiKey = keyof typeof DEFAULT_RDI;
@@ -57,6 +53,7 @@ const GoalInput: React.FC<GoalInputProps> = ({
         textAlign="right"
         placeholder="0"
         placeholderTextColor="#999"
+        editable={false}
       />
       <Text style={styles.inputUnit}>{unit}</Text>
     </View>
@@ -80,17 +77,12 @@ export default function SettingsScreen() {
     }));
   };
 
-  const handleSave = () => {
-    // TODO: Save to context/global state or persistent storage
-    alert("RDI values saved! (Implement persistence for real use)");
-  };
-
   const macros: RdiKey[] = ["Calories", "Protein", "Carbohydrate", "Fat"];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
       <ScrollView style={styles.container}>
-        <Text style={styles.heading}>⚙️ Customize Daily Goals</Text>
+        <Text style={styles.heading}>Your Daily Goals</Text>
 
         <Text style={styles.sectionTitle}>Macronutrient Goals</Text>
 
@@ -107,31 +99,6 @@ export default function SettingsScreen() {
             />
           ))}
         </View>
-
-        <Text style={styles.sectionTitle}>Micronutrient & Other Goals</Text>
-
-        {/* --- Card: Micronutrients --- */}
-        <View style={styles.card}>
-          {Object.keys(rdi)
-            .filter((name) => !macros.includes(name as RdiKey))
-            .map((name) => {
-              const key = name as RdiKey;
-              return (
-                <GoalInput
-                  key={key}
-                  label={key}
-                  unit={rdi[key].unit}
-                  value={rdi[key].amount.toString()}
-                  onChangeText={(val) => handleChange(key, val)}
-                />
-              );
-            })}
-        </View>
-
-        {/* --- Save Button --- */}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Apply Custom Goals</Text>
-        </TouchableOpacity>
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -226,30 +193,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: PRIMARY_BLUE,
     fontWeight: "bold",
-  },
-
-  // --- Save Button Styles ---
-  saveButton: {
-    backgroundColor: ACCENT_GREEN,
-    paddingVertical: 15,
-    borderRadius: 10,
-    marginTop: 20,
-    alignItems: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: ACCENT_GREEN,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-      },
-      android: {
-        elevation: 5,
-      },
-    }),
-  },
-  saveButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
   },
 });
