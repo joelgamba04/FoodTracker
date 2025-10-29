@@ -1,6 +1,6 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  Platform, // For shadow styles
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,26 +16,86 @@ const ACCENT_GREEN = "#4CD964";
 const BACKGROUND_COLOR = "#f4f7f9";
 const BORDER_COLOR = "#ddd";
 
-// --- Data (Default RDI is kept but not used for calculation on this screen) ---
-const DEFAULT_RDI = {
-  Calories: { name: "Calories", amount: 2000, unit: "kcal" },
-  Protein: { name: "Protein", amount: 50, unit: "g" },
-  Carbohydrate: { name: "Carbohydrate", amount: 300, unit: "g" },
-  Fat: { name: "Fat", amount: 70, unit: "g" },
+// --- Local Persistence Key ---
+const STORAGE_KEY = "@UserProfile";
+
+// --- Profile Data Structure ---
+interface UserProfile {
+  age: string;
+  sex: string;
+  height: string;
+  weight: string;
+}
+
+const initialProfile: UserProfile = {
+  age: "",
+  sex: "Male",
+  height: "",
+  weight: "",
 };
 
 type ProfileField = "age" | "height" | "weight" | "sex";
 
 // --- Main Screen Component ---
 export default function ProfileScreen() {
-  const [profile, setProfile] = useState({
-    age: "",
-    sex: "Male", // ADDED: Default sex option
-    height: "",
-    weight: "",
-  });
+  const [profile, setProfile] = useState<UserProfile>(initialProfile);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Updated ProfileField type to include 'sex'
+  // REMOVED: user, appId, firebaseConfig, initialAuthToken states/globals
+
+  // 1. DATA LOADING FUNCTION (Now uses localStorage)
+  useEffect(() => {
+    try {
+      setLoading(true);
+      // Retrieve data from local storage
+      const storedData = localStorage.getItem(STORAGE_KEY);
+
+      if (storedData) {
+        const loadedProfile = JSON.parse(storedData);
+        // Load stored data, ensuring defaults fill in any missing fields
+        setProfile({
+          ...initialProfile,
+          ...loadedProfile,
+          // Ensure values are stored as strings for TextInput component
+          age: String(loadedProfile.age || ""),
+          height: String(loadedProfile.height || ""),
+          weight: String(loadedProfile.weight || ""),
+        });
+        console.log("Profile loaded successfully from local storage.");
+      } else {
+        console.log("No local profile found, using defaults.");
+      }
+    } catch (e: any) {
+      console.error("Error loading profile from local storage:", e);
+      setError(`Failed to load profile data: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, []); // Run only once on mount
+
+  // 2. DATA SAVING FUNCTION (Now uses localStorage)
+  const handleSave = () => {
+    setLoading(true);
+    setError(null); // Clear any previous error
+
+    try {
+      // Convert the current state object to a JSON string
+      const dataToSave = JSON.stringify(profile);
+
+      // Save to Local Storage
+      localStorage.setItem(STORAGE_KEY, dataToSave);
+
+      console.log("Profile saved successfully to local storage!");
+    } catch (e: any) {
+      console.error("Error saving profile:", e);
+      setError(`Failed to save profile: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Profile change handler remains the same
   const handleProfileChange = useCallback(
     (field: ProfileField, value: string) => {
       setProfile((prev) => ({
@@ -46,15 +106,21 @@ export default function ProfileScreen() {
     []
   );
 
-  // Removed: handleIllnessChange function
-
-  const handleSave = () => {
-    // TODO: Save profile to context or persistent storage
-    // Replaced alert() with console.log()
-    console.log(
-      "Profile and RDI updated! (Implement persistence for real use)"
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Loading Profile...</Text>
+      </SafeAreaView>
     );
-  };
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <Text style={styles.errorText}>Error: {error}</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
@@ -98,27 +164,41 @@ export default function ProfileScreen() {
             unit="yrs"
             keyboardType="numeric"
             value={profile.age}
-            onChangeText={(val) => handleProfileChange("age", val)}
+            // Input validation to only allow numbers
+            onChangeText={(val) =>
+              handleProfileChange("age", val.replace(/[^0-9]/g, ""))
+            }
           />
           <FormInput
             label="Height"
             unit="cm"
             keyboardType="numeric"
             value={profile.height}
-            onChangeText={(val) => handleProfileChange("height", val)}
+            // Input validation to only allow numbers and decimal point
+            onChangeText={(val) =>
+              handleProfileChange("height", val.replace(/[^0-9.]/g, ""))
+            }
           />
           <FormInput
             label="Weight"
             unit="kg"
             keyboardType="numeric"
             value={profile.weight}
-            onChangeText={(val) => handleProfileChange("weight", val)}
+            // Input validation to only allow numbers and decimal point
+            onChangeText={(val) =>
+              handleProfileChange("weight", val.replace(/[^0-9.]/g, ""))
+            }
           />
         </View>
-
         {/* --- Save Button --- */}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>💾 Save Profile Changes</Text>
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={handleSave}
+          disabled={loading} // Disable while loading/saving
+        >
+          <Text style={styles.saveButtonText}>
+            {loading ? "Saving..." : "💾 Save Profile Changes (Local)"}
+          </Text>
         </TouchableOpacity>
         <View style={{ height: 40 }} /> {/* Spacer */}
       </ScrollView>
@@ -166,6 +246,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
     backgroundColor: BACKGROUND_COLOR,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: BACKGROUND_COLOR,
+  },
+  loadingText: {
+    fontSize: 18,
+    color: PRIMARY_BLUE,
+    fontWeight: "600",
+  },
+  errorText: {
+    fontSize: 16,
+    color: "red",
+    fontWeight: "600",
+    textAlign: "center",
+    padding: 20,
   },
   heading: {
     fontSize: 28,
