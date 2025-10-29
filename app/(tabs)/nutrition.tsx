@@ -25,9 +25,6 @@ const ARBITRARY_RDI: Record<string, Nutrient> = {
   Protein: { name: "Protein", amount: 50, unit: "g" },
   Carbohydrate: { name: "Carbohydrate", amount: 300, unit: "g" },
   Fat: { name: "Fat", amount: 70, unit: "g" },
-  Fiber: { name: "Fiber", amount: 30, unit: "g" },
-  Calcium: { name: "Calcium", amount: 1000, unit: "mg" },
-  Iron: { name: "Iron", amount: 18, unit: "mg" },
 };
 
 // --- Helper Functions (Kept as is, but logic is fine) ---
@@ -195,26 +192,6 @@ export default function NutritionScreen() {
             );
           })}
         </View>
-        {/* --- MICRO NUTRIENTS SECTION --- */}
-        <Text style={styles.sectionTitle}>Micronutrients & Fiber</Text>
-        {Object.keys(ARBITRARY_RDI)
-          .filter((name) => !["Calories", ...macroNutrients].includes(name))
-          .map((name) => {
-            const recommended = ARBITRARY_RDI[name].amount;
-            const consumed =
-              totals.find((nutrient) => nutrient.name === name)?.amount || 0;
-            const unit = ARBITRARY_RDI[name].unit;
-
-            return (
-              <NutrientCard
-                key={name}
-                name={name}
-                consumed={consumed}
-                recommended={recommended}
-                unit={unit}
-              />
-            );
-          })}
         <View style={{ height: 50 }} /> {/* Spacer for end of scroll */}
       </ScrollView>
     </SafeAreaView>
