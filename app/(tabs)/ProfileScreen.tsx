@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import {
   Platform, // For shadow styles
-  ScrollView, // Used for custom buttons
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -16,46 +16,26 @@ const ACCENT_GREEN = "#4CD964";
 const BACKGROUND_COLOR = "#f4f7f9";
 const BORDER_COLOR = "#ddd";
 
-// --- Data (Kept as is) ---
+// --- Data (Default RDI is kept but not used for calculation on this screen) ---
 const DEFAULT_RDI = {
   Calories: { name: "Calories", amount: 2000, unit: "kcal" },
   Protein: { name: "Protein", amount: 50, unit: "g" },
   Carbohydrate: { name: "Carbohydrate", amount: 300, unit: "g" },
   Fat: { name: "Fat", amount: 70, unit: "g" },
-  Fiber: { name: "Fiber", amount: 30, unit: "g" },
-  Calcium: { name: "Calcium", amount: 1000, unit: "mg" },
-  Iron: { name: "Iron", amount: 18, unit: "mg" },
-  Sodium: { name: "Sodium", amount: 2300, unit: "mg" },
-  Potassium: { name: "Potassium", amount: 4700, unit: "mg" },
 };
 
-const illnesses = ["None", "Diabetes", "Hypertension", "Kidney Disease"];
-
-const illnessRdiAdjustments: Record<
-  string,
-  Partial<Record<keyof typeof DEFAULT_RDI, number>>
-> = {
-  Diabetes: { Carbohydrate: 200 },
-  Hypertension: { Sodium: 1500 },
-  "Kidney Disease": { Protein: 40, Sodium: 1200 },
-};
-
-type NutrientKey = keyof typeof DEFAULT_RDI;
-type ProfileField = "age" | "height" | "weight" | "illness" | "medicines";
+type ProfileField = "age" | "height" | "weight" | "sex";
 
 // --- Main Screen Component ---
 export default function ProfileScreen() {
   const [profile, setProfile] = useState({
     age: "",
+    sex: "Male", // ADDED: Default sex option
     height: "",
     weight: "",
-    illness: "None",
-    medicines: "",
   });
 
-  const [rdi, setRdi] = useState(DEFAULT_RDI);
-
-  // Wrap with useCallback
+  // Updated ProfileField type to include 'sex'
   const handleProfileChange = useCallback(
     (field: ProfileField, value: string) => {
       setProfile((prev) => ({
@@ -64,54 +44,58 @@ export default function ProfileScreen() {
       }));
     },
     []
-  ); // Empty dependency array as setProfile is stable
+  );
 
-  // Corrected handleIllnessChange function:
-  const handleIllnessChange = (illness: string) => {
-    setProfile((prev) => ({
-      ...prev,
-      illness,
-    }));
-
-    // Start with a copy of the default RDI every time
-    let newRdi = { ...DEFAULT_RDI };
-
-    // Adjust RDI based on the selected illness
-    if (illness !== "None" && illnessRdiAdjustments[illness]) {
-      const adjustments = illnessRdiAdjustments[illness];
-
-      (Object.keys(adjustments) as NutrientKey[]).forEach((nutrient) => {
-        if (newRdi[nutrient]) {
-          // Apply the adjustment to the new RDI object
-          newRdi[nutrient] = {
-            ...newRdi[nutrient], // Copy existing properties
-            amount: adjustments[nutrient]!, // Overwrite 'amount'
-          };
-        }
-      });
-      setRdi(newRdi as typeof DEFAULT_RDI); // Apply the fully calculated RDI
-    } else {
-      // If "None" is selected, just set the default RDI
-      setRdi(DEFAULT_RDI);
-    }
-  };
+  // Removed: handleIllnessChange function
 
   const handleSave = () => {
-    // TODO: Save profile and RDI to context or persistent storage
-    alert("Profile and RDI updated! (Implement persistence for real use)");
+    // TODO: Save profile to context or persistent storage
+    // Replaced alert() with console.log()
+    console.log(
+      "Profile and RDI updated! (Implement persistence for real use)"
+    );
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
       <ScrollView style={styles.container}>
-        <Text style={styles.heading}>👤 Your Profile</Text>
-        {/* --- Card: Basic Information --- */}
+        <Text style={styles.heading}>Your Nutrition Profile</Text>
+        {/* --- Card: Basic Information (Updated) --- */}
         <View style={styles.card}>
           <Text style={styles.cardHeader}>Basic Information</Text>
 
+          {/* ADDED: Sex Selection */}
+          <View style={styles.row}>
+            <Text style={styles.label}>Sex:</Text>
+            <View style={styles.sexPillsContainer}>
+              {["Male", "Female"].map((s) => (
+                <TouchableOpacity
+                  key={s}
+                  style={[
+                    styles.pill,
+                    profile.sex === s ? styles.pillActive : styles.pillInactive,
+                    { flex: 1, marginRight: s === "Male" ? 10 : 0 },
+                  ]}
+                  onPress={() => handleProfileChange("sex", s)}
+                >
+                  <Text
+                    style={[
+                      styles.pillText,
+                      profile.sex === s
+                        ? styles.pillTextActive
+                        : styles.pillTextInactive,
+                    ]}
+                  >
+                    {s}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
           <FormInput
             label="Age"
-            unit=""
+            unit="yrs"
             keyboardType="numeric"
             value={profile.age}
             onChangeText={(val) => handleProfileChange("age", val)}
@@ -131,66 +115,7 @@ export default function ProfileScreen() {
             onChangeText={(val) => handleProfileChange("weight", val)}
           />
         </View>
-        {/* --- Card: Health Conditions --- */}
-        <View style={styles.card}>
-          <Text style={styles.cardHeader}>Health Conditions</Text>
 
-          <View style={styles.row}>
-            <Text style={styles.label}>Medical Illness:</Text>
-            <View style={styles.illnessPillsContainer}>
-              {illnesses.map((ill) => (
-                <TouchableOpacity
-                  key={ill}
-                  style={[
-                    styles.pill,
-                    profile.illness === ill
-                      ? styles.pillActive
-                      : styles.pillInactive,
-                  ]}
-                  onPress={() => handleIllnessChange(ill)}
-                >
-                  <Text
-                    style={[
-                      styles.pillText,
-                      profile.illness === ill
-                        ? styles.pillTextActive
-                        : styles.pillTextInactive,
-                    ]}
-                  >
-                    {ill}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.row}>
-            <Text style={styles.label}>Maintenance Medicines:</Text>
-            <TextInput
-              style={styles.textArea}
-              value={profile.medicines}
-              onChangeText={(val) => handleProfileChange("medicines", val)}
-              placeholder="List current medications and dosages..."
-              multiline={true}
-              numberOfLines={4}
-            />
-          </View>
-        </View>
-        {/* --- Card: Adjusted RDI Summary --- */}
-        <View style={[styles.card, styles.rdiCard]}>
-          <Text style={styles.cardHeader}>🎯 Your Adjusted Daily Goals</Text>
-          <View style={styles.rdiGrid}>
-            {(Object.keys(rdi) as NutrientKey[]).map((key) => (
-              <View key={key} style={styles.rdiItem}>
-                <Text style={styles.rdiValue}>
-                  {rdi[key].amount}
-                  <Text style={styles.rdiUnit}> {rdi[key].unit}</Text>
-                </Text>
-                <Text style={styles.rdiLabel}>{key}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
         {/* --- Save Button --- */}
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveButtonText}>💾 Save Profile Changes</Text>
@@ -217,7 +142,8 @@ const FormInput: React.FC<FormInputProps> = ({
   value,
   onChangeText,
 }) => (
-  <View style={styles.row}>
+  // Use a different layout for the FormInput since 'row' now includes pills
+  <View style={styles.inputRow}>
     <Text style={styles.label}>{label}:</Text>
     <View style={styles.inputGroup}>
       <TextInput
@@ -278,7 +204,12 @@ const styles = StyleSheet.create({
   },
 
   // --- Form Row/Input Styles ---
+  // Used for fields with pills (like Sex)
   row: {
+    marginBottom: 15,
+  },
+  // Used for fields with standard inputs (Age, Height, Weight)
+  inputRow: {
     marginBottom: 15,
   },
   label: {
@@ -309,31 +240,19 @@ const styles = StyleSheet.create({
     color: PRIMARY_BLUE,
     fontWeight: "bold",
   },
-  textArea: {
-    borderWidth: 1,
-    borderColor: BORDER_COLOR,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: "#fff",
-    color: "#333",
-    height: 100, // Fixed height for text area
-    textAlignVertical: "top", // For Android multi-line
-    fontSize: 16,
-  },
 
-  // --- Pills (Illness Selection) Styles ---
-  illnessPillsContainer: {
+  // --- Pills (Sex Selection) Styles ---
+  sexPillsContainer: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    justifyContent: "space-between",
     marginTop: 5,
   },
   pill: {
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingVertical: 12,
+    borderRadius: 8, // Square corners look cleaner for two options
     borderWidth: 2,
-    marginRight: 10,
-    marginBottom: 10,
+    alignItems: "center",
   },
   pillActive: {
     backgroundColor: PRIMARY_BLUE,
@@ -344,7 +263,7 @@ const styles = StyleSheet.create({
     borderColor: BORDER_COLOR,
   },
   pillText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
   },
   pillTextActive: {
@@ -352,43 +271,6 @@ const styles = StyleSheet.create({
   },
   pillTextInactive: {
     color: "#555",
-  },
-
-  // --- RDI Grid Styles ---
-  rdiCard: {
-    borderLeftWidth: 5,
-    borderLeftColor: ACCENT_GREEN, // Highlight this card
-  },
-  rdiGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    paddingTop: 5,
-  },
-  rdiItem: {
-    width: "30%", // Allows three items per row with some padding/margin
-    marginBottom: 15,
-    alignItems: "center",
-    padding: 5,
-    backgroundColor: BACKGROUND_COLOR, // Subtle background for RDI value
-    borderRadius: 8,
-  },
-  rdiValue: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: PRIMARY_BLUE,
-  },
-  rdiUnit: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: PRIMARY_BLUE,
-  },
-  rdiLabel: {
-    fontSize: 12,
-    color: "#555",
-    fontWeight: "500",
-    textAlign: "center",
-    marginTop: 2,
   },
 
   // --- Save Button Styles ---
