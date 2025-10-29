@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Platform,
-  ScrollView, // For the save button
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -15,7 +15,7 @@ const ACCENT_GREEN = "#4CD964";
 const BACKGROUND_COLOR = "#f4f7f9";
 const BORDER_COLOR = "#ddd";
 
-// Default RDI values
+// PLACEHOLDER: These default values will be replaced by API data soon.
 const DEFAULT_RDI = {
   Calories: { name: "Calories", amount: 2000, unit: "kcal" },
   Protein: { name: "Protein", amount: 50, unit: "g" },
@@ -30,7 +30,6 @@ interface GoalInputProps {
   label: string;
   unit: string;
   value: string;
-  onChangeText: (text: string) => void;
   isMacro?: boolean;
 }
 
@@ -38,7 +37,6 @@ const GoalInput: React.FC<GoalInputProps> = ({
   label,
   unit,
   value,
-  onChangeText,
   isMacro = false,
 }) => (
   <View style={styles.row}>
@@ -47,12 +45,12 @@ const GoalInput: React.FC<GoalInputProps> = ({
       <TextInput
         style={styles.input}
         keyboardType="numeric"
-        // Only allow numbers to be entered
-        onChangeText={(text) => onChangeText(text.replace(/[^0-9.]/g, ""))}
+        // The value is displayed from the default RDI
         value={value}
         textAlign="right"
         placeholder="0"
         placeholderTextColor="#999"
+        // CLIENT REQUEST: Fields are now read-only
         editable={false}
       />
       <Text style={styles.inputUnit}>{unit}</Text>
@@ -62,21 +60,7 @@ const GoalInput: React.FC<GoalInputProps> = ({
 
 // --- Main Screen Component ---
 export default function SettingsScreen() {
-  // You should lift this state up to a context/provider for app-wide use!
-  const [rdi, setRdi] = useState(DEFAULT_RDI);
-
-  const handleChange = (name: RdiKey, value: string) => {
-    // Only update if the value is a valid number (or empty string)
-    const numericValue = value === "" ? 0 : Number(value);
-    setRdi((prev) => ({
-      ...prev,
-      [name]: {
-        ...prev[name],
-        amount: numericValue,
-      },
-    }));
-  };
-
+  // ⚠️ ARCHITECTURAL NOTE: In the next iteration, this will fetch read-only data from the ProfileContext/API.
   const macros: RdiKey[] = ["Calories", "Protein", "Carbohydrate", "Fat"];
 
   return (
@@ -92,9 +76,9 @@ export default function SettingsScreen() {
             <GoalInput
               key={key}
               label={key}
-              unit={rdi[key].unit}
-              value={rdi[key].amount.toString()}
-              onChangeText={(val) => handleChange(key, val)}
+              unit={DEFAULT_RDI[key].unit}
+              // Display the default RDI amount directly
+              value={DEFAULT_RDI[key].amount.toString()}
               isMacro={true} // Apply macro highlighting
             />
           ))}
@@ -118,7 +102,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700",
     color: PRIMARY_BLUE,
-    marginBottom: 20,
+    marginBottom: 10,
     textAlign: "center",
   },
   sectionTitle: {
@@ -185,7 +169,6 @@ const styles = StyleSheet.create({
     paddingLeft: 8,
     fontSize: 16,
     color: "#333",
-    // Remove background from input, use inputGroup background instead
     backgroundColor: "transparent",
   },
   inputUnit: {
