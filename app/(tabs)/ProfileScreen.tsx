@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  Platform,
+  Platform, // <-- Now explicitly used for platform checks
   ScrollView,
   StyleSheet,
   Text,
@@ -36,60 +36,138 @@ const initialProfile: UserProfile = {
 
 type ProfileField = "age" | "height" | "weight" | "sex";
 
+// --- Cross-Platform Storage Abstraction ---
+
+// Define the core storage mechanism based on environment
+let storageImpl: {
+  getItem: (key: string) => Promise<string | null>;
+  setItem: (key: string, value: string) => Promise<void>;
+};
+
+// --- PLATFORM-SPECIFIC PERSISTENCE IMPLEMENTATION ---
+// Use Platform.OS to determine the correct storage mechanism (Web vs. Native)
+
+if (Platform.OS === "web") {
+  // --- Web Environment: Use localStorage ---
+  console.log("Persistence: Using localStorage (Web).");
+  storageImpl = {
+    // Wrap synchronous localStorage call in a Promise to simulate async AsyncStorage
+    getItem: (key: string) =>
+      new Promise((resolve) => resolve(localStorage.getItem(key))),
+    // Wrap synchronous localStorage call in a Promise to simulate async AsyncStorage
+    setItem: (key: string, value: string) =>
+      new Promise((resolve) => {
+        // Since we know localStorage exists here, we can use it safely
+        localStorage.setItem(key, value);
+        resolve();
+      }),
+  };
+} else {
+  // --- Native/Mobile Environment (Platform.OS is 'ios' or 'android'): Use AsyncStorage placeholder ---
+
+  // NOTE FOR DEVELOPER:
+  // In a real native app, you MUST import and use the actual AsyncStorage
+  // library here (e.g., '@react-native-async-storage/async-storage').
+  // The code below is a placeholder to prevent crashes when running outside of web.
+  console.warn(`Persistence: Using AsyncStorage mock for ${Platform.OS}.`);
+
+  storageImpl = {
+    // These methods would be replaced by AsyncStorage.getItem()
+    getItem: async () => Promise.resolve(null),
+    // These methods would be replaced by AsyncStorage.setItem()
+    setItem: async () => Promise.resolve(),
+  };
+}
+
+// This object acts as the universal API interface for all components
+const AsyncLocalStore = {
+  /**
+   * Loads data asynchronously using the platform-specific implementation.
+   */
+  getItem: storageImpl.getItem,
+  /**
+   * Saves data asynchronously using the platform-specific implementation.
+   */
+  setItem: storageImpl.setItem,
+};
+
+/**
+ * Saves the user profile data via the unified persistence layer.
+ */
+const saveProfileData = async (profile: UserProfile): Promise<void> => {
+  try {
+    const dataToSave = JSON.stringify(profile);
+    // Use the universal API (AsyncLocalStore)
+    await AsyncLocalStore.setItem(STORAGE_KEY, dataToSave);
+  } catch (e: any) {
+    console.error("Error saving profile data:", e);
+    throw new Error("Failed to save data locally.");
+  }
+};
+
+/**
+ * Loads the user profile data from the unified persistence layer.
+ */
+const loadProfileData = async (): Promise<UserProfile | null> => {
+  try {
+    // Use the universal API (AsyncLocalStore)
+    const storedData = await AsyncLocalStore.getItem(STORAGE_KEY);
+    if (storedData) {
+      return JSON.parse(storedData) as UserProfile;
+    }
+    return null;
+  } catch (e: any) {
+    console.error("Error loading profile data:", e);
+    throw new Error("Failed to load data locally.");
+  }
+};
+
 // --- Main Screen Component ---
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile>(initialProfile);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // REMOVED: user, appId, firebaseConfig, initialAuthToken states/globals
-
-  // 1. DATA LOADING FUNCTION (Now uses localStorage)
+  // 1. DATA LOADING (Uses the abstracted layer in an async effect)
   useEffect(() => {
-    try {
+    const initializeProfile = async () => {
       setLoading(true);
-      // Retrieve data from local storage
-      const storedData = localStorage.getItem(STORAGE_KEY);
+      setError(null);
+      try {
+        const loadedProfile = await loadProfileData();
 
-      if (storedData) {
-        const loadedProfile = JSON.parse(storedData);
-        // Load stored data, ensuring defaults fill in any missing fields
-        setProfile({
-          ...initialProfile,
-          ...loadedProfile,
-          // Ensure values are stored as strings for TextInput component
-          age: String(loadedProfile.age || ""),
-          height: String(loadedProfile.height || ""),
-          weight: String(loadedProfile.weight || ""),
-        });
-        console.log("Profile loaded successfully from local storage.");
-      } else {
-        console.log("No local profile found, using defaults.");
+        if (loadedProfile) {
+          // Load stored data, ensuring values are strings for TextInput component
+          setProfile({
+            ...initialProfile,
+            ...loadedProfile,
+            age: String(loadedProfile.age || ""),
+            height: String(loadedProfile.height || ""),
+            weight: String(loadedProfile.weight || ""),
+          });
+          console.log("Profile loaded successfully.");
+        } else {
+          console.log("No local profile found, using defaults.");
+        }
+      } catch (e: any) {
+        setError(e.message || "An unknown error occurred during loading.");
+      } finally {
+        setLoading(false);
       }
-    } catch (e: any) {
-      console.error("Error loading profile from local storage:", e);
-      setError(`Failed to load profile data: ${e.message}`);
-    } finally {
-      setLoading(false);
-    }
+    };
+    initializeProfile();
   }, []); // Run only once on mount
 
-  // 2. DATA SAVING FUNCTION (Now uses localStorage)
-  const handleSave = () => {
+  // 2. DATA SAVING (Uses the abstracted layer)
+  const handleSave = async () => {
     setLoading(true);
-    setError(null); // Clear any previous error
+    setError(null);
 
     try {
-      // Convert the current state object to a JSON string
-      const dataToSave = JSON.stringify(profile);
-
-      // Save to Local Storage
-      localStorage.setItem(STORAGE_KEY, dataToSave);
-
+      await saveProfileData(profile);
       console.log("Profile saved successfully to local storage!");
     } catch (e: any) {
-      console.error("Error saving profile:", e);
-      setError(`Failed to save profile: ${e.message}`);
+      setError(e.message || "An unknown error occurred during saving.");
     } finally {
       setLoading(false);
     }
@@ -125,12 +203,12 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
       <ScrollView style={styles.container}>
-        <Text style={styles.heading}>Your Nutrition Profile</Text>
-        {/* --- Card: Basic Information (Updated) --- */}
+        <Text style={styles.heading}>👤 Your Personal Profile</Text>
+        {/* --- Card: Basic Information --- */}
         <View style={styles.card}>
           <Text style={styles.cardHeader}>Basic Information</Text>
 
-          {/* ADDED: Sex Selection */}
+          {/* Sex Selection */}
           <View style={styles.row}>
             <Text style={styles.label}>Sex:</Text>
             <View style={styles.sexPillsContainer}>
@@ -161,7 +239,7 @@ export default function ProfileScreen() {
 
           <FormInput
             label="Age"
-            unit="yrs"
+            unit=""
             keyboardType="numeric"
             value={profile.age}
             // Input validation to only allow numbers
@@ -222,7 +300,6 @@ const FormInput: React.FC<FormInputProps> = ({
   value,
   onChangeText,
 }) => (
-  // Use a different layout for the FormInput since 'row' now includes pills
   <View style={styles.inputRow}>
     <Text style={styles.label}>{label}:</Text>
     <View style={styles.inputGroup}>
@@ -302,11 +379,9 @@ const styles = StyleSheet.create({
   },
 
   // --- Form Row/Input Styles ---
-  // Used for fields with pills (like Sex)
   row: {
     marginBottom: 15,
   },
-  // Used for fields with standard inputs (Age, Height, Weight)
   inputRow: {
     marginBottom: 15,
   },
@@ -348,7 +423,7 @@ const styles = StyleSheet.create({
   pill: {
     paddingHorizontal: 14,
     paddingVertical: 12,
-    borderRadius: 8, // Square corners look cleaner for two options
+    borderRadius: 8,
     borderWidth: 2,
     alignItems: "center",
   },
