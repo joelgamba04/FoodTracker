@@ -8,7 +8,7 @@ const MOCK_FOODS: Food[] = [
     servingSize: "1 medium",
     nutrients: [
       { name: "Calories", unit: "kcal", amount: 95 },
-      { name: "Carbs", unit: "g", amount: 25 },
+      { name: "Carbohydrate", unit: "g", amount: 25 },
       { name: "Fiber", unit: "g", amount: 4.4 },
       { name: "Vitamin C", unit: "mg", amount: 8.4 },
     ],
@@ -40,7 +40,7 @@ const MOCK_FOODS: Food[] = [
       { name: "Calories", amount: 180, unit: "kcal" },
       { name: "Protein", amount: 12, unit: "g" },
       { name: "Fat", amount: 14, unit: "g" },
-      { name: "Carbs", amount: 2, unit: "g" },
+      { name: "Carbohydrate", amount: 2, unit: "g" },
     ],
   },
   {
@@ -49,7 +49,7 @@ const MOCK_FOODS: Food[] = [
     servingSize: "1/2 cup dry",
     nutrients: [
       { name: "Calories", amount: 150, unit: "kcal" },
-      { name: "Carbs", amount: 27, unit: "g" },
+      { name: "Carbohydrate", amount: 27, unit: "g" },
       { name: "Fiber", amount: 4, unit: "g" },
       { name: "Protein", amount: 5, unit: "g" },
     ],
@@ -62,7 +62,7 @@ const MOCK_FOODS: Food[] = [
       { name: "Calories", amount: 165, unit: "kcal" },
       { name: "Protein", amount: 31, unit: "g" },
       { name: "Fat", amount: 3.6, unit: "g" },
-      { name: "Carbs", amount: 0, unit: "g" },
+      { name: "Carbohydrate", amount: 0, unit: "g" },
     ],
   },
   {
