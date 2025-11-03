@@ -12,8 +12,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 // =================================================================
-// ⚠️ EXTERNAL IMPORTS (Ensure these are correctly set up)
-import { useFoodLog } from "@/context/FoodLogContext";
+// ✅ UPDATED IMPORTS to use the local Context (Note: useUserId is gone)
+import { FoodLogProvider, useFoodLog } from "@/context/FoodLogContext";
 import { Food, FoodLogEntry } from "@/models/models";
 import { getFavoriteFoods, searchFoods } from "@/utils/foodApi";
 // =================================================================
@@ -68,28 +68,41 @@ type LoggedItemProps = {
   item: FoodLogEntry;
 };
 
-const LoggedItem: React.FC<LoggedItemProps> = ({ item }) => (
-  <View style={styles.logItemContainer}>
-    <Text style={styles.logItemText}>
-      <Text style={styles.logItemQuantity}>{item.quantity}x </Text>
-      {item.food.name}
-    </Text>
-    <Text style={styles.logItemDetails}>{item.food.servingSize}</Text>
-  </View>
-);
+const LoggedItem: React.FC<LoggedItemProps> = ({ item }) => {
+  // Format the time for display, handling Date objects
+  const timestamp =
+    item.timestamp instanceof Date ? item.timestamp : new Date(item.timestamp);
+  const timeString = timestamp.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return (
+    <View style={styles.logItemContainer}>
+      <Text style={styles.logItemText}>
+        <Text style={styles.logItemQuantity}>{item.quantity}x </Text>
+        {item.food.name}
+      </Text>
+      <Text style={styles.logItemDetails}>{timeString}</Text>
+    </View>
+  );
+};
 
 // =================================================================
 // --- Main Screen Component ---
 // =================================================================
-export default function LogScreen() {
+function LogScreenContent() {
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState("1");
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<Food[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [favorites, setFavorites] = useState<Food[]>([]);
-  const { log, addEntry } = useFoodLog();
 
+  // ✅ Get state and actions from the context
+  const { log, addEntry, isLoading: isLogLoading } = useFoodLog();
+
+  // Load Favorites on Mount
   useEffect(() => {
     async function loadFavorites() {
       try {
@@ -100,25 +113,23 @@ export default function LogScreen() {
       }
     }
     loadFavorites();
-  }, []); // Empty dependency array ensures it runs only once
+  }, []);
 
-  // --- NEW Quantity Handlers ---
+  // --- Quantity Handlers ---
   const handleQuantityChange = (text: string) => {
-    // Allow only digits and a single decimal point
     const cleanedText = text.replace(/[^0-9.]/g, "");
     setQuantity(cleanedText);
   };
 
   const adjustQuantity = (delta: number) => {
     const currentQ = Number(quantity) || 0;
-    // Don't go below 0 (or 1, depends on app logic; we'll use 1 for food items)
     const newQ = Math.max(1, currentQ + delta);
     setQuantity(String(newQ));
   };
 
   const handleSearch = async () => {
     if (!search.trim()) return;
-    setLoading(true);
+    setSearchLoading(true);
     setResults([]);
     setSelectedFood(null);
 
@@ -128,16 +139,20 @@ export default function LogScreen() {
     } catch (error) {
       console.error("Search failed:", error);
     } finally {
-      setLoading(false);
+      setSearchLoading(false);
     }
   };
 
   const addFoodToLog = () => {
     const qty = Number(quantity);
     if (selectedFood && qty > 0) {
-      // NOTE: Ensure your addEntry function can accept a timestamp if needed,
-      // otherwise, you can just pass { food: selectedFood, quantity: qty }
-      addEntry({ food: selectedFood, quantity: qty, timestamp: new Date() } as FoodLogEntry);
+      // Add the entry, including the current timestamp
+      // Type assertion added for compatibility with FoodLogEntry definition
+      addEntry({
+        food: selectedFood,
+        quantity: qty,
+        timestamp: new Date(),
+      } as FoodLogEntry);
 
       // Reset after successful log
       setSelectedFood(null);
@@ -156,9 +171,19 @@ export default function LogScreen() {
   }, []);
 
   // Determine which main content area to show
-  const isSearching = !!search.trim() && !loading;
+  const isSearching = !!search.trim() && !searchLoading;
   const isShowingResults = results.length > 0 && !selectedFood;
   const isShowingLoggedFood = log.length > 0;
+
+  // Show global loading state while log data is being loaded from local storage
+  if (isLogLoading) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={PRIMARY_COLOR} />
+        <Text style={styles.listEmptyText}>Loading saved log data...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f4f7f9" }}>
@@ -178,9 +203,9 @@ export default function LogScreen() {
           <TouchableOpacity
             style={styles.searchButton}
             onPress={handleSearch}
-            disabled={loading || !search.trim()}
+            disabled={searchLoading || !search.trim()}
           >
-            {loading ? (
+            {searchLoading ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
               <Text style={styles.searchButtonText}>Search</Text>
@@ -237,13 +262,6 @@ export default function LogScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* NUTRIENT PREVIEW (You'll need to re-add the component definition) */}
-              {/* <NutrientPreview
-                                food={selectedFood}
-                                quantity={Number(quantity) || 1}
-                            />
-                            */}
-
               {/* Log Button */}
               <TouchableOpacity
                 style={styles.logButton}
@@ -292,6 +310,15 @@ export default function LogScreen() {
   );
 }
 
+// Export the component wrapped in the provider
+export default function LogScreen() {
+  return (
+    <FoodLogProvider>
+      <LogScreenContent />
+    </FoodLogProvider>
+  );
+}
+
 // =================================================================
 // --- Stylesheet ---
 // =================================================================
@@ -311,6 +338,12 @@ const styles = StyleSheet.create({
   },
   contentScroll: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f4f7f9",
   },
   heading: {
     fontSize: 26,
