@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Platform,
   ScrollView,
   StyleSheet,
@@ -18,7 +19,14 @@ import { Food, FoodLogEntry } from "@/models/models";
 import { getFavoriteFoods, searchFoods } from "@/utils/foodApi";
 // =================================================================
 
-// --- QuickLog Component ---
+// --- Theme Constants ---
+const PRIMARY_COLOR = "#007AFF"; // Blue
+const ACCENT_COLOR = "#4CD964"; // Green (Log/Update)
+const DANGER_RED = "#FF3B30"; // Red for delete
+const GRAY_LIGHT = "#e8e8e8";
+const GRAY_DARK = "#555";
+
+// --- QuickLog Component (No Change) ---
 interface QuickLogProps {
   favorites: Food[];
   onQuickAdd: (food: Food) => void;
@@ -63,13 +71,14 @@ const FoodResultItem: React.FC<FoodResultItemProps> = ({ item, onPress }) => (
   </TouchableOpacity>
 );
 
-// --- LoggedItem Component ---
+// --- LoggedItem Component (MODIFIED for Edit/Delete) ---
 type LoggedItemProps = {
   item: FoodLogEntry;
+  onEdit: (entry: FoodLogEntry) => void;
+  onRemove: (entryId: string) => void;
 };
 
-const LoggedItem: React.FC<LoggedItemProps> = ({ item }) => {
-  // Format the time for display, handling Date objects
+const LoggedItem: React.FC<LoggedItemProps> = ({ item, onEdit, onRemove }) => {
   const timestamp =
     item.timestamp instanceof Date ? item.timestamp : new Date(item.timestamp);
   const timeString = timestamp.toLocaleTimeString([], {
@@ -77,13 +86,50 @@ const LoggedItem: React.FC<LoggedItemProps> = ({ item }) => {
     minute: "2-digit",
   });
 
+  const handleRemove = () => {
+    // Use Alert for confirmation as window.confirm is forbidden
+    Alert.alert(
+      "Confirm Deletion",
+      `Are you sure you want to remove ${item.food.name} (${item.quantity} servings)?`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          onPress: () => onRemove(item.id),
+          style: "destructive",
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <View style={styles.logItemContainer}>
-      <Text style={styles.logItemText}>
-        <Text style={styles.logItemQuantity}>{item.quantity}x </Text>
-        {item.food.name}
-      </Text>
-      <Text style={styles.logItemDetails}>{timeString}</Text>
+      <View style={styles.logItemDetailsContainer}>
+        <Text style={styles.logItemText}>
+          <Text style={styles.logItemQuantity}>{item.quantity}x </Text>
+          {item.food.name}
+        </Text>
+        <Text style={styles.logItemTimestamp}>{timeString}</Text>
+      </View>
+      <View style={styles.logItemActions}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => onEdit(item)}
+        >
+          <Text style={[styles.actionButtonText, { color: PRIMARY_COLOR }]}>
+            Edit
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton} onPress={handleRemove}>
+          <Text style={[styles.actionButtonText, { color: DANGER_RED }]}>
+            Delete
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -101,10 +147,19 @@ export default function LogScreen() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [favorites, setFavorites] = useState<Food[]>([]);
 
-  // ✅ Get state and actions from the context
-  const { log, addEntry, isLoading: isLogLoading } = useFoodLog();
+  // ✅ NEW STATE for editing
+  const [editingEntry, setEditingEntry] = useState<FoodLogEntry | null>(null);
 
-  // Load Favorites on Mount
+  // ✅ Destructure new actions from the context
+  const {
+    log,
+    addEntry,
+    removeEntry,
+    updateEntry,
+    isLoading: isLogLoading,
+  } = useFoodLog();
+
+  // Load Favorites on Mount (No Change)
   useEffect(() => {
     async function loadFavorites() {
       try {
@@ -125,6 +180,7 @@ export default function LogScreen() {
 
   const adjustQuantity = (delta: number) => {
     const currentQ = Number(quantity) || 0;
+    // Quantity must be at least 1 when adjusting from the log screen
     const newQ = Math.max(1, currentQ + delta);
     setQuantity(String(newQ));
   };
@@ -134,6 +190,7 @@ export default function LogScreen() {
     setSearchLoading(true);
     setResults([]);
     setSelectedFood(null);
+    setEditingEntry(null); // Clear editing state on new search
 
     try {
       const foods = await searchFoods(search);
@@ -145,39 +202,70 @@ export default function LogScreen() {
     }
   };
 
-  const addFoodToLog = () => {
+  // ✅ MODIFIED: Handles both adding (new entry) and updating (editing entry)
+  const handleLogAction = () => {
     const qty = Number(quantity);
-    if (selectedFood && qty > 0) {
-      // Add the entry, including the current timestamp
-      // Type assertion added for compatibility with FoodLogEntry definition
-      addEntry({
+    if (qty <= 0) {
+      // If updating, a quantity of 0 should trigger a removal, which is handled in the context.
+      // If adding, we just ignore a zero quantity.
+      return;
+    }
+
+    if (editingEntry) {
+      // Logic for UPDATE
+      updateEntry(editingEntry.id, qty);
+      setEditingEntry(null); // Exit edit mode
+    } else if (selectedFood) {
+      // Logic for ADD
+      const newEntry: FoodLogEntry = {
+        // Using a simple timestamp string for a unique ID
+        id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
         food: selectedFood,
         quantity: qty,
         timestamp: new Date(),
-      } as FoodLogEntry);
-
-      // Reset after successful log
-      setSelectedFood(null);
-      setQuantity("1");
-      setSearch("");
-      setResults([]); // Clear search results after logging
+      };
+      addEntry(newEntry);
+      setSelectedFood(null); // Exit add mode
     }
+
+    // Reset common state
+    setQuantity("1");
+    setSearch("");
+    setResults([]); // Clear search results after logging
   };
 
-  // Unified handler for QuickLog and SearchResult tap
+  // Unified handler for QuickLog and SearchResult tap (No Change)
   const handleSelectFood = useCallback((foodItem: Food) => {
     setSelectedFood(foodItem);
-    setQuantity("1"); // Reset quantity when new food is selected
+    setEditingEntry(null); // Exit edit mode
+    setQuantity("1");
+    setResults([]);
+    setSearch("");
+  }, []);
+
+  // ✅ NEW: Handler to start editing a log entry
+  const handleEditStart = useCallback((entry: FoodLogEntry) => {
+    setEditingEntry(entry); // Set the entry to be edited
+    setSelectedFood(null); // Ensure we are not in 'new food' mode
+    setQuantity(String(entry.quantity)); // Pre-fill quantity
     setResults([]);
     setSearch("");
   }, []);
 
   // Determine which main content area to show
   const isSearching = !!search.trim() && !searchLoading;
-  const isShowingResults = results.length > 0 && !selectedFood;
+  const isShowingResults = results.length > 0 && !selectedFood && !editingEntry;
+  const isShowingActionForm = selectedFood || editingEntry;
   const isShowingLoggedFood = log.length > 0;
 
-  // Show global loading state while log data is being loaded from local storage
+  // Set the current food for display in the action form
+  const currentFood = editingEntry ? editingEntry.food : selectedFood;
+  const actionButtonText = editingEntry
+    ? `Update ${currentFood?.name}`
+    : `Log ${currentFood?.name}`;
+  const cancelButtonText = editingEntry ? "Cancel Edit" : "Clear Selection";
+
+  // Show global loading state (No Change)
   if (isLogLoading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
@@ -216,7 +304,7 @@ export default function LogScreen() {
         </View>
 
         {/* --- QUICK LOG INTEGRATION --- */}
-        {!isSearching && !selectedFood && (
+        {!isSearching && !isShowingActionForm && (
           <QuickLog favorites={favorites} onQuickAdd={handleSelectFood} />
         )}
 
@@ -225,14 +313,14 @@ export default function LogScreen() {
           style={styles.contentScroll}
           keyboardShouldPersistTaps="handled"
         >
-          {/* --- Selected Food & Quantity Input Section --- */}
-          {selectedFood && (
+          {/* --- Selected Food / Editing Input Section --- */}
+          {isShowingActionForm && currentFood && (
             <View style={styles.selectedFoodContainer}>
               <Text style={styles.selectedFoodTitle}>
-                Add {selectedFood.name}
+                {editingEntry ? "Editing Log Entry" : "Add New Food"}
               </Text>
               <Text style={styles.selectedFoodDetails}>
-                Serving: {selectedFood.servingSize}
+                {currentFood.name} - Serving: {currentFood.servingSize}
               </Text>
 
               {/* QUANTITY CONTROL SECTION */}
@@ -267,12 +355,22 @@ export default function LogScreen() {
               {/* Log Button */}
               <TouchableOpacity
                 style={styles.logButton}
-                onPress={addFoodToLog}
+                onPress={handleLogAction}
+                // Also disabled if the quantity is 0
                 disabled={Number(quantity) <= 0}
               >
-                <Text style={styles.logButtonText}>
-                  Log {selectedFood.name}
-                </Text>
+                <Text style={styles.logButtonText}>{actionButtonText}</Text>
+              </TouchableOpacity>
+              {/* Cancel Button */}
+              <TouchableOpacity
+                style={[styles.logButton, styles.cancelButton]}
+                onPress={() => {
+                  setEditingEntry(null);
+                  setSelectedFood(null);
+                  setQuantity("1");
+                }}
+              >
+                <Text style={styles.logButtonText}>{cancelButtonText}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -291,12 +389,20 @@ export default function LogScreen() {
             </>
           )}
 
-          {/* --- Today's Log Section (Default view) --- */}
-          {!isShowingResults && !selectedFood && (
+          {/* --- Today's Log Section --- */}
+          {!isShowingResults && !isShowingActionForm && (
             <>
               <Text style={styles.logHeading}>📝 Today's Log</Text>
               {isShowingLoggedFood ? (
-                log.map((item, idx) => <LoggedItem key={idx} item={item} />)
+                // ✅ Pass the new handlers to LoggedItem
+                log.map((item) => (
+                  <LoggedItem
+                    key={item.id} // Ensure key uses the unique ID
+                    item={item}
+                    onEdit={handleEditStart}
+                    onRemove={removeEntry}
+                  />
+                ))
               ) : (
                 <Text style={styles.listEmptyText}>
                   Nothing logged yet. Start searching or use Quick Log!
@@ -315,11 +421,6 @@ export default function LogScreen() {
 // =================================================================
 // --- Stylesheet ---
 // =================================================================
-
-const PRIMARY_COLOR = "#007AFF"; // Blue
-const ACCENT_COLOR = "#4CD964"; // Green
-const GRAY_LIGHT = "#e8e8e8";
-const GRAY_DARK = "#555";
 
 const styles = StyleSheet.create({
   // Global Styles
@@ -518,13 +619,16 @@ const styles = StyleSheet.create({
     backgroundColor: ACCENT_COLOR,
     paddingVertical: 12,
     borderRadius: 10,
-    marginTop: 20,
+    marginTop: 10,
     alignItems: "center",
   },
   logButtonText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "700",
+  },
+  cancelButton: {
+    backgroundColor: GRAY_DARK, // New style for Cancel button
   },
 
   // --- Today's Log Styles ---
@@ -557,6 +661,10 @@ const styles = StyleSheet.create({
       android: { elevation: 1 },
     }),
   },
+  logItemDetailsContainer: {
+    flex: 1,
+    marginRight: 10,
+  },
   logItemText: {
     fontSize: 16,
     color: "#333",
@@ -565,8 +673,22 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: PRIMARY_COLOR,
   },
-  logItemDetails: {
+  logItemTimestamp: {
     fontSize: 12,
     color: GRAY_DARK,
+  },
+  // ✅ NEW Styles for actions
+  logItemActions: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  actionButton: {
+    marginLeft: 10,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

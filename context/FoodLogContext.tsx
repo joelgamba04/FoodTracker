@@ -13,6 +13,8 @@ import { loadFoodLog, saveFoodLog } from "@/utils/persistence";
 interface FoodLogContextType {
   log: FoodLogEntry[];
   addEntry: (entry: FoodLogEntry) => void;
+  removeEntry: (entryId: string) => void;
+  updateEntry: (entryId: string, newQuantity: number) => void;
   isLoading: boolean;
 }
 
@@ -69,9 +71,31 @@ export const FoodLogProvider: React.FC<{ children: React.ReactNode }> = ({
     setLog((prevLog) => [...prevLog, entry]);
   }, []);
 
+  const removeEntry = useCallback((entryId: string) => {
+    setLog((prevLog) => prevLog.filter((entry) => entry.id !== entryId));
+  }, []);
+
+  const updateEntry = useCallback(
+    (entryId: string, newQuantity: number) => {
+      if (newQuantity <= 0) {
+        // Option: if quantity is zero, remove it instead of updating to zero
+        removeEntry(entryId);
+        return;
+      }
+      setLog((prevLog) =>
+        prevLog.map((entry) =>
+          entry.id === entryId ? { ...entry, quantity: newQuantity } : entry
+        )
+      );
+    },
+    [removeEntry]
+  );
+
   const contextValue = {
     log,
     addEntry,
+    removeEntry,
+    updateEntry,
     isLoading,
   };
 
