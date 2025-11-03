@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
-  ScrollView, // Using ScrollView for main content
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -12,13 +12,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 // =================================================================
-// ✅ UPDATED IMPORTS to use the local Context (Note: useUserId is gone)
-import { FoodLogProvider, useFoodLog } from "@/context/FoodLogContext";
+// ✅ UPDATED IMPORTS: We no longer import FoodLogProvider here.
+import { useFoodLog } from "@/context/FoodLogContext";
 import { Food, FoodLogEntry } from "@/models/models";
 import { getFavoriteFoods, searchFoods } from "@/utils/foodApi";
 // =================================================================
 
-// --- QuickLog Component (Styles moved to main StyleSheet) ---
+// --- QuickLog Component ---
 interface QuickLogProps {
   favorites: Food[];
   onQuickAdd: (food: Food) => void;
@@ -90,8 +90,10 @@ const LoggedItem: React.FC<LoggedItemProps> = ({ item }) => {
 
 // =================================================================
 // --- Main Screen Component ---
+// This component is renamed and exported directly.
+// The FoodLogProvider is assumed to be wrapping the entire app/navigation.
 // =================================================================
-function LogScreenContent() {
+export default function LogScreen() {
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState("1");
   const [search, setSearch] = useState("");
@@ -233,7 +235,7 @@ function LogScreenContent() {
                 Serving: {selectedFood.servingSize}
               </Text>
 
-              {/* QUANTITY CONTROL SECTION - MODIFIED */}
+              {/* QUANTITY CONTROL SECTION */}
               <View style={styles.quantityControl}>
                 {/* Minus Button */}
                 <TouchableOpacity
@@ -307,15 +309,6 @@ function LogScreenContent() {
         </ScrollView>
       </View>
     </SafeAreaView>
-  );
-}
-
-// Export the component wrapped in the provider
-export default function LogScreen() {
-  return (
-    <FoodLogProvider>
-      <LogScreenContent />
-    </FoodLogProvider>
   );
 }
 
