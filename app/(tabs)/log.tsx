@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Platform,
   ScrollView,
   StyleSheet,
@@ -13,11 +12,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 // =================================================================
-// ✅ UPDATED IMPORTS: We no longer import FoodLogProvider here.
+// Context and Models
 import { useFoodLog } from "@/context/FoodLogContext";
 import { Food, FoodLogEntry } from "@/models/models";
 import { getFavoriteFoods, searchFoods } from "@/utils/foodApi";
 // =================================================================
+
+import CustomConfirmationModal from "@/components/CustomConfirmationModal"; // <--- Imported Modal
 
 // --- Theme Constants ---
 const PRIMARY_COLOR = "#007AFF"; // Blue
@@ -79,6 +80,8 @@ type LoggedItemProps = {
 };
 
 const LoggedItem: React.FC<LoggedItemProps> = ({ item, onEdit, onRemove }) => {
+  const [isModalVisible, setIsModalVisible] = useState(false); // State for modal visibility
+
   const timestamp =
     item.timestamp instanceof Date ? item.timestamp : new Date(item.timestamp);
   const timeString = timestamp.toLocaleTimeString([], {
@@ -87,50 +90,60 @@ const LoggedItem: React.FC<LoggedItemProps> = ({ item, onEdit, onRemove }) => {
   });
 
   const handleRemove = () => {
-    // Use Alert for confirmation as window.confirm is forbidden
-    Alert.alert(
-      "Confirm Deletion",
-      `Are you sure you want to remove ${item.food.name} (${item.quantity} servings)?`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          onPress: () => onRemove(item.id),
-          style: "destructive",
-        },
-      ],
-      { cancelable: true }
-    );
+    // Show the custom modal
+    console.log("handleRemove triggered. Showing Custom Modal...");
+    setIsModalVisible(true);
+  };
+
+  const handleConfirmDeletion = () => {
+    console.log(`Deletion confirmed for ID: ${item.id}`);
+    onRemove(item.id);
+    setIsModalVisible(false);
+  };
+
+  const handleCancelDeletion = () => {
+    setIsModalVisible(false);
   };
 
   return (
-    <View style={styles.logItemContainer}>
-      <View style={styles.logItemDetailsContainer}>
-        <Text style={styles.logItemText}>
-          <Text style={styles.logItemQuantity}>{item.quantity}x </Text>
-          {item.food.name}
-        </Text>
-        <Text style={styles.logItemTimestamp}>{timeString}</Text>
-      </View>
-      <View style={styles.logItemActions}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onEdit(item)}
-        >
-          <Text style={[styles.actionButtonText, { color: PRIMARY_COLOR }]}>
-            Edit
+    <>
+      <View style={styles.logItemContainer}>
+        <View style={styles.logItemDetailsContainer}>
+          <Text style={styles.logItemText}>
+            <Text style={styles.logItemQuantity}>{item.quantity}x </Text>
+            {item.food.name}
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={handleRemove}>
-          <Text style={[styles.actionButtonText, { color: DANGER_RED }]}>
-            Delete
-          </Text>
-        </TouchableOpacity>
+          <Text style={styles.logItemTimestamp}>{timeString}</Text>
+        </View>
+        <View style={styles.logItemActions}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => onEdit(item)}
+          >
+            <Text style={[styles.actionButtonText, { color: PRIMARY_COLOR }]}>
+              Edit
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleRemove} // Triggers the custom modal
+          >
+            <Text style={[styles.actionButtonText, { color: DANGER_RED }]}>
+              Delete
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+
+      {/* Use the imported modal component */}
+      <CustomConfirmationModal
+        isVisible={isModalVisible}
+        title="Confirm Deletion"
+        message={`Are you sure you want to remove ${item.food.name} (${item.quantity} servings)? This action cannot be undone.`}
+        onConfirm={handleConfirmDeletion}
+        onCancel={handleCancelDeletion}
+      />
+    </>
   );
 };
 
@@ -147,10 +160,10 @@ export default function LogScreen() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [favorites, setFavorites] = useState<Food[]>([]);
 
-  // ✅ NEW STATE for editing
+  // State for editing
   const [editingEntry, setEditingEntry] = useState<FoodLogEntry | null>(null);
 
-  // ✅ Destructure new actions from the context
+  // Destructure actions from the context
   const {
     log,
     addEntry,
@@ -202,7 +215,7 @@ export default function LogScreen() {
     }
   };
 
-  // ✅ MODIFIED: Handles both adding (new entry) and updating (editing entry)
+  // Handles both adding (new entry) and updating (editing entry)
   const handleLogAction = () => {
     const qty = Number(quantity);
     if (qty <= 0) {
@@ -218,7 +231,7 @@ export default function LogScreen() {
     } else if (selectedFood) {
       // Logic for ADD
       const newEntry: FoodLogEntry = {
-        // Using a simple timestamp string for a unique ID
+        // Using a simple timestamp string + random suffix for a unique ID
         id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
         food: selectedFood,
         quantity: qty,
@@ -243,7 +256,7 @@ export default function LogScreen() {
     setSearch("");
   }, []);
 
-  // ✅ NEW: Handler to start editing a log entry
+  // Handler to start editing a log entry
   const handleEditStart = useCallback((entry: FoodLogEntry) => {
     setEditingEntry(entry); // Set the entry to be edited
     setSelectedFood(null); // Ensure we are not in 'new food' mode
@@ -252,7 +265,7 @@ export default function LogScreen() {
     setSearch("");
   }, []);
 
-  // Determine which main content area to show
+  // Determine which input/action area to show
   const isSearching = !!search.trim() && !searchLoading;
   const isShowingResults = results.length > 0 && !selectedFood && !editingEntry;
   const isShowingActionForm = selectedFood || editingEntry;
@@ -329,7 +342,7 @@ export default function LogScreen() {
                 <TouchableOpacity
                   style={styles.quantityButton}
                   onPress={() => adjustQuantity(-1)}
-                  disabled={Number(quantity) <= 1} // Disable when quantity is 1
+                  disabled={Number(quantity) <= 1}
                 >
                   <Text style={styles.quantityButtonText}>-</Text>
                 </TouchableOpacity>
@@ -394,7 +407,7 @@ export default function LogScreen() {
             <>
               <Text style={styles.logHeading}>📝 Today's Log</Text>
               {isShowingLoggedFood ? (
-                // ✅ Pass the new handlers to LoggedItem
+                // Pass the new handlers to LoggedItem
                 log.map((item) => (
                   <LoggedItem
                     key={item.id} // Ensure key uses the unique ID
@@ -580,7 +593,7 @@ const styles = StyleSheet.create({
     color: "#888",
     marginBottom: 15,
   },
-  // New Styles for Quantity Control
+  // Quantity Control
   quantityControl: {
     flexDirection: "row",
     alignItems: "center",
@@ -628,7 +641,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   cancelButton: {
-    backgroundColor: GRAY_DARK, // New style for Cancel button
+    backgroundColor: GRAY_DARK,
   },
 
   // --- Today's Log Styles ---
@@ -677,7 +690,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: GRAY_DARK,
   },
-  // ✅ NEW Styles for actions
+  // Styles for actions
   logItemActions: {
     flexDirection: "row",
     alignItems: "center",
