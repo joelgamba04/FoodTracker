@@ -76,11 +76,16 @@ const FoodResultItem: React.FC<FoodResultItemProps> = ({ item, onPress }) => (
 type LoggedItemProps = {
   item: FoodLogEntry;
   onEdit: (entry: FoodLogEntry) => void;
-  onRemove: (entryId: string) => void;
+  // Now triggers a callback with the item details to start the removal process in the parent component
+  onStartRemove: (entryId: string, foodName: string, quantity: number) => void;
 };
 
-const LoggedItem: React.FC<LoggedItemProps> = ({ item, onEdit, onRemove }) => {
-  const [isModalVisible, setIsModalVisible] = useState(false); // State for modal visibility
+const LoggedItem: React.FC<LoggedItemProps> = ({
+  item,
+  onEdit,
+  onStartRemove,
+}) => {
+  // Local state for modal visibility removed
 
   const timestamp =
     item.timestamp instanceof Date ? item.timestamp : new Date(item.timestamp);
@@ -89,61 +94,39 @@ const LoggedItem: React.FC<LoggedItemProps> = ({ item, onEdit, onRemove }) => {
     minute: "2-digit",
   });
 
-  const handleRemove = () => {
-    // Show the custom modal
-    console.log("handleRemove triggered. Showing Custom Modal...");
-    setIsModalVisible(true);
-  };
-
-  const handleConfirmDeletion = () => {
-    console.log(`Deletion confirmed for ID: ${item.id}`);
-    onRemove(item.id);
-    setIsModalVisible(false);
-  };
-
-  const handleCancelDeletion = () => {
-    setIsModalVisible(false);
+  const handleRemovePress = () => {
+    // Call the parent handler instead of managing local modal state
+    onStartRemove(item.id, item.food.name, item.quantity);
   };
 
   return (
-    <>
-      <View style={styles.logItemContainer}>
-        <View style={styles.logItemDetailsContainer}>
-          <Text style={styles.logItemText}>
-            <Text style={styles.logItemQuantity}>{item.quantity}x </Text>
-            {item.food.name}
-          </Text>
-          <Text style={styles.logItemTimestamp}>{timeString}</Text>
-        </View>
-        <View style={styles.logItemActions}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onEdit(item)}
-          >
-            <Text style={[styles.actionButtonText, { color: PRIMARY_COLOR }]}>
-              Edit
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleRemove} // Triggers the custom modal
-          >
-            <Text style={[styles.actionButtonText, { color: DANGER_RED }]}>
-              Delete
-            </Text>
-          </TouchableOpacity>
-        </View>
+    <View style={styles.logItemContainer}>
+      <View style={styles.logItemDetailsContainer}>
+        <Text style={styles.logItemText}>
+          <Text style={styles.logItemQuantity}>{item.quantity}x </Text>
+          {item.food.name}
+        </Text>
+        <Text style={styles.logItemTimestamp}>{timeString}</Text>
       </View>
-
-      {/* Use the imported modal component */}
-      <CustomConfirmationModal
-        isVisible={isModalVisible}
-        title="Confirm Deletion"
-        message={`Are you sure you want to remove ${item.food.name} (${item.quantity} servings)? This action cannot be undone.`}
-        onConfirm={handleConfirmDeletion}
-        onCancel={handleCancelDeletion}
-      />
-    </>
+      <View style={styles.logItemActions}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => onEdit(item)}
+        >
+          <Text style={[styles.actionButtonText, { color: PRIMARY_COLOR }]}>
+            Edit
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={handleRemovePress} // Triggers parent handler
+        >
+          <Text style={[styles.actionButtonText, { color: DANGER_RED }]}>
+            Delete
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 
@@ -160,8 +143,14 @@ export default function LogScreen() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [favorites, setFavorites] = useState<Food[]>([]);
 
-  // State for editing
   const [editingEntry, setEditingEntry] = useState<FoodLogEntry | null>(null);
+
+  // --- NEW STATE FOR MODAL CONTROL ---
+  const [entryToDelete, setEntryToDelete] = useState<{
+    id: string;
+    foodName: string;
+    quantity: number;
+  } | null>(null);
 
   // Destructure actions from the context
   const {
@@ -193,7 +182,6 @@ export default function LogScreen() {
 
   const adjustQuantity = (delta: number) => {
     const currentQ = Number(quantity) || 0;
-    // Quantity must be at least 1 when adjusting from the log screen
     const newQ = Math.max(1, currentQ + delta);
     setQuantity(String(newQ));
   };
@@ -203,7 +191,7 @@ export default function LogScreen() {
     setSearchLoading(true);
     setResults([]);
     setSelectedFood(null);
-    setEditingEntry(null); // Clear editing state on new search
+    setEditingEntry(null);
 
     try {
       const foods = await searchFoods(search);
@@ -215,42 +203,35 @@ export default function LogScreen() {
     }
   };
 
-  // Handles both adding (new entry) and updating (editing entry)
   const handleLogAction = () => {
     const qty = Number(quantity);
     if (qty <= 0) {
-      // If updating, a quantity of 0 should trigger a removal, which is handled in the context.
-      // If adding, we just ignore a zero quantity.
       return;
     }
 
     if (editingEntry) {
-      // Logic for UPDATE
       updateEntry(editingEntry.id, qty);
-      setEditingEntry(null); // Exit edit mode
+      setEditingEntry(null);
     } else if (selectedFood) {
-      // Logic for ADD
       const newEntry: FoodLogEntry = {
-        // Using a simple timestamp string + random suffix for a unique ID
         id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
         food: selectedFood,
         quantity: qty,
         timestamp: new Date(),
       };
       addEntry(newEntry);
-      setSelectedFood(null); // Exit add mode
+      setSelectedFood(null);
     }
 
-    // Reset common state
     setQuantity("1");
     setSearch("");
-    setResults([]); // Clear search results after logging
+    setResults([]);
   };
 
   // Unified handler for QuickLog and SearchResult tap (No Change)
   const handleSelectFood = useCallback((foodItem: Food) => {
     setSelectedFood(foodItem);
-    setEditingEntry(null); // Exit edit mode
+    setEditingEntry(null);
     setQuantity("1");
     setResults([]);
     setSearch("");
@@ -258,20 +239,42 @@ export default function LogScreen() {
 
   // Handler to start editing a log entry
   const handleEditStart = useCallback((entry: FoodLogEntry) => {
-    setEditingEntry(entry); // Set the entry to be edited
-    setSelectedFood(null); // Ensure we are not in 'new food' mode
-    setQuantity(String(entry.quantity)); // Pre-fill quantity
+    setEditingEntry(entry);
+    setSelectedFood(null);
+    setQuantity(String(entry.quantity));
     setResults([]);
     setSearch("");
   }, []);
 
-  // Determine which input/action area to show
+  // --- NEW HANDLERS FOR MODAL ---
+  const handleStartRemove = (
+    id: string,
+    foodName: string,
+    quantity: number
+  ) => {
+    // Set the data for the item to be deleted, which makes the modal visible
+    setEntryToDelete({ id, foodName, quantity });
+  };
+
+  const handleConfirmDeletion = () => {
+    if (entryToDelete) {
+      removeEntry(entryToDelete.id);
+      setEntryToDelete(null); // Hide modal
+    }
+  };
+
+  const handleCancelDeletion = () => {
+    setEntryToDelete(null); // Hide modal
+  };
+  // -----------------------------
+
+  // Determine which input/action area to show (No Change)
   const isSearching = !!search.trim() && !searchLoading;
   const isShowingResults = results.length > 0 && !selectedFood && !editingEntry;
   const isShowingActionForm = selectedFood || editingEntry;
   const isShowingLoggedFood = log.length > 0;
 
-  // Set the current food for display in the action form
+  // Set the current food for display in the action form (No Change)
   const currentFood = editingEntry ? editingEntry.food : selectedFood;
   const actionButtonText = editingEntry
     ? `Update ${currentFood?.name}`
@@ -287,6 +290,11 @@ export default function LogScreen() {
       </SafeAreaView>
     );
   }
+
+  // Determine modal message
+  const modalMessage = entryToDelete
+    ? `Are you sure you want to remove ${entryToDelete.foodName} (${entryToDelete.quantity} servings)? This action cannot be undone.`
+    : "";
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f4f7f9" }}>
@@ -407,13 +415,13 @@ export default function LogScreen() {
             <>
               <Text style={styles.logHeading}>📝 Today's Log</Text>
               {isShowingLoggedFood ? (
-                // Pass the new handlers to LoggedItem
+                // Use the new prop onStartRemove
                 log.map((item) => (
                   <LoggedItem
-                    key={item.id} // Ensure key uses the unique ID
+                    key={item.id}
                     item={item}
                     onEdit={handleEditStart}
-                    onRemove={removeEntry}
+                    onStartRemove={handleStartRemove} // Pass the new handler
                   />
                 ))
               ) : (
@@ -426,6 +434,15 @@ export default function LogScreen() {
 
           <View style={{ height: 30 }} />
         </ScrollView>
+
+        {/* --- MOVED MODAL TO THE ROOT OF LogScreen --- */}
+        <CustomConfirmationModal
+          isVisible={!!entryToDelete} // Modal is visible if entryToDelete is set
+          title="Confirm Deletion"
+          message={modalMessage}
+          onConfirm={handleConfirmDeletion}
+          onCancel={handleCancelDeletion}
+        />
       </View>
     </SafeAreaView>
   );
