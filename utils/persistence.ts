@@ -1,4 +1,5 @@
 import { FoodLogEntry } from "@/models/models";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // <-- NEW: Import AsyncStorage
 import { Platform } from "react-native";
 
 const LOG_STORAGE_KEY = "@FoodLogToday";
@@ -29,23 +30,17 @@ if (Platform.OS === "web") {
       }),
   };
 } else {
-  // --- Native/Mobile Environment: AsyncStorage Placeholder ---
-
-  // NOTE: In a real native app, you MUST import and use the actual AsyncStorage
-  // library (e.g., from '@react-native-async-storage/async-storage') here.
-  // The code below is a placeholder to prevent crashes in a pure RN environment.
-  console.warn(
-    `Persistence: Using AsyncStorage mock for ${Platform.OS}. Please implement real AsyncStorage.`
-  );
+  // --- Native/Mobile Environment: AsyncStorage Implementation ---
+  console.log(`Persistence: Using real AsyncStorage for ${Platform.OS}.`);
 
   storageImpl = {
-    getItem: async () => {
-      console.log("MOCK: getItem called.");
-      return Promise.resolve(null);
+    // Use the actual AsyncStorage getItem method
+    getItem: async (key: string) => {
+      return await AsyncStorage.getItem(key);
     },
-    setItem: async () => {
-      console.log("MOCK: setItem called.");
-      return Promise.resolve();
+    // Use the actual AsyncStorage setItem method
+    setItem: async (key: string, value: string) => {
+      return await AsyncStorage.setItem(key, value);
     },
   };
 }
