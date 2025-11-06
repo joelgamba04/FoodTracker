@@ -7,7 +7,10 @@ import React, {
   useState,
 } from "react";
 // ✅ Import local persistence functions from the new file
-import { loadFoodLog, saveFoodLog } from "@/utils/persistence";
+
+import { loadJSON, saveJSON, storage } from "@/lib/storage";
+
+const KEY = "@FoodLogToday";
 
 // --- Context Definition ---
 interface FoodLogContextType {
@@ -15,6 +18,7 @@ interface FoodLogContextType {
   addEntry: (entry: FoodLogEntry) => void;
   removeEntry: (entryId: string) => void;
   updateEntry: (entryId: string, newQuantity: number) => void;
+  clearAll: () => void;
   isLoading: boolean;
 }
 
@@ -34,7 +38,9 @@ export const FoodLogProvider: React.FC<{ children: React.ReactNode }> = ({
     const initializeLog = async () => {
       try {
         // Call the persistence utility function to fetch data
-        const loadedLog = await loadFoodLog();
+        const loadedLog = await loadJSON<FoodLogEntry[]>(KEY, (arr) =>
+          arr.map((e: any) => ({ ...e, timestamp: new Date(e.timestamp) }))
+        );
         if (loadedLog) {
           setLog(loadedLog);
         }
@@ -52,50 +58,41 @@ export const FoodLogProvider: React.FC<{ children: React.ReactNode }> = ({
     initializeLog();
   }, []);
 
-  // 2. Saving Effect: Save log to local storage whenever the 'log' state changes
   useEffect(() => {
-    // IMPORTANT: Only save if the initial load is complete.
-    // This prevents saving an empty array right after the app starts
-    // but before the attempt to load old data finishes.
-    if (isInitialLoadComplete) {
-      // Call the persistence utility function to save data
-      saveFoodLog(log);
-      console.log("Food log saved locally.");
-    }
+    if (isInitialLoadComplete) saveJSON(KEY, log);
   }, [log, isInitialLoadComplete]);
 
-  // 3. Data Mutation (Adding Entry)
   const addEntry = useCallback((entry: FoodLogEntry) => {
-    // Update the state optimistically. The useEffect above will detect
-    // this change and trigger the asynchronous 'saveFoodLog'.
-    setLog((prevLog) => [...prevLog, entry]);
+    setLog((prev) => [...prev, entry]);
   }, []);
 
   const removeEntry = useCallback((entryId: string) => {
-    setLog((prevLog) => prevLog.filter((entry) => entry.id !== entryId));
+    setLog((prev) => prev.filter((e) => e.id !== entryId));
   }, []);
 
   const updateEntry = useCallback(
     (entryId: string, newQuantity: number) => {
-      if (newQuantity <= 0) {
-        // Option: if quantity is zero, remove it instead of updating to zero
-        removeEntry(entryId);
-        return;
-      }
-      setLog((prevLog) =>
-        prevLog.map((entry) =>
-          entry.id === entryId ? { ...entry, quantity: newQuantity } : entry
+      if (newQuantity <= 0) return removeEntry(entryId);
+      setLog((prev) =>
+        prev.map((e) =>
+          e.id === entryId ? { ...e, quantity: newQuantity } : e
         )
       );
     },
     [removeEntry]
   );
 
+  const clearAll = useCallback(() => {
+    setLog([]);
+    storage.removeItem(KEY);
+  }, []);
+
   const contextValue = {
     log,
     addEntry,
     removeEntry,
     updateEntry,
+    clearAll: () => setLog([]),
     isLoading,
   };
 

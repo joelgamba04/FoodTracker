@@ -12,6 +12,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import DisclaimerModal from "@/components/DisclaimerModal";
 import { FoodLogProvider } from "@/context/FoodLogContext";
+import { ProfileProvider } from "@/context/ProfileContext";
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -32,16 +33,18 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <FoodLogProvider>
-        <ThemeProvider
-          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-        >
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          </Stack>
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </FoodLogProvider>
+      <ProfileProvider>
+        <FoodLogProvider>
+          <ThemeProvider
+            value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+          >
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            </Stack>
+            <StatusBar style="auto" />
+          </ThemeProvider>
+        </FoodLogProvider>
+      </ProfileProvider>
     </SafeAreaProvider>
   );
 }

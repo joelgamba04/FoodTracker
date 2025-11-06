@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ARBITRARY_RDI } from "../../constants/recommendedDailyIntake";
 
 // --- Theme Constants ---
 const PRIMARY_BLUE = "#007AFF"; // Used for headers and markers
@@ -18,14 +19,6 @@ const WARNING_YELLOW = "#FFCC00"; // Used for lacking progress
 const DANGER_RED = "#FF3B30"; // Used for excessive progress
 const GRAY_LIGHT = "#e8e8e8"; // Background for bars
 const BACKGROUND_COLOR = "#f4f7f9"; // Screen background
-
-// --- RDI Data (Kept as is) ---
-const ARBITRARY_RDI: Record<string, Nutrient> = {
-  Calories: { name: "Calories", amount: 2000, unit: "kcal" },
-  Protein: { name: "Protein", amount: 50, unit: "g" },
-  Carbohydrate: { name: "Carbohydrate", amount: 300, unit: "g" },
-  Fat: { name: "Fat", amount: 70, unit: "g" },
-};
 
 // --- Helper Functions (Kept as is, but logic is fine) ---
 function calculateTotals(log: any[]): Nutrient[] {
