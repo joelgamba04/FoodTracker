@@ -1,3 +1,4 @@
+import { loadJSON, saveJSON } from "@/lib/storage";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Platform, // <-- Now explicitly used for platform checks
@@ -36,69 +37,12 @@ const initialProfile: UserProfile = {
 
 type ProfileField = "age" | "height" | "weight" | "sex";
 
-// --- Cross-Platform Storage Abstraction ---
-
-// Define the core storage mechanism based on environment
-let storageImpl: {
-  getItem: (key: string) => Promise<string | null>;
-  setItem: (key: string, value: string) => Promise<void>;
-};
-
-// --- PLATFORM-SPECIFIC PERSISTENCE IMPLEMENTATION ---
-// Use Platform.OS to determine the correct storage mechanism (Web vs. Native)
-
-if (Platform.OS === "web") {
-  // --- Web Environment: Use localStorage ---
-  console.log("Persistence: Using localStorage (Web).");
-  storageImpl = {
-    // Wrap synchronous localStorage call in a Promise to simulate async AsyncStorage
-    getItem: (key: string) =>
-      new Promise((resolve) => resolve(localStorage.getItem(key))),
-    // Wrap synchronous localStorage call in a Promise to simulate async AsyncStorage
-    setItem: (key: string, value: string) =>
-      new Promise((resolve) => {
-        // Since we know localStorage exists here, we can use it safely
-        localStorage.setItem(key, value);
-        resolve();
-      }),
-  };
-} else {
-  // --- Native/Mobile Environment (Platform.OS is 'ios' or 'android'): Use AsyncStorage placeholder ---
-
-  // NOTE FOR DEVELOPER:
-  // In a real native app, you MUST import and use the actual AsyncStorage
-  // library here (e.g., '@react-native-async-storage/async-storage').
-  // The code below is a placeholder to prevent crashes when running outside of web.
-  console.warn(`Persistence: Using AsyncStorage mock for ${Platform.OS}.`);
-
-  storageImpl = {
-    // These methods would be replaced by AsyncStorage.getItem()
-    getItem: async () => Promise.resolve(null),
-    // These methods would be replaced by AsyncStorage.setItem()
-    setItem: async () => Promise.resolve(),
-  };
-}
-
-// This object acts as the universal API interface for all components
-const AsyncLocalStore = {
-  /**
-   * Loads data asynchronously using the platform-specific implementation.
-   */
-  getItem: storageImpl.getItem,
-  /**
-   * Saves data asynchronously using the platform-specific implementation.
-   */
-  setItem: storageImpl.setItem,
-};
-
 /**
  * Saves the user profile data via the unified persistence layer.
  */
-const saveProfileData = async (profile: UserProfile): Promise<void> => {
+const saveProfileData = async (profile: UserProfile) => {
   try {
-    const dataToSave = JSON.stringify(profile);
-    // Use the universal API (AsyncLocalStore)
-    await AsyncLocalStore.setItem(STORAGE_KEY, dataToSave);
+    await saveJSON(STORAGE_KEY, profile);
   } catch (e: any) {
     console.error("Error saving profile data:", e);
     throw new Error("Failed to save data locally.");
@@ -111,11 +55,7 @@ const saveProfileData = async (profile: UserProfile): Promise<void> => {
 const loadProfileData = async (): Promise<UserProfile | null> => {
   try {
     // Use the universal API (AsyncLocalStore)
-    const storedData = await AsyncLocalStore.getItem(STORAGE_KEY);
-    if (storedData) {
-      return JSON.parse(storedData) as UserProfile;
-    }
-    return null;
+    return await loadJSON<UserProfile>(STORAGE_KEY);
   } catch (e: any) {
     console.error("Error loading profile data:", e);
     throw new Error("Failed to load data locally.");
