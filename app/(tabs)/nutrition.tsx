@@ -185,7 +185,8 @@ export default function NutritionScreen() {
             );
           })}
         </View>
-        <View style={{ height: 50 }} /> {/* Spacer for end of scroll */}
+        {/* Spacer for end of scroll */}
+        <View style={{ height: 50 }} />
       </ScrollView>
     </SafeAreaView>
   );

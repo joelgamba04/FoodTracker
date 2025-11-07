@@ -43,6 +43,7 @@ type ProfileField = "age" | "height" | "weight" | "sex";
 const saveProfileData = async (profile: UserProfile) => {
   try {
     await saveJSON(STORAGE_KEY, profile);
+    console.log("Profile data saved:", profile);
   } catch (e: any) {
     console.error("Error saving profile data:", e);
     throw new Error("Failed to save data locally.");
@@ -143,82 +144,87 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
       <ScrollView style={styles.container}>
-        <Text style={styles.heading}>👤 Your Personal Profile</Text>
-        {/* --- Card: Basic Information --- */}
-        <View style={styles.card}>
-          <Text style={styles.cardHeader}>Basic Information</Text>
+          <Text style={styles.heading}>👤 Your Personal Profile</Text>
 
-          {/* Sex Selection */}
-          <View style={styles.row}>
-            <Text style={styles.label}>Sex:</Text>
-            <View style={styles.sexPillsContainer}>
-              {["Male", "Female"].map((s) => (
-                <TouchableOpacity
-                  key={s}
-                  style={[
-                    styles.pill,
-                    profile.sex === s ? styles.pillActive : styles.pillInactive,
-                    { flex: 1, marginRight: s === "Male" ? 10 : 0 },
-                  ]}
-                  onPress={() => handleProfileChange("sex", s)}
-                >
-                  <Text
+          {/* Card: Basic Information */}
+          <View style={styles.card}>
+            <Text style={styles.cardHeader}>Basic Information</Text>
+
+            {/* Sex Selection */}
+            <View style={styles.row}>
+              <Text style={styles.label}>Sex:</Text>
+              <View style={styles.sexPillsContainer}>
+                {["Male", "Female"].map((s) => (
+                  <TouchableOpacity
+                    key={s}
                     style={[
-                      styles.pillText,
+                      styles.pill,
                       profile.sex === s
-                        ? styles.pillTextActive
-                        : styles.pillTextInactive,
+                        ? styles.pillActive
+                        : styles.pillInactive,
+                      { flex: 1, marginRight: s === "Male" ? 10 : 0 },
                     ]}
+                    onPress={() => handleProfileChange("sex", s)}
                   >
-                    {s}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text
+                      style={[
+                        styles.pillText,
+                        profile.sex === s
+                          ? styles.pillTextActive
+                          : styles.pillTextInactive,
+                      ]}
+                    >
+                      {s}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
+
+            <FormInput
+              label="Age"
+              unit=""
+              keyboardType="numeric"
+              value={profile.age}
+              onChangeText={(val) =>
+                handleProfileChange("age", val.replace(/[^0-9]/g, ""))
+              }
+            />
+
+            <FormInput
+              label="Height"
+              unit="cm"
+              keyboardType="numeric"
+              value={profile.height}
+              onChangeText={(val) =>
+                handleProfileChange("height", val.replace(/[^0-9.]/g, ""))
+              }
+            />
+
+            <FormInput
+              label="Weight"
+              unit="kg"
+              keyboardType="numeric"
+              value={profile.weight}
+              onChangeText={(val) =>
+                handleProfileChange("weight", val.replace(/[^0-9.]/g, ""))
+              }
+            />
           </View>
 
-          <FormInput
-            label="Age"
-            unit=""
-            keyboardType="numeric"
-            value={profile.age}
-            // Input validation to only allow numbers
-            onChangeText={(val) =>
-              handleProfileChange("age", val.replace(/[^0-9]/g, ""))
-            }
-          />
-          <FormInput
-            label="Height"
-            unit="cm"
-            keyboardType="numeric"
-            value={profile.height}
-            // Input validation to only allow numbers and decimal point
-            onChangeText={(val) =>
-              handleProfileChange("height", val.replace(/[^0-9.]/g, ""))
-            }
-          />
-          <FormInput
-            label="Weight"
-            unit="kg"
-            keyboardType="numeric"
-            value={profile.weight}
-            // Input validation to only allow numbers and decimal point
-            onChangeText={(val) =>
-              handleProfileChange("weight", val.replace(/[^0-9.]/g, ""))
-            }
-          />
-        </View>
-        {/* --- Save Button --- */}
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={handleSave}
-          disabled={loading} // Disable while loading/saving
-        >
-          <Text style={styles.saveButtonText}>
-            {loading ? "Saving..." : "💾 Save Profile Changes (Local)"}
-          </Text>
-        </TouchableOpacity>
-        <View style={{ height: 40 }} /> {/* Spacer */}
+          {/* Save Button */}
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSave}
+            disabled={loading}
+          >
+            <Text style={styles.saveButtonText}>
+              {loading ? "Saving..." : "💾 Save Profile Changes (Local)"}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Spacer */}
+          <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -251,7 +257,7 @@ const FormInput: React.FC<FormInputProps> = ({
         placeholder={`Enter ${label.toLowerCase()}...`}
         placeholderTextColor="#999"
       />
-      {unit ? <Text style={styles.inputUnit}>{unit}</Text> : null}
+      <Text style={styles.inputUnit}>{unit ? unit : null}</Text>
     </View>
   </View>
 );
