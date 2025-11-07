@@ -1,4 +1,4 @@
-import { Nutrient } from "../models/models";
+import { Nutrient } from "@/models/models";
 
 // --- RDI Data (Kept as is) ---
 export const ARBITRARY_RDI: Record<string, Nutrient> = {

@@ -1,3 +1,4 @@
+import { ARBITRARY_RDI } from "@/constants/recommendedDailyIntake";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { Nutrient } from "@/models/models";
 import React from "react";
@@ -10,7 +11,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ARBITRARY_RDI } from "../../constants/recommendedDailyIntake";
 
 // --- Theme Constants ---
 const PRIMARY_BLUE = "#007AFF"; // Used for headers and markers
