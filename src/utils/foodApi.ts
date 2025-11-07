@@ -1,5 +1,5 @@
 // Placeholder for custom food API integration
-import { Food } from '@/models/models';
+import { Food } from "@/models/models";
 
 const MOCK_FOODS: Food[] = [
   {

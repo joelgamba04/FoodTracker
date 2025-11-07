@@ -1,4 +1,4 @@
-import { Food, Nutrient } from "@/models/models";
+import { Food, Nutrient } from "@/src/models/models";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 
