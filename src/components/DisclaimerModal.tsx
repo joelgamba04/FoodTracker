@@ -23,18 +23,20 @@ const DisclaimerModal: React.FC<DisclaimerModalProps> = ({ onAccept }) => {
   // Check storage on component mount
   useEffect(() => {
     if (Platform.OS === "web") {
-      console.log("Web platform detected");
-      // Assume accepted on web for development/prototyping purposes
-      setIsLoading(false);
-      setIsVisible(true);
-      return; // Stop execution for web
+      // Either auto-accept on web:
+      onAccept();
+      return;
     }
 
     const checkDisclaimerStatus = async () => {
       try {
         const value = await AsyncStorage.getItem(DISCLAIMER_ACCEPTED_KEY);
-        if (value !== "true") {
-          // If not accepted, show the modal
+
+        if (value === "true") {
+          // ✅ Already accepted — let the parent continue rendering the app
+          onAccept();
+        } else {
+          // ❗ Not yet accepted — show the modal
           setIsVisible(true);
         }
       } catch (error) {
@@ -47,7 +49,7 @@ const DisclaimerModal: React.FC<DisclaimerModalProps> = ({ onAccept }) => {
     };
 
     checkDisclaimerStatus();
-  }, []);
+  }, [onAccept]);
 
   const handleAccept = useCallback(async () => {
     // Hide modal

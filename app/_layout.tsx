@@ -10,6 +10,7 @@ import { useState } from "react";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import DisclaimerModal from "@/components/DisclaimerModal";
 import { FoodLogProvider } from "@/context/FoodLogContext";
 import { ProfileProvider } from "@/context/ProfileContext";
@@ -33,18 +34,20 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <ProfileProvider>
-        <FoodLogProvider>
-          <ThemeProvider
-            value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-          >
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            </Stack>
-            <StatusBar style="auto" />
-          </ThemeProvider>
-        </FoodLogProvider>
-      </ProfileProvider>
+      <AppErrorBoundary>
+        <ProfileProvider>
+          <FoodLogProvider>
+            <ThemeProvider
+              value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+            >
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              </Stack>
+              <StatusBar style="auto" />
+            </ThemeProvider>
+          </FoodLogProvider>
+        </ProfileProvider>
+      </AppErrorBoundary>
     </SafeAreaProvider>
   );
 }
