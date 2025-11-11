@@ -306,7 +306,7 @@ export default function LogScreen() {
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder="Search for food, e.g., 'apple', 'egg'"
+            placeholder="Search for food, e.g., 'rice', 'gabi'"
             placeholderTextColor="#888"
             style={styles.input}
             onSubmitEditing={handleSearch}
