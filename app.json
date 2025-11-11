@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Taguig NutriApp",
-    "slug": "FoodTracker",
+    "slug": "Taguig-NutriApp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/FixedSquareNoBg.png",
@@ -49,7 +49,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "d74ce1e8-d761-425d-86a4-c11c55550be5"
+        "projectId": "005f41e5-06ed-4646-addf-f068457abd0a"
       }
     },
     "owner": "joelgamba"
