@@ -12,20 +12,21 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const formatDate = (d: Date) =>
-  d.toLocaleDateString(undefined, {
+const formatDate = (date: Date) =>
+  date.toLocaleDateString(undefined, {
     weekday: "short",
     month: "short",
     day: "numeric",
     year: "numeric",
   });
 
-const formatTime = (d: Date) =>
-  d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+const formatTime = (date: Date) =>
+  date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 
 const getCalories = (entry: FoodLogEntry) => {
   const list = entry.food?.nutrients ?? [];
-  const cal = list.find((n) => n.name === "Calories")?.amount ?? 0;
+  const cal =
+    list.find((nutrient) => nutrient.name === "Calories")?.amount ?? 0;
   return cal * (entry.quantity ?? 1);
 };
 
@@ -35,10 +36,11 @@ const sumBy = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 function dayTotals(entries: FoodLogEntry[]) {
   const pick = (name: string) =>
     sumBy(
-      entries.map((e) => {
+      entries.map((entry) => {
         const unit =
-          e.food?.nutrients?.find((n) => n.name === name)?.amount ?? 0;
-        return unit * (e.quantity ?? 1);
+          entry.food?.nutrients?.find((nutrient) => nutrient.name === name)
+            ?.amount ?? 0;
+        return unit * (entry.quantity ?? 1);
       })
     );
   return {
@@ -53,11 +55,11 @@ function dayTotals(entries: FoodLogEntry[]) {
 function groupByDay(all: FoodLogEntry[]) {
   const map = new Map<string, FoodLogEntry[]>();
   for (const e of all) {
-    const d = new Date(e.timestamp as any);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+    const date = new Date(e.timestamp as any);
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
       2,
       "0"
-    )}-${String(d.getDate()).padStart(2, "0")}`;
+    )}-${String(date.getDate()).padStart(2, "0")}`;
     const arr = map.get(key) ?? [];
     arr.push(e);
     map.set(key, arr);
@@ -65,7 +67,7 @@ function groupByDay(all: FoodLogEntry[]) {
   // Convert to sections sorted desc by date
   const sections = Array.from(map.entries())
     .map(([key, entries]) => {
-      const d = new Date(key);
+      const date = new Date(key);
       const totals = dayTotals(entries);
       return {
         title: `${formatDate(
@@ -87,11 +89,11 @@ function groupByDay(all: FoodLogEntry[]) {
 }
 
 // Date filter helpers
-const daysAgo = (n: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  d.setHours(0, 0, 0, 0);
-  return d;
+const daysAgo = (daysAgo: number) => {
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  date.setHours(0, 0, 0, 0);
+  return date;
 };
 
 export default function HistoryScreen() {
@@ -104,11 +106,11 @@ export default function HistoryScreen() {
     const after =
       range === "7" ? daysAgo(7) : range === "30" ? daysAgo(30) : null;
 
-    const base = (log ?? []).filter((e: FoodLogEntry) => {
-      const ts = new Date(e.timestamp as any);
+    const base = (log ?? []).filter((foodLogEntry: FoodLogEntry) => {
+      const ts = new Date(foodLogEntry.timestamp as any);
       if (after && ts < after) return false;
       if (!lower) return true;
-      const name = e.food?.name?.toLowerCase() ?? "";
+      const name = foodLogEntry.food?.name?.toLowerCase() ?? "";
       return name.includes(lower);
     });
 
@@ -117,18 +119,18 @@ export default function HistoryScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={s.center}>
+      <SafeAreaView style={styles.center}>
         <ActivityIndicator />
-        <Text style={s.dim}>Loading history…</Text>
+        <Text style={styles.dim}>Loading history…</Text>
       </SafeAreaView>
     );
   }
 
   if (!log || log.length === 0) {
     return (
-      <SafeAreaView style={s.center}>
-        <Text style={s.h1}>No history yet</Text>
-        <Text style={s.dim}>Log your first meal to see it here.</Text>
+      <SafeAreaView style={styles.center}>
+        <Text style={styles.h1}>No history yet</Text>
+        <Text style={styles.dim}>Log your first meal to see it here.</Text>
       </SafeAreaView>
     );
   }
@@ -136,15 +138,15 @@ export default function HistoryScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       {/* Controls */}
-      <View style={s.controls}>
+      <View style={styles.controls}>
         <TextInput
           value={query}
           onChangeText={setQuery}
           placeholder="Search foods…"
           placeholderTextColor="#888"
-          style={s.search}
+          style={styles.search}
         />
-        <View style={s.rangeWrap}>
+        <View style={styles.rangeWrap}>
           <RangeButton
             label="All"
             active={range === "all"}
@@ -167,42 +169,49 @@ export default function HistoryScreen() {
         sections={filtered}
         keyExtractor={(item: FoodLogEntry) => item.id}
         renderSectionHeader={({ section }) => (
-          <View style={s.secHeader}>
-            <Text style={s.secTitle}>{section.title}</Text>
-            <Text style={s.secSubtitle}>{section.subtitle}</Text>
+          <View style={styles.secHeader}>
+            <Text style={styles.secTitle}>{section.title}</Text>
+            <Text style={styles.secSubtitle}>{section.subtitle}</Text>
           </View>
         )}
         renderItem={({ item }) => (
-          <View style={s.itemRow}>
+          <View style={styles.itemRow}>
             <View style={{ flex: 1 }}>
-              <Text style={s.itemTitle}>
+              <Text style={styles.itemTitle}>
                 {item.food?.name ?? "Unnamed item"}
               </Text>
-              <Text style={s.itemSub}>
+              <Text style={styles.itemSub}>
                 {formatTime(new Date(item.timestamp as any))}
               </Text>
             </View>
             <View style={{ alignItems: "flex-end" }}>
-              <Text style={s.itemKcal}>{Math.round(getCalories(item))}</Text>
-              <Text style={s.itemKcalUnit}>kcal</Text>
+              <Text style={styles.itemKcal}>
+                {Math.round(getCalories(item))}
+              </Text>
+              <Text style={styles.itemKcalUnit}>kcal</Text>
             </View>
           </View>
         )}
-        ItemSeparatorComponent={() => <View style={s.sep} />}
+        ItemSeparatorComponent={() => <View style={styles.sep} />}
         SectionSeparatorComponent={() => <View style={{ height: 12 }} />}
-        contentContainerStyle={s.listPad}
+        contentContainerStyle={styles.listPad}
       />
 
       {/* Footer actions */}
-      <View style={s.footer}>
+      <View style={styles.footer}>
         <TouchableOpacity
-          style={[s.btn, s.btnOutline]}
+          style={[styles.btn, styles.btnOutline]}
           onPress={exportCSV(filtered)}
         >
-          <Text style={[s.btnText, s.btnOutlineText]}>Export CSV</Text>
+          <Text style={[styles.btnText, styles.btnOutlineText]}>
+            Export CSV
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[s.btn, s.btnDanger]} onPress={clearAll}>
-          <Text style={s.btnText}>Clear History</Text>
+        <TouchableOpacity
+          style={[styles.btn, styles.btnDanger]}
+          onPress={clearAll}
+        >
+          <Text style={styles.btnText}>Clear History</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -222,9 +231,9 @@ function RangeButton({
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={[s.rangeBtn, active ? s.rangeBtnActive : null]}
+      style={[styles.rangeBtn, active ? styles.rangeBtnActive : null]}
     >
-      <Text style={[s.rangeText, active ? s.rangeTextActive : null]}>
+      <Text style={[styles.rangeText, active ? styles.rangeTextActive : null]}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -257,7 +266,7 @@ const escapeCSV = (s: string) => `"${String(s).replace(/"/g, '""')}"`;
 // ——— Styles
 const BLUE = "#007AFF";
 const DANGER = "#d7263d";
-const s = StyleSheet.create({
+const styles = StyleSheet.create({
   center: {
     flex: 1,
     alignItems: "center",
@@ -298,7 +307,7 @@ const s = StyleSheet.create({
   secSubtitle: { fontSize: 12, opacity: 0.7 },
   itemRow: {
     flexDirection: "row",
-    alignItems: "baseline", 
+    alignItems: "baseline",
     paddingVertical: 10,
   },
   itemTitle: { fontWeight: "600", fontSize: 15 },
@@ -319,5 +328,4 @@ const s = StyleSheet.create({
   btnOutline: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#ddd" },
   btnOutlineText: { color: "#333" },
   btnDanger: { backgroundColor: DANGER },
-
 });
