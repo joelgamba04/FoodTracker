@@ -7,7 +7,7 @@ const MOCK_FOODS: Food[] = [
     name: "White Rice (protein-reduced)",
     servingSize: "1/3 cup (55g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -18,7 +18,7 @@ const MOCK_FOODS: Food[] = [
     name: "Ampaw (Pinipig)",
     servingSize: "2 pcs (25g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -29,7 +29,7 @@ const MOCK_FOODS: Food[] = [
     name: "Biko",
     servingSize: "1 slice (40g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -40,7 +40,7 @@ const MOCK_FOODS: Food[] = [
     name: "Cuchinta",
     servingSize: "2 pcs (60g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -51,7 +51,7 @@ const MOCK_FOODS: Food[] = [
     name: "Sapin-sapin",
     servingSize: "1 slice (55g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -62,7 +62,7 @@ const MOCK_FOODS: Food[] = [
     name: "Cornstarch",
     servingSize: "1/4 cup (25g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -73,7 +73,7 @@ const MOCK_FOODS: Food[] = [
     name: "Maja Blanca",
     servingSize: "1/2 slice (65g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -84,7 +84,7 @@ const MOCK_FOODS: Food[] = [
     name: "Maja mais",
     servingSize: "1 slice (75g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -95,7 +95,7 @@ const MOCK_FOODS: Food[] = [
     name: "Bihon",
     servingSize: "1 cup (100g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -106,7 +106,7 @@ const MOCK_FOODS: Food[] = [
     name: "Misua",
     servingSize: "1 cup (100g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -117,7 +117,7 @@ const MOCK_FOODS: Food[] = [
     name: "Sotanghon",
     servingSize: "1 cup (100g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -128,7 +128,7 @@ const MOCK_FOODS: Food[] = [
     name: "Sweet potato noodles",
     servingSize: "1 cup (100g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -139,7 +139,7 @@ const MOCK_FOODS: Food[] = [
     name: "Gabi",
     servingSize: "3/4 cup (100g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -150,7 +150,7 @@ const MOCK_FOODS: Food[] = [
     name: "Kamote (dilaw, murado, puti)",
     servingSize: "3/4 cup (85g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -161,7 +161,7 @@ const MOCK_FOODS: Food[] = [
     name: "Kamoteng kahoy / balinghoy",
     servingSize: "3/4 cup (85g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -172,7 +172,7 @@ const MOCK_FOODS: Food[] = [
     name: "Kamoteng kahoy / bibingka",
     servingSize: "1 slice (55g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -183,7 +183,7 @@ const MOCK_FOODS: Food[] = [
     name: "Kamoteng kahoy / linupak",
     servingSize: "1 pc (55g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -194,7 +194,7 @@ const MOCK_FOODS: Food[] = [
     name: "Kamoteng kahoy / pichi-pichi",
     servingSize: "1 pc (45g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -205,7 +205,7 @@ const MOCK_FOODS: Food[] = [
     name: "Kamoteng kahoy / suman",
     servingSize: "1 pc (45g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -216,7 +216,7 @@ const MOCK_FOODS: Food[] = [
     name: "Tugi",
     servingSize: "1 1/4 cup (150g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -227,7 +227,7 @@ const MOCK_FOODS: Food[] = [
     name: "Ube (purple yam)",
     servingSize: "1 1/4 cup (150g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -238,7 +238,7 @@ const MOCK_FOODS: Food[] = [
     name: "Saging saba, nilaga",
     servingSize: "1 pc (65g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -249,7 +249,7 @@ const MOCK_FOODS: Food[] = [
     name: "Sago nilaga",
     servingSize: "1/2 cup (120g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -260,7 +260,7 @@ const MOCK_FOODS: Food[] = [
     name: "Sago tapioca",
     servingSize: "3/4 cup (160g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 0 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -271,7 +271,7 @@ const MOCK_FOODS: Food[] = [
     name: "White Rice (well-milled)",
     servingSize: "1/2 cup (80g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -282,7 +282,7 @@ const MOCK_FOODS: Food[] = [
     name: "Red Rice (undermilled red)",
     servingSize: "1/2 cup (80g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -293,7 +293,7 @@ const MOCK_FOODS: Food[] = [
     name: "Pinawa Rice (brown rice)",
     servingSize: "1/2 cup (80g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -304,7 +304,7 @@ const MOCK_FOODS: Food[] = [
     name: "Lugaw (Thin consistency)",
     servingSize: "4 1/2 cup (705g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -315,7 +315,7 @@ const MOCK_FOODS: Food[] = [
     name: "Lugaw (Medium consistency)",
     servingSize: "3 cup (435g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -326,7 +326,7 @@ const MOCK_FOODS: Food[] = [
     name: "Lugaw (Thick consistency)",
     servingSize: "1 1/2 cup (250g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -337,7 +337,7 @@ const MOCK_FOODS: Food[] = [
     name: "Ampaw rice",
     servingSize: "2 pcs (25g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -348,7 +348,7 @@ const MOCK_FOODS: Food[] = [
     name: "Bibingka, galapong",
     servingSize: "1/2 slice (45g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -359,7 +359,7 @@ const MOCK_FOODS: Food[] = [
     name: "Bibingka, malagkit",
     servingSize: "1/2 slice (40g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -370,7 +370,7 @@ const MOCK_FOODS: Food[] = [
     name: "Bibingka, pinipig",
     servingSize: "1 slice (50g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -381,7 +381,7 @@ const MOCK_FOODS: Food[] = [
     name: "Espasol",
     servingSize: "1 slice (35g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -392,7 +392,7 @@ const MOCK_FOODS: Food[] = [
     name: "Kalamay, may latik",
     servingSize: "1 slice (50g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -403,7 +403,7 @@ const MOCK_FOODS: Food[] = [
     name: "Kalamay, ube",
     servingSize: "1 slice (60g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -414,7 +414,7 @@ const MOCK_FOODS: Food[] = [
     name: "Palitaw, walang niyog",
     servingSize: "3 pcs (50g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -425,7 +425,7 @@ const MOCK_FOODS: Food[] = [
     name: "Puto, brown",
     servingSize: "1/2 slice (50g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -436,7 +436,7 @@ const MOCK_FOODS: Food[] = [
     name: "Puto bumbong",
     servingSize: "2 pcs (40g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -447,7 +447,7 @@ const MOCK_FOODS: Food[] = [
     name: "Puto maya",
     servingSize: "1/2 slice (60g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -458,7 +458,7 @@ const MOCK_FOODS: Food[] = [
     name: "Puto, puti",
     servingSize: "3 pcs (50g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -469,7 +469,7 @@ const MOCK_FOODS: Food[] = [
     name: "Puto seko",
     servingSize: "4 pcs (25g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
@@ -480,7 +480,7 @@ const MOCK_FOODS: Food[] = [
     name: "Puto seko, may niyog",
     servingSize: "7 pcs (25g)",
     nutrients: [
-      { name: "Calories", unit: "kcal", amount: 95 },
+      { name: "Calories", unit: "kcal", amount: 100 },
       { name: "Carbohydrate", unit: "g", amount: 23 },
       { name: "Protein", unit: "g", amount: 2 },
       { name: "Fat", unit: "g", amount: 0 },
