@@ -97,7 +97,7 @@ const daysAgo = (daysAgo: number) => {
 };
 
 export default function HistoryScreen() {
-  const { log, isLoading, clearAll } = useFoodLog();
+  const { log, isLoading } = useFoodLog();
   const [query, setQuery] = useState("");
   const [range, setRange] = useState<"all" | "7" | "30">("all");
 
@@ -130,7 +130,6 @@ export default function HistoryScreen() {
     return (
       <SafeAreaView style={styles.center}>
         <Text style={styles.h1}>No history yet</Text>
-        <Text style={styles.dim}>Log your first meal to see it here.</Text>
       </SafeAreaView>
     );
   }
@@ -196,24 +195,6 @@ export default function HistoryScreen() {
         SectionSeparatorComponent={() => <View style={{ height: 12 }} />}
         contentContainerStyle={styles.listPad}
       />
-
-      {/* Footer actions */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.btn, styles.btnOutline]}
-          onPress={exportCSV(filtered)}
-        >
-          <Text style={[styles.btnText, styles.btnOutlineText]}>
-            Export CSV
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.btn, styles.btnDanger]}
-          onPress={clearAll}
-        >
-          <Text style={styles.btnText}>Clear History</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }
@@ -239,29 +220,6 @@ function RangeButton({
     </TouchableOpacity>
   );
 }
-
-// ——— CSV export (simple; no extra deps)
-function exportCSV(sections: { data: FoodLogEntry[]; title: string }[]) {
-  return () => {
-    const rows = [["Date", "Time", "Food", "Quantity", "Calories"]];
-    sections.forEach((sec) => {
-      sec.data.forEach((e) => {
-        const d = new Date(e.timestamp as any);
-        rows.push([
-          formatDate(d),
-          formatTime(d),
-          e.food?.name ?? "",
-          String(e.quantity ?? 1),
-          String(Math.round(getCalories(e))),
-        ]);
-      });
-    });
-    const csv = rows.map((r) => r.map(escapeCSV).join(",")).join("\n");
-    console.log("CSV preview:\n" + csv);
-    // Tip: to actually share, write to FileSystem then use shareAsync from expo-sharing.
-  };
-}
-const escapeCSV = (s: string) => `"${String(s).replace(/"/g, '""')}"`;
 
 // ——— Styles
 const BLUE = "#007AFF";

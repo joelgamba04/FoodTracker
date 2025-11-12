@@ -82,6 +82,17 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
+        name="history"
+        options={{
+          title: "History",
+          tabBarIcon: ({ color }) => (
+            // Use a bold, clear icon for logging food/tracking
+            <IconSymbol size={26} name="calendar" color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="Settings"
         options={{
           title: "PDRI", // Use a more user-friendly, descriptive name
