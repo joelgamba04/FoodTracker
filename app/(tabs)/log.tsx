@@ -19,6 +19,7 @@ import { getFavoriteFoods, searchFoods } from "@/utils/foodApi";
 // =================================================================
 
 import CustomConfirmationModal from "@/components/CustomConfirmationModal"; // <--- Imported Modal
+import { getTodayWindow } from "@/utils/date";
 
 // --- Theme Constants ---
 const PRIMARY_COLOR = "#007AFF"; // Blue
@@ -161,6 +162,12 @@ export default function LogScreen() {
     isLoading: isLogLoading,
   } = useFoodLog();
 
+  const { start, end } = getTodayWindow();
+  const todayLog = log.filter((e) => {
+    const ts = new Date(e.timestamp as any);
+    return ts >= start && ts < end;
+  });
+
   // Load Favorites on Mount (No Change)
   useEffect(() => {
     async function loadFavorites() {
@@ -272,7 +279,7 @@ export default function LogScreen() {
   const isSearching = !!search.trim() && !searchLoading;
   const isShowingResults = results.length > 0 && !selectedFood && !editingEntry;
   const isShowingActionForm = selectedFood || editingEntry;
-  const isShowingLoggedFood = log.length > 0;
+  const isShowingLoggedFood = todayLog.length > 0;
 
   // Set the current food for display in the action form (No Change)
   const currentFood = editingEntry ? editingEntry.food : selectedFood;
@@ -413,10 +420,12 @@ export default function LogScreen() {
           {/* --- Today's Log Section --- */}
           {!isShowingResults && !isShowingActionForm && (
             <>
-              <Text style={styles.logHeading}>📝 Today's Log</Text>
+              <Text style={styles.logHeading}>
+                📝 Today's Log — {new Date().toLocaleDateString()}
+              </Text>
               {isShowingLoggedFood ? (
                 // Use the new prop onStartRemove
-                log.map((item) => (
+                todayLog.map((item) => (
                   <LoggedItem
                     key={item.id}
                     item={item}

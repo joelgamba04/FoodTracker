@@ -1,6 +1,7 @@
 import { ARBITRARY_RDI } from "@/constants/recommendedDailyIntake";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { Nutrient } from "@/models/models";
+import { getTodayWindow } from "@/utils/date";
 import React from "react";
 import {
   DimensionValue,
@@ -126,7 +127,14 @@ const NutrientCard: React.FC<NutrientCardProps> = ({
 // --- Main Screen Component ---
 export default function NutritionScreen() {
   const { log } = useFoodLog();
-  const totals = calculateTotals(log);
+
+  const { start, end } = getTodayWindow();
+  const todayLog = log.filter((e) => {
+    const ts = new Date(e.timestamp as any);
+    return ts >= start && ts < end;
+  });
+
+  const totals = calculateTotals(todayLog);
 
   if (totals.length === 0) {
     return (
