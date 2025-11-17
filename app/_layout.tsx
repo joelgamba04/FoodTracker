@@ -24,12 +24,9 @@ export default function RootLayout() {
 
   const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useState(false);
 
-  const handleDisclaimerAccept = () => {
-    setIsDisclaimerAccepted(true);
-  };
 
   if (!isDisclaimerAccepted) {
-    return <DisclaimerModal onAccept={handleDisclaimerAccept} />;
+    return <DisclaimerModal onAccept={() => setIsDisclaimerAccepted(true)} />;
   }
 
   return (
