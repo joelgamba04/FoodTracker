@@ -18,8 +18,8 @@ const BORDER_COLOR = "#ddd";
 // PLACEHOLDER: These default values will be replaced by API data soon.
 const DEFAULT_RDI = {
   Calories: { name: "Calories", amount: 2000, unit: "kcal" },
-  Protein: { name: "Protein", amount: 50, unit: "g" },
   Carbohydrate: { name: "Carbohydrate", amount: 300, unit: "g" },
+  Protein: { name: "Protein", amount: 50, unit: "g" },
   Fat: { name: "Fat", amount: 70, unit: "g" },
 };
 
@@ -61,7 +61,7 @@ const GoalInput: React.FC<GoalInputProps> = ({
 // --- Main Screen Component ---
 export default function SettingsScreen() {
   // ⚠️ ARCHITECTURAL NOTE: In the next iteration, this will fetch read-only data from the ProfileContext/API.
-  const macros: RdiKey[] = ["Calories", "Protein", "Carbohydrate", "Fat"];
+  const macros: RdiKey[] = ["Calories", "Carbohydrate", "Protein", "Fat"];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
