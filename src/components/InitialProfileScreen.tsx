@@ -1,17 +1,16 @@
 // src/components/InitialProfileScreen.tsx
 import { loadJSON, saveJSON } from "@/lib/storage";
-import { UserProfile } from "@/models/models";
+import { UserProfile, defaultProfile } from "@/models/models";
+import { USER_PROFILE_KEY } from "@/utils/profileUtils";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const STORAGE_KEY = "@UserProfile";
 
 type ProfileField = "age" | "sex" | "height" | "weight";
 
@@ -23,13 +22,6 @@ const PRIMARY_BLUE = "#007AFF";
 const ACCENT_GREEN = "#4CD964";
 const BACKGROUND_COLOR = "#f4f7f9";
 const BORDER_COLOR = "#ddd";
-
-const defaultProfile: UserProfile = {
-  age: "",
-  sex: "Male",
-  height: "",
-  weight: "",
-};
 
 const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
   onComplete,
@@ -44,7 +36,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
     let active = true;
     (async () => {
       try {
-        const stored = await loadJSON<UserProfile>(STORAGE_KEY);
+        const stored = await loadJSON<UserProfile>(USER_PROFILE_KEY);
         if (active && stored) {
           setProfile({
             ...defaultProfile,
@@ -100,7 +92,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
     setError(null);
     setSaving(true);
     try {
-      await saveJSON(STORAGE_KEY, profile);
+      await saveJSON(USER_PROFILE_KEY, profile);
       onComplete(profile);
     } catch (e) {
       console.error("InitialProfileScreen: failed to save profile", e);

@@ -1,4 +1,6 @@
 import { loadJSON, saveJSON } from "@/lib/storage";
+import { defaultProfile, UserProfile } from "@/models/models";
+import { USER_PROFILE_KEY } from "@/utils/profileUtils";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Platform, // <-- Now explicitly used for platform checks
@@ -17,24 +19,6 @@ const ACCENT_GREEN = "#4CD964";
 const BACKGROUND_COLOR = "#f4f7f9";
 const BORDER_COLOR = "#ddd";
 
-// --- Local Persistence Key ---
-const STORAGE_KEY = "@UserProfile";
-
-// --- Profile Data Structure ---
-interface UserProfile {
-  age: string;
-  sex: string;
-  height: string;
-  weight: string;
-}
-
-const initialProfile: UserProfile = {
-  age: "",
-  sex: "Male",
-  height: "",
-  weight: "",
-};
-
 type ProfileField = "age" | "height" | "weight" | "sex";
 
 /**
@@ -42,7 +26,7 @@ type ProfileField = "age" | "height" | "weight" | "sex";
  */
 const saveProfileData = async (profile: UserProfile) => {
   try {
-    await saveJSON(STORAGE_KEY, profile);
+    await saveJSON(USER_PROFILE_KEY, profile);
     console.log("Profile data saved:", profile);
   } catch (e: any) {
     console.error("Error saving profile data:", e);
@@ -56,7 +40,7 @@ const saveProfileData = async (profile: UserProfile) => {
 const loadProfileData = async (): Promise<UserProfile | null> => {
   try {
     // Use the universal API (AsyncLocalStore)
-    return await loadJSON<UserProfile>(STORAGE_KEY);
+    return await loadJSON<UserProfile>(USER_PROFILE_KEY);
   } catch (e: any) {
     console.error("Error loading profile data:", e);
     throw new Error("Failed to load data locally.");
@@ -65,7 +49,7 @@ const loadProfileData = async (): Promise<UserProfile | null> => {
 
 // --- Main Screen Component ---
 export default function ProfileScreen() {
-  const [profile, setProfile] = useState<UserProfile>(initialProfile);
+  const [profile, setProfile] = useState<UserProfile>(defaultProfile);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,7 +64,7 @@ export default function ProfileScreen() {
         if (loadedProfile) {
           // Load stored data, ensuring values are strings for TextInput component
           setProfile({
-            ...initialProfile,
+            ...defaultProfile,
             ...loadedProfile,
             age: String(loadedProfile.age || ""),
             height: String(loadedProfile.height || ""),
@@ -144,87 +128,85 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
       <ScrollView style={styles.container}>
-          <Text style={styles.heading}>👤 Your Personal Profile</Text>
+        <Text style={styles.heading}>👤 Your Personal Profile</Text>
 
-          {/* Card: Basic Information */}
-          <View style={styles.card}>
-            <Text style={styles.cardHeader}>Basic Information</Text>
+        {/* Card: Basic Information */}
+        <View style={styles.card}>
+          <Text style={styles.cardHeader}>Basic Information</Text>
 
-            {/* Sex Selection */}
-            <View style={styles.row}>
-              <Text style={styles.label}>Sex:</Text>
-              <View style={styles.sexPillsContainer}>
-                {["Male", "Female"].map((s) => (
-                  <TouchableOpacity
-                    key={s}
+          {/* Sex Selection */}
+          <View style={styles.row}>
+            <Text style={styles.label}>Sex:</Text>
+            <View style={styles.sexPillsContainer}>
+              {["Male", "Female"].map((s) => (
+                <TouchableOpacity
+                  key={s}
+                  style={[
+                    styles.pill,
+                    profile.sex === s ? styles.pillActive : styles.pillInactive,
+                    { flex: 1, marginRight: s === "Male" ? 10 : 0 },
+                  ]}
+                  onPress={() => handleProfileChange("sex", s)}
+                >
+                  <Text
                     style={[
-                      styles.pill,
+                      styles.pillText,
                       profile.sex === s
-                        ? styles.pillActive
-                        : styles.pillInactive,
-                      { flex: 1, marginRight: s === "Male" ? 10 : 0 },
+                        ? styles.pillTextActive
+                        : styles.pillTextInactive,
                     ]}
-                    onPress={() => handleProfileChange("sex", s)}
                   >
-                    <Text
-                      style={[
-                        styles.pillText,
-                        profile.sex === s
-                          ? styles.pillTextActive
-                          : styles.pillTextInactive,
-                      ]}
-                    >
-                      {s}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+                    {s}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
-
-            <FormInput
-              label="Age"
-              unit=""
-              keyboardType="numeric"
-              value={profile.age}
-              onChangeText={(val) =>
-                handleProfileChange("age", val.replace(/[^0-9]/g, ""))
-              }
-            />
-
-            <FormInput
-              label="Height"
-              unit="cm"
-              keyboardType="numeric"
-              value={profile.height}
-              onChangeText={(val) =>
-                handleProfileChange("height", val.replace(/[^0-9.]/g, ""))
-              }
-            />
-
-            <FormInput
-              label="Weight"
-              unit="kg"
-              keyboardType="numeric"
-              value={profile.weight}
-              onChangeText={(val) =>
-                handleProfileChange("weight", val.replace(/[^0-9.]/g, ""))
-              }
-            />
           </View>
 
-          {/* Save Button */}
-          <TouchableOpacity
-            style={styles.saveButton}
-            onPress={handleSave}
-            disabled={loading}
-          >
-            <Text style={styles.saveButtonText}>
-              {loading ? "Saving..." : "💾 Save Profile Changes (Local)"}
-            </Text>
-          </TouchableOpacity>
+          <FormInput
+            label="Age"
+            unit=""
+            keyboardType="numeric"
+            value={profile.age}
+            onChangeText={(val) =>
+              handleProfileChange("age", val.replace(/[^0-9]/g, ""))
+            }
+          />
 
-          {/* Spacer */}
-          <View style={{ height: 40 }} />
+          <FormInput
+            label="Height"
+            unit="cm"
+            keyboardType="numeric"
+            value={profile.height}
+            onChangeText={(val) =>
+              handleProfileChange("height", val.replace(/[^0-9.]/g, ""))
+            }
+          />
+
+          <FormInput
+            label="Weight"
+            unit="kg"
+            keyboardType="numeric"
+            value={profile.weight}
+            onChangeText={(val) =>
+              handleProfileChange("weight", val.replace(/[^0-9.]/g, ""))
+            }
+          />
+        </View>
+
+        {/* Save Button */}
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={handleSave}
+          disabled={loading}
+        >
+          <Text style={styles.saveButtonText}>
+            {loading ? "Saving..." : "💾 Save Profile Changes (Local)"}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Spacer */}
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );

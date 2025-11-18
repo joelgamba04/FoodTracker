@@ -39,3 +39,10 @@ export interface UserProfile {
   height: string;
   weight: string;
 }
+
+export const defaultProfile: UserProfile = {
+  age: "",
+  sex: "Male",
+  height: "",
+  weight: "",
+};

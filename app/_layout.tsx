@@ -6,8 +6,8 @@ import {
 } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
-import { Text } from "react-native";
+import { useEffect, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -16,7 +16,9 @@ import DisclaimerModal from "@/components/DisclaimerModal";
 import InitialProfileScreen from "@/components/InitialProfileScreen";
 import { FoodLogProvider } from "@/context/FoodLogContext";
 import { ProfileProvider } from "@/context/ProfileContext";
+import { loadJSON } from "@/lib/storage";
 import { UserProfile } from "@/models/models";
+import { USER_PROFILE_KEY } from "@/utils/profileUtils";
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -64,10 +66,43 @@ const disclaimers = [
   },
 ];
 
+const isProfileComplete = (profile: UserProfile | null): boolean => {
+  if (!profile) return false;
+  if (!profile.age || !profile.sex || !profile.height || !profile.weight)
+    return false;
+  return true;
+};
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   const [step, setStep] = useState(0);
+  const [profileStatus, setProfileStatus] = useState<
+    "checking" | "incomplete" | "complete"
+  >("checking");
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const stored = await loadJSON<UserProfile>(USER_PROFILE_KEY);
+        if (!active) return;
+
+        if (isProfileComplete(stored)) {
+          setProfileStatus("complete");
+        } else {
+          setProfileStatus("incomplete");
+        }
+      } catch (e) {
+        console.warn("RootLayout: failed to load user profile", e);
+        if (active) setProfileStatus("incomplete");
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   //disclaimer flow
   if (step < disclaimers.length) {
@@ -83,13 +118,23 @@ export default function RootLayout() {
     );
   }
 
-  if (step === disclaimers.length) {
+  if (profileStatus === "checking") {
+    // small loading screen while we read AsyncStorage
+    return (
+      <View style={styles.loadingScreen}>
+        <Text style={styles.loadingText}>Loading your profile…</Text>
+      </View>
+    );
+  }
+
+  if (profileStatus === "incomplete") {
+    // Show profile onboarding once, then go to app
     return (
       <InitialProfileScreen
         key="initial-profile"
-        onComplete={(_profile: UserProfile) => {
-          // profile is already saved inside InitialProfileScreen
-          setStep((prev) => prev + 1);
+        onComplete={(_profile) => {
+          // profile already saved inside InitialProfileScreen
+          setProfileStatus("complete");
         }}
       />
     );
@@ -114,3 +159,21 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  bodyText: {
+    fontSize: 14,
+    color: "#333",
+    lineHeight: 20,
+  },
+  loadingScreen: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#333",
+  },
+});
