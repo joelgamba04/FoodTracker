@@ -32,3 +32,10 @@ export interface RecommendedIntake {
   amount: number;
   unit: string;
 }
+
+export interface UserProfile {
+  age: string;
+  sex: string;
+  height: string;
+  weight: string;
+}

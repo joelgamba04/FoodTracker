@@ -13,8 +13,10 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import DisclaimerModal from "@/components/DisclaimerModal";
+import InitialProfileScreen from "@/components/InitialProfileScreen";
 import { FoodLogProvider } from "@/context/FoodLogContext";
 import { ProfileProvider } from "@/context/ProfileContext";
+import { UserProfile } from "@/models/models";
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -78,6 +80,18 @@ export default function RootLayout() {
       >
         {current.body}
       </DisclaimerModal>
+    );
+  }
+
+  if (step === disclaimers.length) {
+    return (
+      <InitialProfileScreen
+        key="initial-profile"
+        onComplete={(_profile: UserProfile) => {
+          // profile is already saved inside InitialProfileScreen
+          setStep((prev) => prev + 1);
+        }}
+      />
     );
   }
 
