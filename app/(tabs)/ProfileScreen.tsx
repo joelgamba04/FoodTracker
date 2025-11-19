@@ -1,9 +1,8 @@
-import { loadJSON, saveJSON } from "@/lib/storage";
-import { defaultProfile, UserProfile } from "@/models/models";
-import { USER_PROFILE_KEY } from "@/utils/profileUtils";
+// app/(tabs)/ProfileScreen.tsx
+import { useProfile } from "@/context/ProfileContext";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  Platform, // <-- Now explicitly used for platform checks
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,95 +12,28 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// --- Theme Constants ---
 const PRIMARY_BLUE = "#007AFF";
 const ACCENT_GREEN = "#4CD964";
 const BACKGROUND_COLOR = "#f4f7f9";
 const BORDER_COLOR = "#ddd";
 
-type ProfileField = "age" | "height" | "weight" | "sex";
+type ProfileField = "age" | "sex" | "height" | "weight";
 
-/**
- * Saves the user profile data via the unified persistence layer.
- */
-const saveProfileData = async (profile: UserProfile) => {
-  try {
-    await saveJSON(USER_PROFILE_KEY, profile);
-    console.log("Profile data saved:", profile);
-  } catch (e: any) {
-    console.error("Error saving profile data:", e);
-    throw new Error("Failed to save data locally.");
-  }
-};
-
-/**
- * Loads the user profile data from the unified persistence layer.
- */
-const loadProfileData = async (): Promise<UserProfile | null> => {
-  try {
-    // Use the universal API (AsyncLocalStore)
-    return await loadJSON<UserProfile>(USER_PROFILE_KEY);
-  } catch (e: any) {
-    console.error("Error loading profile data:", e);
-    throw new Error("Failed to load data locally.");
-  }
-};
-
-// --- Main Screen Component ---
 export default function ProfileScreen() {
-  const [profile, setProfile] = useState<UserProfile>(defaultProfile);
-  const [loading, setLoading] = useState(true);
+  const { profile, updateProfile } = useProfile();
+
+  const [form, setForm] = useState(profile);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 1. DATA LOADING (Uses the abstracted layer in an async effect)
+  // keep local form in sync when context profile changes (e.g. first load)
   useEffect(() => {
-    const initializeProfile = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const loadedProfile = await loadProfileData();
+    setForm(profile);
+  }, [profile]);
 
-        if (loadedProfile) {
-          // Load stored data, ensuring values are strings for TextInput component
-          setProfile({
-            ...defaultProfile,
-            ...loadedProfile,
-            age: String(loadedProfile.age || ""),
-            height: String(loadedProfile.height || ""),
-            weight: String(loadedProfile.weight || ""),
-          });
-          console.log("Profile loaded successfully.");
-        } else {
-          console.log("No local profile found, using defaults.");
-        }
-      } catch (e: any) {
-        setError(e.message || "An unknown error occurred during loading.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    initializeProfile();
-  }, []); // Run only once on mount
-
-  // 2. DATA SAVING (Uses the abstracted layer)
-  const handleSave = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      await saveProfileData(profile);
-      console.log("Profile saved successfully to local storage!");
-    } catch (e: any) {
-      setError(e.message || "An unknown error occurred during saving.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Profile change handler remains the same
   const handleProfileChange = useCallback(
     (field: ProfileField, value: string) => {
-      setProfile((prev) => ({
+      setForm((prev) => ({
         ...prev,
         [field]: value,
       }));
@@ -109,28 +41,26 @@ export default function ProfileScreen() {
     []
   );
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading Profile...</Text>
-      </SafeAreaView>
-    );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <Text style={styles.errorText}>Error: {error}</Text>
-      </SafeAreaView>
-    );
-  }
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      await updateProfile(form);
+      // updateProfile will recompute RDI + persist
+      console.log("Profile updated & RDI recomputed:", form);
+    } catch (e: any) {
+      console.error("Error updating profile:", e);
+      setError("Failed to save your profile. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
       <ScrollView style={styles.container}>
         <Text style={styles.heading}>👤 Your Personal Profile</Text>
 
-        {/* Card: Basic Information */}
         <View style={styles.card}>
           <Text style={styles.cardHeader}>Basic Information</Text>
 
@@ -143,7 +73,7 @@ export default function ProfileScreen() {
                   key={s}
                   style={[
                     styles.pill,
-                    profile.sex === s ? styles.pillActive : styles.pillInactive,
+                    form.sex === s ? styles.pillActive : styles.pillInactive,
                     { flex: 1, marginRight: s === "Male" ? 10 : 0 },
                   ]}
                   onPress={() => handleProfileChange("sex", s)}
@@ -151,7 +81,7 @@ export default function ProfileScreen() {
                   <Text
                     style={[
                       styles.pillText,
-                      profile.sex === s
+                      form.sex === s
                         ? styles.pillTextActive
                         : styles.pillTextInactive,
                     ]}
@@ -167,52 +97,50 @@ export default function ProfileScreen() {
             label="Age"
             unit=""
             keyboardType="numeric"
-            value={profile.age}
+            value={form.age}
             onChangeText={(val) =>
               handleProfileChange("age", val.replace(/[^0-9]/g, ""))
             }
           />
-
           <FormInput
             label="Height"
             unit="cm"
             keyboardType="numeric"
-            value={profile.height}
+            value={form.height}
             onChangeText={(val) =>
               handleProfileChange("height", val.replace(/[^0-9.]/g, ""))
             }
           />
-
           <FormInput
             label="Weight"
             unit="kg"
             keyboardType="numeric"
-            value={profile.weight}
+            value={form.weight}
             onChangeText={(val) =>
               handleProfileChange("weight", val.replace(/[^0-9.]/g, ""))
             }
           />
         </View>
 
-        {/* Save Button */}
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
         <TouchableOpacity
           style={styles.saveButton}
           onPress={handleSave}
-          disabled={loading}
+          disabled={saving}
         >
           <Text style={styles.saveButtonText}>
-            {loading ? "Saving..." : "💾 Save Profile Changes (Local)"}
+            {saving ? "Saving..." : "💾 Save Profile Changes"}
           </Text>
         </TouchableOpacity>
 
-        {/* Spacer */}
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// --- Reusable Form Input Component ---
+// same FormInput & styles you already had
 interface FormInputProps {
   label: string;
   unit: string;
@@ -244,31 +172,12 @@ const FormInput: React.FC<FormInputProps> = ({
   </View>
 );
 
-// --- Stylesheet ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 10,
     backgroundColor: BACKGROUND_COLOR,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: BACKGROUND_COLOR,
-  },
-  loadingText: {
-    fontSize: 18,
-    color: PRIMARY_BLUE,
-    fontWeight: "600",
-  },
-  errorText: {
-    fontSize: 16,
-    color: "red",
-    fontWeight: "600",
-    textAlign: "center",
-    padding: 20,
   },
   heading: {
     fontSize: 28,
@@ -277,8 +186,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "center",
   },
-
-  // --- Card Styles ---
   card: {
     backgroundColor: "#fff",
     borderRadius: 12,
@@ -291,9 +198,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 6,
       },
-      android: {
-        elevation: 5,
-      },
+      android: { elevation: 5 },
     }),
   },
   cardHeader: {
@@ -305,14 +210,8 @@ const styles = StyleSheet.create({
     borderBottomColor: BORDER_COLOR,
     paddingBottom: 8,
   },
-
-  // --- Form Row/Input Styles ---
-  row: {
-    marginBottom: 15,
-  },
-  inputRow: {
-    marginBottom: 15,
-  },
+  row: { marginBottom: 15 },
+  inputRow: { marginBottom: 15 },
   label: {
     fontWeight: "600",
     color: "#333",
@@ -341,8 +240,6 @@ const styles = StyleSheet.create({
     color: PRIMARY_BLUE,
     fontWeight: "bold",
   },
-
-  // --- Pills (Sex Selection) Styles ---
   sexPillsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -355,26 +252,17 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: "center",
   },
-  pillActive: {
-    backgroundColor: PRIMARY_BLUE,
-    borderColor: PRIMARY_BLUE,
+  pillActive: { backgroundColor: PRIMARY_BLUE, borderColor: PRIMARY_BLUE },
+  pillInactive: { backgroundColor: "#fff", borderColor: BORDER_COLOR },
+  pillText: { fontSize: 16, fontWeight: "600" },
+  pillTextActive: { color: "#fff" },
+  pillTextInactive: { color: "#555" },
+  errorText: {
+    fontSize: 14,
+    color: "red",
+    textAlign: "center",
+    marginBottom: 10,
   },
-  pillInactive: {
-    backgroundColor: "#fff",
-    borderColor: BORDER_COLOR,
-  },
-  pillText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  pillTextActive: {
-    color: "#fff",
-  },
-  pillTextInactive: {
-    color: "#555",
-  },
-
-  // --- Save Button Styles ---
   saveButton: {
     backgroundColor: ACCENT_GREEN,
     paddingVertical: 15,
@@ -382,21 +270,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 40,
     alignItems: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: ACCENT_GREEN,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-      },
-      android: {
-        elevation: 5,
-      },
-    }),
   },
-  saveButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-  },
+  saveButtonText: { color: "#fff", fontSize: 18, fontWeight: "700" },
 });

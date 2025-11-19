@@ -29,16 +29,10 @@ interface ProfileContextType {
   rdi: Record<NutrientKey, NutrientGoal>;
   isProfileLoading: boolean;
   // Method to update and save the entire profile state
-  updateProfile: (
-    newProfile: UserProfile,
-    newRdi: Record<NutrientKey, NutrientGoal>
-  ) => void;
+  updateProfile: (newProfile: UserProfile) => void;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
-
-// --- Constants for AsyncStorage Keys ---
-const RDI_STORAGE_KEY = "@user_rdi";
 
 // --- Context Provider ---
 export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
@@ -59,9 +53,6 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
     async function loadProfile() {
       try {
         const storedProfile = await loadJSON<UserProfile>(USER_PROFILE_KEY);
-        const storedRdi = await loadJSON<Record<NutrientKey, NutrientGoal>>(
-          RDI_STORAGE_KEY
-        );
 
         if (storedProfile) {
           setProfile(storedProfile);
@@ -69,9 +60,6 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
           setRdi(computed);
         } else {
           setRdi(ARBITRARY_RDI);
-        }
-        if (storedRdi) {
-          setRdi(storedRdi);
         }
       } catch (error) {
         console.error("Failed to load profile from storage:", error);
@@ -89,7 +77,11 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
     const computed = calculateRecommendedIntake(newProfile);
     setRdi(computed);
 
-    await saveJSON(USER_PROFILE_KEY, newProfile);
+    try {
+      await saveJSON(USER_PROFILE_KEY, newProfile);
+    } catch (e) {
+      console.warn("ProfileProvider: failed to save profile", e);
+    }
   }, []);
 
   return (
