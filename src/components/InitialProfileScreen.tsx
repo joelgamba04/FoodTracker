@@ -4,6 +4,7 @@ import { UserProfile, defaultProfile } from "@/models/models";
 import { USER_PROFILE_KEY } from "@/utils/profileUtils";
 import React, { useCallback, useEffect, useState } from "react";
 import {
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -112,7 +113,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
-      <View style={styles.container}>
+      <ScrollView style={styles.container}>
         <Text style={styles.heading}>👤 Tell us about you</Text>
         <Text style={styles.subheading}>
           These details will help Taguig NutriApp provide more relevant
@@ -191,7 +192,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
             {saving ? "Saving…" : "Save & Continue"}
           </Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
