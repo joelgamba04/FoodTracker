@@ -2,9 +2,9 @@
   "expo": {
     "name": "Taguig NutriApp",
     "slug": "Taguig-NutriApp",
-    "version": "1.0.0",
+    "version": "1.0.01",
     "orientation": "portrait",
-    "icon": "./assets/images/FixedSquareNoBg.png",
+    "icon": "./assets/images/ThinkBigTaguigBaseLogo.jpg",
     "scheme": "taguig-nutriapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -31,7 +31,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/FixedSquareNoBg.png",
+          "image": "./assets/images/ThinkBigTaguigBaseLogo.jpg",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
