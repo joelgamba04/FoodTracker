@@ -1,3 +1,5 @@
+// app/(tabs)/Settings.tsx
+import { NutrientKey, useProfile } from "@/context/ProfileContext";
 import React from "react";
 import {
   Platform,
@@ -14,16 +16,6 @@ const PRIMARY_BLUE = "#007AFF";
 const ACCENT_GREEN = "#4CD964";
 const BACKGROUND_COLOR = "#f4f7f9";
 const BORDER_COLOR = "#ddd";
-
-// PLACEHOLDER: These default values will be replaced by API data soon.
-const DEFAULT_RDI = {
-  Calories: { name: "Calories", amount: 2000, unit: "kcal" },
-  Carbohydrate: { name: "Carbohydrate", amount: 300, unit: "g" },
-  Protein: { name: "Protein", amount: 50, unit: "g" },
-  Fat: { name: "Fat", amount: 70, unit: "g" },
-};
-
-type RdiKey = keyof typeof DEFAULT_RDI;
 
 // --- Reusable Goal Input Component ---
 interface GoalInputProps {
@@ -45,7 +37,6 @@ const GoalInput: React.FC<GoalInputProps> = ({
       <TextInput
         style={styles.input}
         keyboardType="numeric"
-        // The value is displayed from the default RDI
         value={value}
         textAlign="right"
         placeholder="0"
@@ -60,26 +51,35 @@ const GoalInput: React.FC<GoalInputProps> = ({
 
 // --- Main Screen Component ---
 export default function SettingsScreen() {
-  // ⚠️ ARCHITECTURAL NOTE: In the next iteration, this will fetch read-only data from the ProfileContext/API.
-  const macros: RdiKey[] = ["Calories", "Carbohydrate", "Protein", "Fat"];
+  const { rdi, profile } = useProfile();
+
+  const macros: NutrientKey[] = ["Calories", "Carbohydrate", "Protein", "Fat"];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
       <ScrollView style={styles.container}>
         <Text style={styles.heading}>Your Daily Goals</Text>
 
+        {/* Optional: small profile summary at top */}
+        {profile?.age && profile?.weight ? (
+          <View style={styles.infoBox}>
+            <Text style={styles.infoText}>
+              Based on your profile: {profile.sex}, {profile.age} yrs,{" "}
+              {profile.weight} kg
+            </Text>
+          </View>
+        ) : null}
+
         <Text style={styles.sectionTitle}>Macronutrient Goals</Text>
 
-        {/* --- Card: Macronutrients --- */}
         <View style={styles.card}>
           {macros.map((key) => (
             <GoalInput
               key={key}
               label={key}
-              unit={DEFAULT_RDI[key].unit}
-              // Display the default RDI amount directly
-              value={DEFAULT_RDI[key].amount.toString()}
-              isMacro={true} // Apply macro highlighting
+              unit={rdi[key].unit}
+              value={rdi[key].amount.toString()}
+              isMacro={true}
             />
           ))}
         </View>
@@ -112,8 +112,6 @@ const styles = StyleSheet.create({
     marginTop: 15,
     marginBottom: 10,
   },
-
-  // --- Card Styles ---
   card: {
     backgroundColor: "#fff",
     borderRadius: 12,
@@ -132,8 +130,6 @@ const styles = StyleSheet.create({
       },
     }),
   },
-
-  // --- Form Row Styles ---
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -155,12 +151,11 @@ const styles = StyleSheet.create({
   inputGroup: {
     flexDirection: "row",
     alignItems: "center",
-    // Ensures the input area has a controlled width
     width: 120,
     borderWidth: 1,
     borderColor: BORDER_COLOR,
     borderRadius: 8,
-    backgroundColor: BACKGROUND_COLOR, // Slight contrast for the input field
+    backgroundColor: BACKGROUND_COLOR,
     overflow: "hidden",
   },
   input: {
@@ -176,5 +171,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: PRIMARY_BLUE,
     fontWeight: "bold",
+  },
+  infoBox: {
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: "#e6f2ff",
+    marginBottom: 10,
+  },
+  infoText: {
+    fontSize: 14,
+    color: "#333",
   },
 });

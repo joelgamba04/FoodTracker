@@ -1,4 +1,5 @@
 // Food, Nutrient, and DailyLog models for FoodTracker
+// src/models/models.ts
 
 export interface Nutrient {
   name: string; // e.g., Protein, Carbs, Fat, Vitamin C
@@ -19,18 +20,6 @@ export interface FoodLogEntry {
   timestamp: any;
   food: Food;
   quantity: number; // number of servings
-}
-
-export interface DailyLog {
-  date: string; // YYYY-MM-DD
-  entries: FoodLogEntry[];
-  totalNutrients: Nutrient[];
-}
-
-export interface RecommendedIntake {
-  nutrient: string;
-  amount: number;
-  unit: string;
 }
 
 export interface UserProfile {

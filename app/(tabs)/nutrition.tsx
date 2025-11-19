@@ -1,5 +1,6 @@
-import { ARBITRARY_RDI } from "@/constants/recommendedDailyIntake";
+// app/(tabs)/nutrition.tsx
 import { useFoodLog } from "@/context/FoodLogContext";
+import { NutrientKey, useProfile } from "@/context/ProfileContext";
 import { Nutrient } from "@/models/models";
 import { getTodayWindow } from "@/utils/date";
 import React from "react";
@@ -14,18 +15,17 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 // --- Theme Constants ---
-const PRIMARY_BLUE = "#007AFF"; // Used for headers and markers
-const ACCENT_GREEN = "#4CD964"; // Used for normal/on-track progress
-const WARNING_YELLOW = "#FFCC00"; // Used for lacking progress
-const DANGER_RED = "#FF3B30"; // Used for excessive progress
-const GRAY_LIGHT = "#e8e8e8"; // Background for bars
-const BACKGROUND_COLOR = "#f4f7f9"; // Screen background
+const PRIMARY_BLUE = "#007AFF";
+const ACCENT_GREEN = "#4CD964";
+const WARNING_YELLOW = "#FFCC00";
+const DANGER_RED = "#FF3B30";
+const GRAY_LIGHT = "#e8e8e8";
+const BACKGROUND_COLOR = "#f4f7f9";
 
-// --- Helper Functions (Kept as is, but logic is fine) ---
+// --- Helper Functions ---
 function calculateTotals(log: any[]): Nutrient[] {
   const totals: { [key: string]: Nutrient } = {};
   log.forEach((entry) => {
-    // Check if food and nutrients exist before iterating
     if (entry.food && entry.food.nutrients) {
       entry.food.nutrients.forEach((nutrient: Nutrient) => {
         if (!totals[nutrient.name]) {
@@ -39,9 +39,9 @@ function calculateTotals(log: any[]): Nutrient[] {
 }
 
 function getBarColor(percent: number) {
-  if (percent > 1.2) return DANGER_RED; // Overeating
-  if (percent < 0.6) return WARNING_YELLOW; // Severely lacking
-  return ACCENT_GREEN; // Normal
+  if (percent > 1.2) return DANGER_RED;
+  if (percent < 0.6) return WARNING_YELLOW;
+  return ACCENT_GREEN;
 }
 
 // --- Reusable Nutrient Card Component ---
@@ -50,7 +50,7 @@ interface NutrientCardProps {
   consumed: number;
   recommended: number;
   unit: string;
-  isMacro?: boolean; // Highlight Macros (Protein, Carbs, Fat)
+  isMacro?: boolean;
 }
 
 const NutrientCard: React.FC<NutrientCardProps> = ({
@@ -60,20 +60,13 @@ const NutrientCard: React.FC<NutrientCardProps> = ({
   unit,
   isMacro = false,
 }) => {
-  const percent = consumed / recommended;
-  // Set a max width for the bar to visually represent "too much" (e.g., 150%)
+  const percent = recommended > 0 ? consumed / recommended : 0;
   const MAX_BAR_PERCENT = 1.5;
-  // 1. Calculate the percentage of the RDI consumed, capped at MAX_VISUAL_PERCENT
   const cappedPercent = Math.min(percent, MAX_BAR_PERCENT);
-
-  // 2. Map the capped percent to a percentage width of the parent container (barBackground).
-  // Example: If consumed is 100% (percent=1), the bar should fill (1 / 1.5) * 100 = 66.67% of the background width.
   const visualWidthPercent = (cappedPercent / MAX_BAR_PERCENT) * 100;
 
   const barWidth: DimensionValue = `${visualWidthPercent}%`;
   const color = getBarColor(percent);
-
-  // The 100% RDI marker should always be at (1 / MAX_VISUAL_PERCENT) * 100% of the barBackground.
   const markerPosition = `${(1 / MAX_BAR_PERCENT) * 100}%`;
 
   return (
@@ -94,13 +87,11 @@ const NutrientCard: React.FC<NutrientCardProps> = ({
             style={[
               styles.bar,
               {
-                // CORRECTED: Use the calculated percentage width
                 width: barWidth,
                 backgroundColor: color,
               },
             ]}
           />
-          {/* CORRECTED: Marker is now positioned using percentage */}
           <View style={[styles.marker, { left: markerPosition }]} />
         </View>
         <View style={styles.summaryRow}>
@@ -127,6 +118,7 @@ const NutrientCard: React.FC<NutrientCardProps> = ({
 // --- Main Screen Component ---
 export default function NutritionScreen() {
   const { log } = useFoodLog();
+  const { rdi } = useProfile();
 
   const { start, end } = getTodayWindow();
   const todayLog = log.filter((e) => {
@@ -156,39 +148,41 @@ export default function NutritionScreen() {
   const calorieData = totals.find((n) => n.name === "Calories") || {
     name: "Calories",
     amount: 0,
-    unit: "kcal",
+    unit: rdi.Calories.unit,
   };
-  const macroNutrients = ["Protein", "Carbohydrate", "Fat"];
+
+  const macroNutrients: NutrientKey[] = ["Carbohydrate", "Protein", "Fat"];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
       <ScrollView style={styles.container}>
         <Text style={styles.mainHeading}>📊 Daily Nutrition Summary</Text>
-        {/* --- CALORIES SECTION (Big Card) --- */}
+
+        {/* --- CALORIES SECTION --- */}
         <Text style={styles.sectionTitle}>Calories Goal</Text>
         <NutrientCard
           name={calorieData.name}
           consumed={calorieData.amount}
-          recommended={ARBITRARY_RDI["Calories"].amount}
-          unit={ARBITRARY_RDI["Calories"].unit}
+          recommended={rdi.Calories.amount}
+          unit={rdi.Calories.unit}
         />
+
         {/* --- MACRO NUTRIENTS SECTION --- */}
         <Text style={styles.sectionTitle}>Macronutrients</Text>
         <View style={styles.macroContainer}>
-          {macroNutrients.map((name) => {
-            const recommended = ARBITRARY_RDI[name].amount;
-            const consumed =
-              totals.find((nutrient) => nutrient.name === name)?.amount || 0;
-            const unit = ARBITRARY_RDI[name].unit;
+          {macroNutrients.map((key) => {
+            const nutrientTotal =
+              totals.find((n) => n.name === key)?.amount || 0;
+            const goal = rdi[key];
 
             return (
               <NutrientCard
-                key={name}
-                name={name}
-                consumed={consumed}
-                recommended={recommended}
-                unit={unit}
-                isMacro={true}
+                key={key}
+                name={key}
+                consumed={nutrientTotal}
+                recommended={goal.amount}
+                unit={goal.unit}
+                isMacro
               />
             );
           })}
@@ -222,8 +216,6 @@ const styles = StyleSheet.create({
     marginTop: 15,
     marginBottom: 10,
   },
-
-  // --- Card Styles (Reusable Component) ---
   card: {
     backgroundColor: "#fff",
     borderRadius: 12,
@@ -242,7 +234,6 @@ const styles = StyleSheet.create({
     }),
   },
   macroCard: {
-    // Style specific to macro cards if needed (e.g., a subtle border)
     borderLeftWidth: 4,
     borderLeftColor: PRIMARY_BLUE,
   },
@@ -265,13 +256,11 @@ const styles = StyleSheet.create({
     color: "#888",
     fontWeight: "500",
   },
-
-  // --- Bar and Progress Styles ---
   barContainer: {
     marginTop: 5,
   },
   barBackground: {
-    height: 12, // Thinner bar for a modern look
+    height: 12,
     backgroundColor: GRAY_LIGHT,
     borderRadius: 6,
     position: "relative",
@@ -292,10 +281,8 @@ const styles = StyleSheet.create({
     height: "100%",
     backgroundColor: PRIMARY_BLUE,
     borderRadius: 1,
-    zIndex: 10, // Ensure marker is always visible on top
+    zIndex: 10,
   },
-
-  // --- Summary Text Styles ---
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -322,8 +309,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 14,
   },
-
-  // --- Empty State Styles ---
   emptyHeading: {
     fontSize: 24,
     fontWeight: "700",
@@ -337,8 +322,5 @@ const styles = StyleSheet.create({
     marginHorizontal: 40,
     lineHeight: 24,
   },
-  macroContainer: {
-    // You can wrap macros in a container if you want them side-by-side on large screens
-    // For now, keep them stacked for mobile screens (default Flow)
-  },
+  macroContainer: {},
 });
