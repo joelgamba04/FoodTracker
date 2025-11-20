@@ -1,4 +1,5 @@
 // Placeholder for custom food API integration
+//src/utils/foodApi.ts
 import { Food } from "@/models/models";
 
 const MOCK_FOODS: Food[] = [
@@ -971,16 +972,6 @@ const MOCK_FOODS: Food[] = [
     ],
   },
 ];
-
-// Function to get "favorites" (or just the list for Quick Log)
-export async function getFavoriteFoods(): Promise<Food[]> {
-  // In a real app, this would fetch a user's specific favorites.
-  // For now, we return a subset or the full mock list.
-  // We'll return IDs 3, 4, 5, 6, 7 (the non-basic ones) for the Quick Log.
-  return MOCK_FOODS.filter((food) =>
-    ["3", "4", "5", "6", "7"].includes(food.id)
-  );
-}
 
 export async function searchFoods(query: string): Promise<Food[]> {
   const lowerQuery = query.toLowerCase();

@@ -1,4 +1,6 @@
-import React, { useCallback, useEffect, useState } from "react";
+//app/(tabs)/log.tsx
+// Main Log Screen with Edit and Delete Functionality
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -15,7 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 // Context and Models
 import { useFoodLog } from "@/context/FoodLogContext";
 import { Food, FoodLogEntry } from "@/models/models";
-import { getFavoriteFoods, searchFoods } from "@/utils/foodApi";
+import { searchFoods } from "@/utils/foodApi";
 // =================================================================
 
 import CustomConfirmationModal from "@/components/CustomConfirmationModal"; // <--- Imported Modal
@@ -142,7 +144,6 @@ export default function LogScreen() {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<Food[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [favorites, setFavorites] = useState<Food[]>([]);
 
   const [editingEntry, setEditingEntry] = useState<FoodLogEntry | null>(null);
 
@@ -168,18 +169,28 @@ export default function LogScreen() {
     return ts >= start && ts < end;
   });
 
-  // Load Favorites on Mount (No Change)
-  useEffect(() => {
-    async function loadFavorites() {
-      try {
-        const favs = await getFavoriteFoods();
-        setFavorites(favs);
-      } catch (error) {
-        console.error("Failed to load favorites:", error);
+  const favoriteFoods = useMemo(() => {
+    if (!log || log.length === 0) return [];
+
+    const counts: Record<string, { food: Food; count: number }> = {};
+
+    for (const entry of log) {
+      const food = entry.food as Food;
+      if (!food || !food.id) continue;
+
+      if (!counts[food.id]) {
+        counts[food.id] = { food, count: 0 };
       }
+
+      const qty = entry.quantity ?? 1;
+      counts[food.id].count += qty;
     }
-    loadFavorites();
-  }, []);
+
+    return Object.values(counts)
+      .sort((a, b) => b.count - a.count) // highest count first
+      .slice(0, 5) // top 5
+      .map((item) => item.food);
+  }, [log]);
 
   // --- Quantity Handlers ---
   const handleQuantityChange = (text: string) => {
@@ -333,7 +344,7 @@ export default function LogScreen() {
 
         {/* --- QUICK LOG INTEGRATION --- */}
         {!isSearching && !isShowingActionForm && (
-          <QuickLog favorites={favorites} onQuickAdd={handleSelectFood} />
+          <QuickLog favorites={favoriteFoods} onQuickAdd={handleSelectFood} />
         )}
 
         {/* --- Main Scrollable Content Area --- */}
