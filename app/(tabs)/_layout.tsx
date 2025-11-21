@@ -1,3 +1,4 @@
+// app/(tabs)/_layout.tsx
 import { Tabs } from "expo-router";
 import React from "react";
 import { Platform } from "react-native"; // Import Platform for OS-specific styling
@@ -6,6 +7,7 @@ import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // --- Theme Constants for Better Readability ---
 const TAB_BAR_HEIGHT = Platform.OS === "ios" ? 90 : 65; // Taller for iOS for the home indicator
@@ -36,6 +38,8 @@ export default function TabLayout() {
     default: {},
   });
 
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
@@ -43,15 +47,17 @@ export default function TabLayout() {
         tabBarInactiveTintColor: INACTIVE_COLOR,
         headerShown: false,
         tabBarButton: HapticTab, // Keep your custom haptic button
+        tabBarHideOnKeyboard: true,
 
         // --- Tab Bar Style Enhancements ---
         tabBarStyle: {
           ...tabShadow, // Apply the floating shadow
           backgroundColor: themeColors.background, // Use theme background color
-          height: TAB_BAR_HEIGHT,
+          height: TAB_BAR_HEIGHT + insets.bottom,
           borderTopWidth: 0, // Remove the default gray top line
           paddingTop: 10,
-          paddingBottom: Platform.OS === "ios" ? 30 : 5, // Adjust padding for home indicator on iOS
+          paddingBottom:
+            Platform.OS === "ios" ? 30 : Math.max(insets.bottom, 8), // Adjust padding for home indicator on iOS
         },
         // --- Tab Label and Icon Style ---
         tabBarLabelStyle: {
