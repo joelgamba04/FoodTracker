@@ -13,6 +13,7 @@ export interface Food {
   brand?: string;
   servingSize: string; // e.g., "100g", "1 cup"
   nutrients: Nutrient[];
+  englishName?: string; // Optional Filipino name for the food
 }
 
 export interface FoodLogEntry {
