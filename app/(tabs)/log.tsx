@@ -67,6 +67,7 @@ const FoodResultItem: React.FC<FoodResultItemProps> = ({ item, onPress }) => (
   <TouchableOpacity style={styles.resultItem} onPress={() => onPress(item)}>
     <View>
       <Text style={styles.resultItemName}>{item.name}</Text>
+      <Text style={styles.resultItemName}>{item.englishName}</Text>
       <Text style={styles.resultItemDetails}>
         Serving: {item.servingSize || "N/A"}
       </Text>
@@ -109,6 +110,7 @@ const LoggedItem: React.FC<LoggedItemProps> = ({
           <Text style={styles.logItemQuantity}>{item.quantity}x </Text>
           {item.food.name}
         </Text>
+        <Text style={styles.logItemText}>{item.food.englishName}</Text>
         <Text style={styles.logItemTimestamp}>{timeString}</Text>
       </View>
       <View style={styles.logItemActions}>
@@ -294,9 +296,7 @@ export default function LogScreen() {
 
   // Set the current food for display in the action form (No Change)
   const currentFood = editingEntry ? editingEntry.food : selectedFood;
-  const actionButtonText = editingEntry
-    ? `Update ${currentFood?.name}`
-    : `Log ${currentFood?.name}`;
+  const actionButtonText = editingEntry ? `Update` : `Log`;
   const cancelButtonText = editingEntry ? "Cancel Edit" : "Clear Selection";
 
   // Show global loading state (No Change)
@@ -360,6 +360,9 @@ export default function LogScreen() {
               </Text>
               <Text style={styles.selectedFoodDetails}>
                 {currentFood.name} - Serving: {currentFood.servingSize}
+              </Text>
+              <Text style={styles.selectedFoodDetails}>
+                {currentFood.englishName}
               </Text>
 
               {/* QUANTITY CONTROL SECTION */}

@@ -179,6 +179,9 @@ export default function HistoryScreen() {
               <Text style={styles.itemTitle}>
                 {item.food?.name ?? "Unnamed item"}
               </Text>
+              <Text style={styles.itemTitle}>
+                {item.food?.englishName ?? "Unnamed item"}
+              </Text>
               <Text style={styles.itemSub}>
                 {formatTime(new Date(item.timestamp as any))}
               </Text>
