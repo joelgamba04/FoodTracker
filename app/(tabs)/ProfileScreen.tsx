@@ -19,6 +19,99 @@ const BORDER_COLOR = "#ddd";
 
 type ProfileField = "age" | "sex" | "height" | "weight";
 
+// helper to derive a gentle weight status
+type WeightStatus =
+  | {
+      category: "under";
+      label: "Lighter than typical";
+      color: string;
+      dotPosition: "left";
+      message: string;
+    }
+  | {
+      category: "normal";
+      label: "Within typical range";
+      color: string;
+      dotPosition: "center";
+      message: string;
+    }
+  | {
+      category: "over";
+      label: "Above typical range";
+      color: string;
+      dotPosition: "right";
+      message: string;
+    };
+
+function getWeightStatus(form: {
+  age: string;
+  sex: string;
+  weight: string;
+}): WeightStatus | null {
+  const age = parseFloat(form.age);
+  const weightKg = parseFloat(form.weight);
+
+  // If data is incomplete or clearly invalid, don’t show anything yet
+  if (
+    !Number.isFinite(age) ||
+    !Number.isFinite(weightKg) ||
+    age <= 18 ||
+    weightKg <= 0
+  ) {
+    return null;
+  }
+
+  var score = 0;
+
+  if (form.sex === "Male") {
+    const RecommendedWeight = 60.5;
+    score = (weightKg / RecommendedWeight) * 25;
+  } else {
+    const RecommendedWeight = 52.5;
+    score = (weightKg / RecommendedWeight) * 25;
+  }
+
+  const diff = score - 25; // 0 = at recommended
+  const absDiff = Math.abs(diff);
+
+  // Define a gentle "normal" band around 25
+  const NORMAL_BAND = 1.5; // you can tweak this: smaller = stricter middle
+
+  // 1) Middle: close to recommended
+  if (absDiff <= NORMAL_BAND) {
+    return {
+      category: "normal",
+      label: "Within typical range",
+      color: "#4CD964", // ACCENT_GREEN
+      dotPosition: "center",
+      message:
+        "You’re within a common range for many adults. Keep focusing on balanced meals, movement, and good sleep to support your overall wellness.",
+    };
+  }
+
+  // 2) Left extreme: lighter than recommended
+  if (diff < 0) {
+    return {
+      category: "under",
+      label: "Lighter than typical",
+      color: "#5A9BFF", // soft blue
+      dotPosition: "left",
+      message:
+        "You’re currently in a lighter range. If you feel well and energetic, that can be okay — but if you have concerns, a quick chat with a health professional is always best.",
+    };
+  }
+
+  // 3) Right extreme: above recommended
+  return {
+    category: "over",
+    label: "Above typical range",
+    color: "#FFB347", // soft orange, less harsh than red
+    dotPosition: "right",
+    message:
+      "You’re gently above the usual range. This is not a diagnosis — it’s just a guide. Small, sustainable changes in movement and food choices can already support your health.",
+  };
+}
+
 export default function ProfileScreen() {
   const { profile, updateProfile } = useProfile();
 
@@ -55,6 +148,9 @@ export default function ProfileScreen() {
       setSaving(false);
     }
   };
+
+  // derive current status from the form (live as user types)
+  const weightStatus = getWeightStatus(form);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
@@ -120,6 +216,69 @@ export default function ProfileScreen() {
               handleProfileChange("weight", val.replace(/[^0-9.]/g, ""))
             }
           />
+        </View>
+
+        {/* Gentle weight status card */}
+        <View style={styles.statusCard}>
+          <Text style={styles.statusTitle}>Your Wellness Band</Text>
+
+          {!weightStatus ? (
+            <Text style={styles.statusHint}>
+              Add your height and weight to see a gentle overview of where you
+              currently sit. This is just a guide — not a diagnosis.
+            </Text>
+          ) : (
+            <>
+              <View style={styles.statusTagRow}>
+                <View
+                  style={[
+                    styles.statusTag,
+                    { backgroundColor: `${weightStatus.color}20` },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.statusDot,
+                      { backgroundColor: weightStatus.color },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.statusTagText,
+                      { color: weightStatus.color },
+                    ]}
+                  >
+                    {weightStatus.label}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.statusBar}>
+                {/* left */}
+                <View style={styles.statusBarSegment} />
+                {/* center */}
+                <View style={styles.statusBarSegment} />
+                {/* right */}
+                <View style={styles.statusBarSegment} />
+
+                {/* dot */}
+                <View
+                  style={[
+                    styles.statusBarDot,
+                    weightStatus.dotPosition === "left" &&
+                      styles.statusBarDotLeft,
+                    weightStatus.dotPosition === "center" &&
+                      styles.statusBarDotCenter,
+                    weightStatus.dotPosition === "right" &&
+                      styles.statusBarDotRight,
+                    { borderColor: weightStatus.color },
+                  ]}
+                />
+              </View>
+
+              <Text style={styles.statusMessage}>{weightStatus.message}</Text>
+            </>
+          )}
         </View>
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -257,6 +416,94 @@ const styles = StyleSheet.create({
   pillText: { fontSize: 16, fontWeight: "600" },
   pillTextActive: { color: "#fff" },
   pillTextInactive: { color: "#555" },
+
+  statusCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 4,
+      },
+      android: { elevation: 3 },
+    }),
+  },
+  statusTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: PRIMARY_BLUE,
+    marginBottom: 8,
+  },
+  statusHint: {
+    fontSize: 14,
+    color: "#666",
+    lineHeight: 20,
+  },
+  statusTagRow: {
+    flexDirection: "row",
+    marginBottom: 8,
+  },
+  statusTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    alignSelf: "flex-start",
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  statusTagText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  statusBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6,
+    marginBottom: 8,
+    position: "relative",
+  },
+  statusBarSegment: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#e3e7ed",
+    marginHorizontal: 2,
+  },
+  statusBarDot: {
+    position: "absolute",
+    top: -4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "#fff",
+    borderWidth: 2,
+  },
+  statusBarDotLeft: {
+    left: "0%",
+  },
+  statusBarDotCenter: {
+    left: "50%",
+    marginLeft: -8,
+  },
+  statusBarDotRight: {
+    right: 0,
+  },
+  statusMessage: {
+    fontSize: 13,
+    color: "#555",
+    lineHeight: 19,
+  },
+
   errorText: {
     fontSize: 14,
     color: "red",
