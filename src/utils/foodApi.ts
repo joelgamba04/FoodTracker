@@ -5468,12 +5468,17 @@ const MOCK_FOODS: Food[] = [
 ];
 
 export async function searchFoods(query: string): Promise<Food[]> {
-  const lowerQuery = query.toLowerCase();
+  const trimmed = query.trim().toLowerCase();
 
-  // Filter the MOCK_FOODS array based on the query
-  const results = MOCK_FOODS.filter((food) =>
-    food.name.toLowerCase().includes(lowerQuery)
-  );
+  // If empty search, return empty array (or all foods if you prefer)
+  if (!trimmed) return [];
+
+  const results = MOCK_FOODS.filter((food) => {
+    const name = food.name?.toLowerCase() ?? "";
+    const englishName = food.englishName?.toLowerCase() ?? "";
+
+    return name.includes(trimmed) || englishName.includes(trimmed);
+  });
 
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 300));
