@@ -1,5 +1,7 @@
 // app/(tabs)/Settings.tsx
 import { NutrientKey, useProfile } from "@/context/ProfileContext";
+import { useSteps } from "@/context/StepContext";
+
 import React from "react";
 import {
   Platform,
@@ -52,6 +54,7 @@ const GoalInput: React.FC<GoalInputProps> = ({
 // --- Main Screen Component ---
 export default function SettingsScreen() {
   const { rdi, profile } = useProfile();
+  const { todaySteps, isAvailable, isLoading } = useSteps();
 
   const macros: NutrientKey[] = ["Calories", "Carbohydrate", "Protein", "Fat"];
 
@@ -82,6 +85,33 @@ export default function SettingsScreen() {
               isMacro={true}
             />
           ))}
+        </View>
+
+        {/* --- Steps card --- */}
+        <View style={styles.stepsCard}>
+          <Text style={styles.sectionTitle}>Daily Steps</Text>
+
+          {isLoading ? (
+            <Text style={styles.stepsMuted}>Checking step data…</Text>
+          ) : isAvailable === false ? (
+            <Text style={styles.stepsMuted}>
+              Step tracking is not available on this device.
+            </Text>
+          ) : todaySteps == null ? (
+            <Text style={styles.stepsMuted}>
+              Steps are not available yet. Try walking with the app open for a
+              while.
+            </Text>
+          ) : (
+            <View>
+              <Text style={styles.stepsNumber}>
+                {todaySteps.toLocaleString()}
+              </Text>
+              <Text style={styles.stepsMuted}>
+                Steps recorded for today (midnight to now).
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={{ height: 40 }} />
@@ -181,5 +211,30 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: 14,
     color: "#333",
+  },
+  stepsCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 10,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+      },
+      android: { elevation: 3 },
+    }),
+  },
+  stepsNumber: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: PRIMARY_BLUE,
+    marginBottom: 4,
+  },
+  stepsMuted: {
+    fontSize: 13,
+    color: "#666",
   },
 });

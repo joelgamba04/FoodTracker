@@ -16,6 +16,8 @@ import DisclaimerModal from "@/components/DisclaimerModal";
 import InitialProfileScreen from "@/components/InitialProfileScreen";
 import { FoodLogProvider } from "@/context/FoodLogContext";
 import { ProfileProvider } from "@/context/ProfileContext";
+import { StepProvider } from "@/context/StepContext";
+
 import { loadJSON } from "@/lib/storage";
 import { UserProfile } from "@/models/models";
 import { USER_PROFILE_KEY } from "@/utils/profileUtils";
@@ -145,14 +147,19 @@ export default function RootLayout() {
       <AppErrorBoundary>
         <ProfileProvider>
           <FoodLogProvider>
-            <ThemeProvider
-              value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-            >
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              </Stack>
-              <StatusBar style="auto" />
-            </ThemeProvider>
+            <StepProvider>
+              <ThemeProvider
+                value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+              >
+                <Stack>
+                  <Stack.Screen
+                    name="(tabs)"
+                    options={{ headerShown: false }}
+                  />
+                </Stack>
+                <StatusBar style="auto" />
+              </ThemeProvider>
+            </StepProvider>
           </FoodLogProvider>
         </ProfileProvider>
       </AppErrorBoundary>
