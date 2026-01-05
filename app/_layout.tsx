@@ -14,6 +14,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import DisclaimerModal from "@/components/DisclaimerModal";
 import InitialProfileScreen from "@/components/InitialProfileScreen";
+import { AuthProvider } from "@/context/AuthContext";
 import { FoodLogProvider } from "@/context/FoodLogContext";
 import { ProfileProvider } from "@/context/ProfileContext";
 import { loadJSON } from "@/lib/storage";
@@ -142,20 +143,25 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <AppErrorBoundary>
-        <ProfileProvider>
-          <FoodLogProvider>
-            <ThemeProvider
-              value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-            >
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              </Stack>
-              <StatusBar style="auto" />
-            </ThemeProvider>
-          </FoodLogProvider>
-        </ProfileProvider>
-      </AppErrorBoundary>
+      <AuthProvider>
+        <AppErrorBoundary>
+          <ProfileProvider>
+            <FoodLogProvider>
+              <ThemeProvider
+                value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+              >
+                <Stack>
+                  <Stack.Screen
+                    name="(tabs)"
+                    options={{ headerShown: false }}
+                  />
+                </Stack>
+                <StatusBar style="auto" />
+              </ThemeProvider>
+            </FoodLogProvider>
+          </ProfileProvider>
+        </AppErrorBoundary>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }
