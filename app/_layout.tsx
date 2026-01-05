@@ -22,10 +22,6 @@ import { loadJSON } from "@/lib/storage";
 import { UserProfile } from "@/models/models";
 import { USER_PROFILE_KEY } from "@/utils/profileUtils";
 
-export const unstable_settings = {
-  anchor: "(auth)",
-};
-
 const disclaimers = [
   {
     id: "health",
@@ -82,6 +78,8 @@ function AuthGate() {
 
   useEffect(() => {
     if (isAuthLoading) return;
+
+    if (!segments) return;
 
     const inAuthGroup = segments[0] === "(auth)";
 
