@@ -1,20 +1,21 @@
+// app/_layout.tsx
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import DisclaimerModal from "@/components/DisclaimerModal";
 import InitialProfileScreen from "@/components/InitialProfileScreen";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { FoodLogProvider } from "@/context/FoodLogContext";
 import { ProfileProvider } from "@/context/ProfileContext";
 import { loadJSON } from "@/lib/storage";
@@ -22,7 +23,7 @@ import { UserProfile } from "@/models/models";
 import { USER_PROFILE_KEY } from "@/utils/profileUtils";
 
 export const unstable_settings = {
-  anchor: "(tabs)",
+  anchor: "(auth)",
 };
 
 const disclaimers = [
@@ -73,6 +74,39 @@ const isProfileComplete = (profile: UserProfile | null): boolean => {
     return false;
   return true;
 };
+
+function AuthGate() {
+  const { user, isAuthLoading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isAuthLoading) return;
+
+    const inAuthGroup = segments[0] === "(auth)";
+
+    if (!user && !inAuthGroup) {
+      // Not logged in → go login
+      router.replace("/(auth)/login");
+    }
+
+    if (user && inAuthGroup) {
+      // Logged in → go app
+      router.replace("/(tabs)");
+    }
+  }, [user, isAuthLoading, segments, router]);
+
+  if (isAuthLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  // Important: always render the stack
+  return <Stack screenOptions={{ headerShown: false }} />;
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -150,12 +184,7 @@ export default function RootLayout() {
               <ThemeProvider
                 value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
               >
-                <Stack>
-                  <Stack.Screen
-                    name="(tabs)"
-                    options={{ headerShown: false }}
-                  />
-                </Stack>
+                <AuthGate />
                 <StatusBar style="auto" />
               </ThemeProvider>
             </FoodLogProvider>
