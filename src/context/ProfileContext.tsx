@@ -1,20 +1,23 @@
 // src/context/ProfileContext.tsx
 
-import { ARBITRARY_RDI } from "@/constants/recommendedDailyIntake";
-import { calculateRecommendedIntake } from "@/lib/recommendedIntake";
-import { loadJSON, saveJSON } from "@/lib/storage";
-import { UserProfile } from "@/models/models";
-import { USER_PROFILE_KEY } from "@/utils/profileUtils";
-
 import React, {
   createContext,
   ReactNode,
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
+import { ARBITRARY_RDI } from "@/constants/recommendedDailyIntake";
+import { PROFILE_CACHE_KEY } from "@/constants/storageKeys";
+import { api } from "@/lib/apiClient"; // <-- make sure you have this
+import { calculateRecommendedIntake } from "@/lib/recommendedIntake";
+import { loadJSON, saveJSON } from "@/lib/storage";
+import { UserProfile } from "@/models/models";
+
+// ----- Types -----
 export type NutrientKey = keyof typeof ARBITRARY_RDI;
 
 interface NutrientGoal {
@@ -23,18 +26,50 @@ interface NutrientGoal {
   unit: string;
 }
 
-// --- Context Types ---
+type ApiUserProfileResponse = {
+  success: boolean;
+  data: {
+    first_name: string;
+    middle_name: string;
+    last_name: string;
+    email: string;
+    gender_id: number; // assumed: 1=Male, 2=Female (adjust if backend differs)
+    age: number;
+    height: string; // "150.00"
+    weight: string; // "70.00"
+  };
+};
+
 interface ProfileContextType {
   profile: UserProfile;
   rdi: Record<NutrientKey, NutrientGoal>;
   isProfileLoading: boolean;
-  // Method to update and save the entire profile state
-  updateProfile: (newProfile: UserProfile) => void;
+
+  // Local update (your existing behavior)
+  updateProfile: (newProfile: UserProfile) => Promise<void>;
+
+  // NEW: refresh from backend (GET /user/profile)
+  refreshProfile: () => Promise<void>;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
-// --- Context Provider ---
+// ----- Helpers -----
+function genderIdToSex(genderId: number): "Male" | "Female" {
+  // If your backend uses different ids, change mapping here only.
+  return genderId === 2 ? "Female" : "Male";
+}
+
+function apiToUserProfile(res: ApiUserProfileResponse["data"]): UserProfile {
+  return {
+    age: String(res.age ?? ""),
+    sex: genderIdToSex(res.gender_id ?? 1),
+    height: String(res.height ?? ""),
+    weight: String(res.weight ?? ""),
+  };
+}
+
+// ----- Provider -----
 export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
@@ -44,49 +79,70 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
     height: "",
     weight: "",
   });
-  const [rdi, setRdi] =
-    useState<Record<NutrientKey, NutrientGoal>>(ARBITRARY_RDI);
+
   const [isProfileLoading, setIsProfileLoading] = useState(true);
 
-  // Load profile and RDI from AsyncStorage on startup
-  useEffect(() => {
-    async function loadProfile() {
-      try {
-        const storedProfile = await loadJSON<UserProfile>(USER_PROFILE_KEY);
+  // Always derive RDI from the current profile (prevents stale RDI)
+  const rdi = useMemo<Record<NutrientKey, NutrientGoal>>(() => {
+    try {
+      return calculateRecommendedIntake(profile);
+    } catch {
+      return ARBITRARY_RDI;
+    }
+  }, [profile]);
 
-        if (storedProfile) {
-          setProfile(storedProfile);
-          const computed = calculateRecommendedIntake(storedProfile);
-          setRdi(computed);
-        } else {
-          setRdi(ARBITRARY_RDI);
-        }
-      } catch (error) {
-        console.error("Failed to load profile from storage:", error);
-        setRdi(ARBITRARY_RDI);
+  // 1) Load cached profile fast on startup, then optionally refresh from API
+  useEffect(() => {
+    (async () => {
+      try {
+        const cached = await loadJSON<UserProfile>(PROFILE_CACHE_KEY);
+        if (cached) setProfile(cached);
+      } catch (e) {
+        console.warn("ProfileProvider: failed to load cached profile", e);
       } finally {
         setIsProfileLoading(false);
       }
-    }
-    loadProfile();
+    })();
   }, []);
 
-  // Function to update state and persist data
+  // 2) Local update + persist (same as your current updateProfile but Promise-safe)
   const updateProfile = useCallback(async (newProfile: UserProfile) => {
     setProfile(newProfile);
-    const computed = calculateRecommendedIntake(newProfile);
-    setRdi(computed);
 
     try {
-      await saveJSON(USER_PROFILE_KEY, newProfile);
+      await saveJSON(PROFILE_CACHE_KEY, newProfile);
     } catch (e) {
       console.warn("ProfileProvider: failed to save profile", e);
     }
   }, []);
 
+  // 3) NEW: Refresh from backend GET /user/profile and cache it
+  const refreshProfile = useCallback(async () => {
+    try {
+      const res = await api<ApiUserProfileResponse>("/user/profile", {
+        method: "GET",
+      });
+
+      if (!res?.success) throw new Error("Failed to load profile");
+
+      const nextProfile = apiToUserProfile(res.data);
+      setProfile(nextProfile);
+
+      // Cache the backend result as the new local profile
+      try {
+        await saveJSON(PROFILE_CACHE_KEY, nextProfile);
+      } catch (e) {
+        console.warn("ProfileProvider: failed to cache server profile", e);
+      }
+    } catch (e) {
+      // Don’t hard-crash; rely on cached profile if available
+      console.warn("ProfileProvider: refreshProfile failed", e);
+    }
+  }, []);
+
   return (
     <ProfileContext.Provider
-      value={{ profile, rdi, isProfileLoading, updateProfile }}
+      value={{ profile, rdi, isProfileLoading, updateProfile, refreshProfile }}
     >
       {children}
     </ProfileContext.Provider>
