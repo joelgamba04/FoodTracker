@@ -1,9 +1,9 @@
 // src/services/authService.ts
 
 import {
-    ACCESS_TOKEN_KEY,
-    AUTH_USER_KEY,
-    REFRESH_TOKEN_KEY,
+  ACCESS_TOKEN_KEY,
+  AUTH_USER_KEY,
+  REFRESH_TOKEN_KEY,
 } from "@/constants/storageKeys";
 import { api } from "@/lib/apiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -16,29 +16,47 @@ export interface LoginResponse {
       user_id: number;
       email: string;
     };
-    accessToken: string;
-    refreshToken: string;
+    accessToken?: string;
+    refreshToken?: string;
   };
+}
+
+export async function persistAuth(res: LoginResponse) {
+  const accessToken = res?.data?.accessToken;
+  const refreshToken = res?.data?.refreshToken;
+  const user = res?.data?.user;
+
+  // Access token is required for logged-in state
+  if (!accessToken) {
+    throw new Error("Missing access token from server.");
+  }
+
+  await AsyncStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+
+  // Refresh token may not exist yet (backend still building route)
+  if (refreshToken) {
+    await AsyncStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  } else {
+    await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
+  }
+
+  if (user) {
+    await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+  } else {
+    await AsyncStorage.removeItem(AUTH_USER_KEY);
+  }
 }
 
 export async function login(email: string, password: string) {
   const res = await api<LoginResponse>("/auth/login", {
     method: "POST",
-    auth: false, // login doesn’t need Authorization header
+    auth: false,
     body: JSON.stringify({ email, password }),
   });
 
-  if (!res.success) {
-    throw new Error(res.message || "Login failed");
-  }
+  if (!res.success) throw new Error(res.message || "Login failed");
 
-  // Save tokens + user
-  await AsyncStorage.multiSet([
-    [ACCESS_TOKEN_KEY, res.data.accessToken],
-    [REFRESH_TOKEN_KEY, res.data.refreshToken],
-    [AUTH_USER_KEY, JSON.stringify(res.data.user)],
-  ]);
-
+  await persistAuth(res);
   return res.data.user;
 }
 
