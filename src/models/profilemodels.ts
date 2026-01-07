@@ -20,10 +20,10 @@ export type AppProfile = {
   middleName: string;
   lastName: string;
   email: string;
-  genderId: "1" | "2";
-  age: string;
-  heightCm: string;
-  weightKg: string;
+  genderId?: "1" | "2";
+  age?: string;
+  heightCm?: string;
+  weightKg?: string;
   activityLevel?: "sedentary" | "light" | "moderate" | "active";
 };
 
@@ -35,7 +35,7 @@ export function apiToAppProfile(api: ApiUserProfile): AppProfile {
     email: api.email ?? "",
     genderId: String(api.gender_id) as "1" | "2",
     age: String(api.age ?? ""),
-    heightCm: String(api.height ?? ""), // already "150.00"
+    heightCm: String(api.height ?? ""),
     weightKg: String(api.weight ?? ""),
   };
 }
