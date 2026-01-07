@@ -1,7 +1,6 @@
 // src/components/InitialProfileScreen.tsx
 import { loadJSON, saveJSON } from "@/lib/storage";
 import { UserProfile, defaultProfile } from "@/models/models";
-import { USER_PROFILE_KEY } from "@/utils/profileUtils";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ScrollView,
@@ -12,6 +11,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { PROFILE_CACHE_KEY as USER_PROFILE_KEY } from "@/constants/storageKeys";
 
 type ProfileField = "age" | "sex" | "height" | "weight";
 
