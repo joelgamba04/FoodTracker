@@ -11,11 +11,13 @@ import React, {
 } from "react";
 
 import { ARBITRARY_RDI } from "@/constants/recommendedDailyIntake";
-import { PROFILE_CACHE_KEY } from "@/constants/storageKeys";
+import { AUTH_USER_KEY, PROFILE_CACHE_KEY } from "@/constants/storageKeys";
 import { api } from "@/lib/apiClient"; // <-- make sure you have this
 import { calculateRecommendedIntake } from "@/lib/recommendedIntake";
 import { loadJSON, saveJSON } from "@/lib/storage";
 import { UserProfile } from "@/models/models";
+import { updateUserProfile } from "@/services/userService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // ----- Types -----
 export type NutrientKey = keyof typeof ARBITRARY_RDI;
@@ -50,6 +52,15 @@ interface ProfileContextType {
 
   // NEW: refresh from backend (GET /user/profile)
   refreshProfile: () => Promise<void>;
+  saveProfileToServer: (nextProfile: UserProfile) => Promise<void>;
+}
+
+async function getCurrentUserId(): Promise<number> {
+  const raw = await AsyncStorage.getItem(AUTH_USER_KEY);
+  if (!raw) throw new Error("Not logged in.");
+  const user = JSON.parse(raw);
+  if (!user?.user_id) throw new Error("Missing user_id.");
+  return user.user_id;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -140,9 +151,36 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, []);
 
+  const saveProfileToServer = useCallback(
+    async (nextProfile: UserProfile) => {
+      const userId = await getCurrentUserId();
+
+      const payload = {
+        gender_id: nextProfile.sex === "Female" ? "2" : "1",
+        age: nextProfile.age,
+        height_cm: nextProfile.height,
+        weight_kg: nextProfile.weight,
+        activity_level: "active",
+      };
+
+      await updateUserProfile(userId, payload);
+
+      // Recommended: refresh from backend so app stays aligned with server formatting
+      await refreshProfile();
+    },
+    [refreshProfile]
+  );
+
   return (
     <ProfileContext.Provider
-      value={{ profile, rdi, isProfileLoading, updateProfile, refreshProfile }}
+      value={{
+        profile,
+        rdi,
+        isProfileLoading,
+        updateProfile,
+        refreshProfile,
+        saveProfileToServer,
+      }}
     >
       {children}
     </ProfileContext.Provider>

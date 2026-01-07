@@ -113,7 +113,7 @@ function getWeightStatus(form: {
 }
 
 export default function ProfileScreen() {
-  const { profile, updateProfile } = useProfile();
+  const { profile, updateProfile, saveProfileToServer } = useProfile();
 
   const [form, setForm] = useState(profile);
   const [saving, setSaving] = useState(false);
@@ -139,6 +139,8 @@ export default function ProfileScreen() {
     setError(null);
     try {
       await updateProfile(form);
+
+      await saveProfileToServer(form);
       // updateProfile will recompute RDI + persist
       console.log("Profile updated & RDI recomputed:", form);
     } catch (e: any) {
