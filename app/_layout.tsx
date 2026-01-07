@@ -15,12 +15,12 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import DisclaimerModal from "@/components/DisclaimerModal";
 import InitialProfileScreen from "@/components/InitialProfileScreen";
+import { PROFILE_CACHE_KEY } from "@/constants/storageKeys";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { FoodLogProvider } from "@/context/FoodLogContext";
 import { ProfileProvider } from "@/context/ProfileContext";
 import { loadJSON } from "@/lib/storage";
 import { UserProfile } from "@/models/models";
-import { USER_PROFILE_KEY } from "@/utils/profileUtils";
 
 const disclaimers = [
   {
@@ -118,7 +118,7 @@ export default function RootLayout() {
     let active = true;
     (async () => {
       try {
-        const stored = await loadJSON<UserProfile>(USER_PROFILE_KEY);
+        const stored = await loadJSON<UserProfile>(PROFILE_CACHE_KEY);
         if (!active) return;
 
         if (isProfileComplete(stored)) {
