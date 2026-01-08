@@ -7,7 +7,7 @@ import {
 } from "@react-navigation/native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -16,6 +16,7 @@ import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import DisclaimerModal from "@/components/DisclaimerModal";
 import InitialProfileScreen from "@/components/InitialProfileScreen";
 import PostLoginSync from "@/components/PostLoginSync";
+
 import { PROFILE_CACHE_KEY } from "@/constants/storageKeys";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { FoodLogProvider } from "@/context/FoodLogContext";
@@ -23,7 +24,7 @@ import { ProfileProvider } from "@/context/ProfileContext";
 import { loadJSON } from "@/lib/storage";
 import { UserProfile } from "@/models/models";
 
-const disclaimers = [
+const DISCLAIMERS = [
   {
     id: "health",
     title: "Important Health Disclaimer",
@@ -65,12 +66,10 @@ const disclaimers = [
   },
 ];
 
-const isProfileComplete = (profile: UserProfile | null): boolean => {
+function isProfileComplete(profile: UserProfile | null): boolean {
   if (!profile) return false;
-  if (!profile.age || !profile.sex || !profile.height || !profile.weight)
-    return false;
-  return true;
-};
+  return !!(profile.age && profile.sex && profile.height && profile.weight);
+}
 
 function AuthGate() {
   const { user, isAuthLoading } = useAuth();
@@ -80,78 +79,72 @@ function AuthGate() {
   useEffect(() => {
     if (isAuthLoading) return;
 
-    if (!segments) return;
+    const inAuthGroup = segments?.[0] === "(auth)";
 
-    const inAuthGroup = segments[0] === "(auth)";
-
-    if (!user && !inAuthGroup) {
-      // Not logged in → go login
-      router.replace("/(auth)/login");
-    }
-
-    if (user && inAuthGroup) {
-      // Logged in → go app
-      router.replace("/(tabs)");
-    }
+    if (!user && !inAuthGroup) router.replace("/(auth)/login");
+    if (user && inAuthGroup) router.replace("/(tabs)");
   }, [user, isAuthLoading, segments, router]);
 
   if (isAuthLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View style={styles.loadingScreen}>
         <ActivityIndicator size="large" />
       </View>
     );
   }
 
-  // Important: always render the stack
   return <Stack screenOptions={{ headerShown: false }} />;
 }
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
-  const [step, setStep] = useState(0);
+/**
+ * Bootstraps the app flow INSIDE providers:
+ * 1) Disclaimers (always show)
+ * 2) Initial Profile (only if local cache is incomplete)
+ * 3) Main app (AuthGate + tabs)
+ */
+function AppBootstrap() {
+  const [disclaimerStep, setDisclaimerStep] = useState(0);
   const [profileStatus, setProfileStatus] = useState<
     "checking" | "incomplete" | "complete"
   >("checking");
 
+  const currentDisclaimer = useMemo(
+    () => DISCLAIMERS[disclaimerStep],
+    [disclaimerStep]
+  );
+
+  // load local cached profile once
   useEffect(() => {
     let active = true;
     (async () => {
       try {
         const stored = await loadJSON<UserProfile>(PROFILE_CACHE_KEY);
         if (!active) return;
-
-        if (isProfileComplete(stored)) {
-          setProfileStatus("complete");
-        } else {
-          setProfileStatus("incomplete");
-        }
+        setProfileStatus(isProfileComplete(stored) ? "complete" : "incomplete");
       } catch (e) {
-        console.warn("RootLayout: failed to load user profile", e);
+        console.warn("RootLayout: failed to load cached profile", e);
         if (active) setProfileStatus("incomplete");
       }
     })();
-
     return () => {
       active = false;
     };
   }, []);
 
-  //disclaimer flow
-  if (step < disclaimers.length) {
-    const current = disclaimers[step];
+  // 1) Disclaimers: always show in sequence
+  if (disclaimerStep < DISCLAIMERS.length) {
     return (
       <DisclaimerModal
-        key={current.id} // 🔑 force a fresh instance for each step
-        title={current.title}
-        onAccept={() => setStep((prev) => prev + 1)}
+        key={currentDisclaimer.id}
+        title={currentDisclaimer.title}
+        onAccept={() => setDisclaimerStep((prev) => prev + 1)}
       >
-        {current.body}
+        {currentDisclaimer.body}
       </DisclaimerModal>
     );
   }
 
+  // 2) Profile cache check
   if (profileStatus === "checking") {
     // small loading screen while we read AsyncStorage
     return (
@@ -161,36 +154,47 @@ export default function RootLayout() {
     );
   }
 
+  // 3) Initial profile onboarding (before using app)
   if (profileStatus === "incomplete") {
-    // Show profile onboarding once, then go to app
     return (
       <InitialProfileScreen
         key="initial-profile"
-        onComplete={(_profile) => {
-          // profile already saved inside InitialProfileScreen
+        onComplete={() => {
+          // InitialProfileScreen should save to PROFILE_CACHE_KEY internally.
           setProfileStatus("complete");
         }}
       />
     );
   }
 
+  // 4) Normal app flow
+  return (
+    <>
+      <PostLoginSync />
+      <AuthGate />
+      <StatusBar style="auto" />
+    </>
+  );
+}
+
+export default function RootLayout() {
+  const colorScheme = useColorScheme();
+
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <AppErrorBoundary>
-          <ProfileProvider>
+      <AppErrorBoundary>
+        <ProfileProvider>
+          <AuthProvider>
             <FoodLogProvider>
               <ThemeProvider
                 value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
               >
-                <PostLoginSync />
-                <AuthGate />
-                <StatusBar style="auto" />
+                <AppBootstrap />
               </ThemeProvider>
             </FoodLogProvider>
-          </ProfileProvider>
-        </AppErrorBoundary>
-      </AuthProvider>
+          </AuthProvider>
+        </ProfileProvider>
+      </AppErrorBoundary>
     </SafeAreaProvider>
   );
 }
