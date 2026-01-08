@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { PROFILE_CACHE_KEY as USER_PROFILE_KEY } from "@/constants/storageKeys";
+import { PROFILE_DRAFT_KEY as USER_PROFILE_KEY } from "@/constants/storageKeys";
 
 type ProfileField = "age" | "sex" | "height" | "weight";
 

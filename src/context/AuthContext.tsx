@@ -1,16 +1,18 @@
 // src/context/AuthContext.tsx
 
+import { useProfile } from "@/context/ProfileContext";
 import {
-    login as doLogin,
-    logout as doLogout,
-    getStoredUser,
+  login as doLogin,
+  logout as doLogout,
+  getStoredUser,
 } from "@/services/authService";
+import { syncDraftProfileAfterLogin } from "@/services/profileSyncService";
 import React, {
-    createContext,
-    useContext,
-    useEffect,
-    useMemo,
-    useState,
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
 } from "react";
 
 type User = { user_id: number; email: string };
@@ -28,6 +30,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
+  const { refreshProfile } = useProfile();
+  const [didPostLoginSync, setDidPostLoginSync] = useState(false);
+
   useEffect(() => {
     (async () => {
       try {
@@ -39,9 +44,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
+  // After login, sync draft profile and refresh profile once
+  useEffect(() => {
+    if (!user || didPostLoginSync) return;
+
+    (async () => {
+      try {
+        await syncDraftProfileAfterLogin();
+        await refreshProfile();
+      } finally {
+        setDidPostLoginSync(true);
+      }
+    })();
+  }, [user, didPostLoginSync, refreshProfile]);
+
   const login = async (email: string, password: string) => {
     const u = await doLogin(email, password);
     setUser(u);
+
+    await syncDraftProfileAfterLogin();
+    await refreshProfile();
   };
 
   const logout = async () => {
