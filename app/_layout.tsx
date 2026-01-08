@@ -15,6 +15,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import DisclaimerModal from "@/components/DisclaimerModal";
 import InitialProfileScreen from "@/components/InitialProfileScreen";
+import PostLoginSync from "@/components/PostLoginSync";
 import { PROFILE_CACHE_KEY } from "@/constants/storageKeys";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { FoodLogProvider } from "@/context/FoodLogContext";
@@ -182,6 +183,7 @@ export default function RootLayout() {
               <ThemeProvider
                 value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
               >
+                <PostLoginSync />
                 <AuthGate />
                 <StatusBar style="auto" />
               </ThemeProvider>
