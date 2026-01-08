@@ -328,7 +328,7 @@ const FormInput: React.FC<FormInputProps> = ({
         placeholder={`Enter ${label.toLowerCase()}...`}
         placeholderTextColor="#999"
       />
-      <Text style={styles.inputUnit}>{unit ? unit : null}</Text>
+      {unit ? <Text style={styles.inputUnit}>{unit}</Text> : null}
     </View>
   </View>
 );
