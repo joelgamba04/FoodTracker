@@ -1,67 +1,134 @@
 // src/lib/apiClient.ts
+
 import { API_ROUTE_BASE_URL } from "@/constants/apiRouteBaseURL";
 import { ACCESS_TOKEN_KEY } from "@/constants/storageKeys";
+import { refreshAccessToken } from "@/services/tokenService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = API_ROUTE_BASE_URL;
-// const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+/**
+ * Global auth-fatal hook (optional):
+ * apiClient can call this when refresh fails / still unauthorized after refresh.
+ */
+type AuthFatalReason = "refresh_failed" | "unauthorized_after_refresh";
+type AuthFatalHandler = (reason: AuthFatalReason, error?: unknown) => void;
 
-if (!BASE_URL) {
-  console.warn("Missing API_ROUTE_BASE_URL");
+let authFatalHandler: AuthFatalHandler | null = null;
+
+export function setAuthFatalHandler(handler: AuthFatalHandler) {
+  authFatalHandler = handler;
 }
 
-type ApiOptions = RequestInit & { auth?: boolean };
+function notifyAuthFatal(reason: AuthFatalReason, error?: unknown) {
+  try {
+    authFatalHandler?.(reason, error);
+  } catch (e) {
+    console.warn("authFatalHandler threw:", e);
+  }
+}
 
+// Single-flight refresh: all concurrent 401s await one refresh
 let refreshPromise: Promise<string> | null = null;
 
-let onUnauthorized: (() => void) | null = null;
+type ApiOptions = Omit<RequestInit, "headers"> & {
+  headers?: HeadersInit;
+  auth?: boolean; // default true
+  _retried?: boolean; // internal only (do not pass to fetch)
+};
 
 async function getAccessToken() {
-  return AsyncStorage.getItem(ACCESS_TOKEN_KEY);
+  return await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
-async function fetchWithAuth(input: string, init: RequestInit) {
-  return fetch(input, init);
+function normalizeUrl(path: string) {
+  return path.startsWith("http") ? path : `${API_ROUTE_BASE_URL}${path}`;
 }
 
-// Allow AuthContext to register what "logout + redirect to login" means
-export function registerUnauthorizedHandler(handler: () => void) {
-  onUnauthorized = handler;
+function mergeHeaders(base?: HeadersInit, extra?: HeadersInit): HeadersInit {
+  return { ...(base as any), ...(extra as any) };
+}
+
+async function parseJsonOrText(res: Response) {
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 }
 
 export async function api<T>(
   path: string,
   options: ApiOptions = {}
 ): Promise<T> {
-  const url = `${BASE_URL}${path}`;
-  const auth = options.auth ?? true;
+  const url = normalizeUrl(path);
+  const authEnabled = options.auth !== false;
 
+  // IMPORTANT: do not forward internal flags to fetch
+  const { _retried, auth, ...fetchOptions } = options;
+
+  // Build headers
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(options.headers as Record<string, string> | undefined),
+    ...(fetchOptions.headers as any),
   };
 
-  if (auth) {
-    const token = await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
+  if (authEnabled) {
+    const token = await getAccessToken();
     if (token) headers.Authorization = `Bearer ${token}`;
   }
 
-  const res = await fetch(url, { ...options, headers });
+  const res = await fetch(url, {
+    ...fetchOptions,
+    headers: mergeHeaders(headers, fetchOptions.headers),
+  });
 
-  // If unauthorized, trigger a single app-level logout path
-  if (res.status === 401 && auth) {
-    if (onUnauthorized) onUnauthorized();
-    throw new Error("Unauthorized");
+  // If 401 on an auth request and we haven't retried yet: refresh then retry once
+  if (res.status === 401 && authEnabled && !_retried) {
+    try {
+      if (!refreshPromise) {
+        refreshPromise = refreshAccessToken().finally(() => {
+          refreshPromise = null;
+        });
+      }
+
+      const newAccess = await refreshPromise;
+
+      const retryHeaders: Record<string, string> = {
+        ...headers,
+        Authorization: `Bearer ${newAccess}`,
+      };
+
+      const retryRes = await fetch(url, {
+        ...fetchOptions,
+        headers: mergeHeaders(retryHeaders, fetchOptions.headers),
+      });
+
+      if (retryRes.status === 401) {
+        const body = await parseJsonOrText(retryRes);
+        notifyAuthFatal("unauthorized_after_refresh", body);
+        throw new Error("Unauthorized after refresh");
+      }
+
+      const data = await parseJsonOrText(retryRes);
+      return data as T;
+    } catch (e) {
+      notifyAuthFatal("refresh_failed", e);
+      throw e;
+    }
   }
 
-  const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
-
+  // Non-401 or already retried
   if (!res.ok) {
-    const message =
-      data?.message || data?.detail || `Request failed (${res.status})`;
-    throw new Error(message);
+    const body = await parseJsonOrText(res);
+    // propagate a useful error
+    throw new Error(
+      typeof body === "string"
+        ? body
+        : body?.message || `Request failed with ${res.status}`
+    );
   }
 
+  const data = await parseJsonOrText(res);
   return data as T;
 }
