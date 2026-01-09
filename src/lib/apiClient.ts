@@ -83,8 +83,8 @@ export async function api<T>(
     headers: mergeHeaders(headers, fetchOptions.headers),
   });
 
-  // If 401 on an auth request and we haven't retried yet: refresh then retry once
-  if (res.status === 401 && authEnabled && !_retried) {
+  // If 401 or 403 on an auth request and we haven't retried yet: refresh then retry once
+  if ((res.status === 401 || res.status === 403) && authEnabled && !_retried) {
     try {
       if (!refreshPromise) {
         refreshPromise = refreshAccessToken().finally(() => {
@@ -104,10 +104,10 @@ export async function api<T>(
         headers: mergeHeaders(retryHeaders, fetchOptions.headers),
       });
 
-      if (retryRes.status === 401) {
+      if (retryRes.status === 401 || retryRes.status === 403) {
         const body = await parseJsonOrText(retryRes);
         notifyAuthFatal("unauthorized_after_refresh", body);
-        throw new Error("Unauthorized after refresh");
+        throw new Error("Unauthorized/forbidden after refresh");
       }
 
       const data = await parseJsonOrText(retryRes);
@@ -122,6 +122,7 @@ export async function api<T>(
   if (!res.ok) {
     const body = await parseJsonOrText(res);
     // propagate a useful error
+    console.log("API error :", res.status, body);
     throw new Error(
       typeof body === "string"
         ? body
