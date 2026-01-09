@@ -57,6 +57,21 @@ async function parseJsonOrText(res: Response) {
   }
 }
 
+function isTokenError(status: number, body: any): boolean {
+  if (status === 401) return true;
+
+  if (status === 403) {
+    const msg = String(body?.message || "").toLowerCase();
+    return (
+      msg.includes("token") ||
+      msg.includes("expired") ||
+      msg.includes("invalid")
+    );
+  }
+
+  return false;
+}
+
 export async function api<T>(
   path: string,
   options: ApiOptions = {}
@@ -84,7 +99,9 @@ export async function api<T>(
   });
 
   // If 401 or 403 on an auth request and we haven't retried yet: refresh then retry once
-  if ((res.status === 401 || res.status === 403) && authEnabled && !_retried) {
+  const errorBody = await parseJsonOrText(res);
+
+  if (authEnabled && !_retried && isTokenError(res.status, errorBody)) {
     try {
       if (!refreshPromise) {
         refreshPromise = refreshAccessToken().finally(() => {
@@ -104,14 +121,14 @@ export async function api<T>(
         headers: mergeHeaders(retryHeaders, fetchOptions.headers),
       });
 
+      const retryBody = await parseJsonOrText(retryRes);
+
       if (retryRes.status === 401 || retryRes.status === 403) {
-        const body = await parseJsonOrText(retryRes);
-        notifyAuthFatal("unauthorized_after_refresh", body);
-        throw new Error("Unauthorized/forbidden after refresh");
+        notifyAuthFatal("unauthorized_after_refresh", retryBody);
+        throw new Error("Unauthorized after refresh");
       }
 
-      const data = await parseJsonOrText(retryRes);
-      return data as T;
+      return retryBody as T;
     } catch (e) {
       notifyAuthFatal("refresh_failed", e);
       throw e;
@@ -120,13 +137,10 @@ export async function api<T>(
 
   // Non-401 or already retried
   if (!res.ok) {
-    const body = await parseJsonOrText(res);
-    // propagate a useful error
-    console.log("API error :", res.status, body);
     throw new Error(
-      typeof body === "string"
-        ? body
-        : body?.message || `Request failed with ${res.status}`
+      typeof errorBody === "string"
+        ? errorBody
+        : errorBody?.message || `Request failed with ${res.status}`
     );
   }
 
