@@ -2,11 +2,11 @@ import { useAuth } from "@/context/AuthContext";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function LoginScreen() {
@@ -24,6 +24,7 @@ export default function LoginScreen() {
       router.replace("/(tabs)"); // adjust to your app’s main route
     } catch (e: any) {
       setErr(e.message || "Login failed");
+      console.error("Login error:", e);
     } finally {
       setLoading(false);
     }

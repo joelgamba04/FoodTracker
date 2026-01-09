@@ -26,7 +26,7 @@ function notifyAuthFatal(reason: AuthFatalReason, error?: unknown) {
   }
 }
 
-// Single-flight refresh: all concurrent 401s await one refresh
+// Single-flight refresh: all concurrent token failures await one refresh
 let refreshPromise: Promise<string> | null = null;
 
 type ApiOptions = Omit<RequestInit, "headers"> & {
@@ -48,7 +48,7 @@ function mergeHeaders(base?: HeadersInit, extra?: HeadersInit): HeadersInit {
 }
 
 async function parseJsonOrText(res: Response) {
-  const text = await res.text();
+  const text = await res.text(); // IMPORTANT: can only be read once per Response
   if (!text) return null;
   try {
     return JSON.parse(text);
@@ -79,10 +79,11 @@ export async function api<T>(
   const url = normalizeUrl(path);
   const authEnabled = options.auth !== false;
 
+  console.log(`API Request: ${url} options:`, options);
+
   // IMPORTANT: do not forward internal flags to fetch
   const { _retried, auth, ...fetchOptions } = options;
 
-  // Build headers
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(fetchOptions.headers as any),
@@ -98,10 +99,13 @@ export async function api<T>(
     headers: mergeHeaders(headers, fetchOptions.headers),
   });
 
-  // If 401 or 403 on an auth request and we haven't retried yet: refresh then retry once
-  const errorBody = await parseJsonOrText(res);
+  console.log(`API Response: ${url} status=${res.status}`);
 
-  if (authEnabled && !_retried && isTokenError(res.status, errorBody)) {
+  // Read body ONCE and reuse
+  const body = await parseJsonOrText(res);
+
+  // If token invalid/expired and we haven't retried, refresh then retry once
+  if (authEnabled && !_retried && isTokenError(res.status, body)) {
     try {
       if (!refreshPromise) {
         refreshPromise = refreshAccessToken().finally(() => {
@@ -128,6 +132,14 @@ export async function api<T>(
         throw new Error("Unauthorized after refresh");
       }
 
+      if (!retryRes.ok) {
+        throw new Error(
+          typeof retryBody === "string"
+            ? retryBody
+            : retryBody?.message || `Request failed with ${retryRes.status}`
+        );
+      }
+
       return retryBody as T;
     } catch (e) {
       notifyAuthFatal("refresh_failed", e);
@@ -135,15 +147,15 @@ export async function api<T>(
     }
   }
 
-  // Non-401 or already retried
+  // Normal error handling (non-token errors, or already retried)
   if (!res.ok) {
     throw new Error(
-      typeof errorBody === "string"
-        ? errorBody
-        : errorBody?.message || `Request failed with ${res.status}`
+      typeof body === "string"
+        ? body
+        : body?.message || `Request failed with ${res.status}`
     );
   }
 
-  const data = await parseJsonOrText(res);
-  return data as T;
+  // Success: return parsed body (already read)
+  return body as T;
 }
