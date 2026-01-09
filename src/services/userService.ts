@@ -62,7 +62,7 @@ export async function updateUserProfile(
   userId: number,
   payload: UpdateUserPayload
 ) {
-  const res = await api<ApiResponse>(`/user/udate/${userId}`, {
+  const res = await api<ApiResponse>(`/user/update/${userId}`, {
     method: "PUT",
     body: JSON.stringify(payload),
   });
