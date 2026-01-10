@@ -17,10 +17,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 // Context and Models
 import { useFoodLog } from "@/context/FoodLogContext";
 import { Food, FoodLogEntry } from "@/models/models";
-import { searchFoods } from "@/utils/foodApi";
+import { SearchFoods } from "@/services/foodSearchService";
 // =================================================================
 
 import CustomConfirmationModal from "@/components/CustomConfirmationModal"; // <--- Imported Modal
+import { FoodDetail } from "@/models/foodModels";
 import { getTodayWindow } from "@/utils/date";
 
 // --- Theme Constants ---
@@ -67,7 +68,9 @@ const FoodResultItem: React.FC<FoodResultItemProps> = ({ item, onPress }) => (
   <TouchableOpacity style={styles.resultItem} onPress={() => onPress(item)}>
     <View>
       <Text style={styles.resultItemName}>{item.name}</Text>
-      <Text style={styles.resultItemName}>{item.englishName}</Text>
+      {item.englishName ? (
+        <Text style={styles.resultItemName}>{item.englishName}</Text>
+      ) : null}
       <Text style={styles.resultItemDetails}>
         Serving: {item.servingSize || "N/A"}
       </Text>
@@ -110,7 +113,9 @@ const LoggedItem: React.FC<LoggedItemProps> = ({
           <Text style={styles.logItemQuantity}>{item.quantity}x </Text>
           {item.food.name}
         </Text>
-        <Text style={styles.logItemText}>{item.food.englishName}</Text>
+        {item.food.englishName ? (
+          <Text style={{ color: "#777" }}>{item.food.englishName}</Text>
+        ) : null}
         <Text style={styles.logItemTimestamp}>{timeString}</Text>
       </View>
       <View style={styles.logItemActions}>
@@ -134,6 +139,45 @@ const LoggedItem: React.FC<LoggedItemProps> = ({
     </View>
   );
 };
+
+function mapFoodSearchItemToFood(item: FoodDetail): Food {
+  const defaultMeasure =
+    item.measures?.find((m) => m.is_default === 1) ?? item.measures?.[0];
+
+  const servingSize =
+    defaultMeasure?.measure_label && defaultMeasure?.weight_g
+      ? `${defaultMeasure.measure_label} (${Number(defaultMeasure.weight_g)}g)`
+      : defaultMeasure?.measure_label ?? "1 serving";
+
+  return {
+    id: String(item.food_id),
+    name: item.filipino_name,
+    englishName: item.english_name,
+    servingSize,
+    nutrients: [
+      {
+        name: "Calories",
+        unit: "kcal",
+        amount: Number(item.energy_kcal ?? 0),
+      },
+      {
+        name: "Carbohydrate",
+        unit: "g",
+        amount: Number(item.carbohydrate_g ?? 0),
+      },
+      {
+        name: "Protein",
+        unit: "g",
+        amount: Number(item.protein_g ?? 0),
+      },
+      {
+        name: "Fat",
+        unit: "g",
+        amount: Number(item.fat_g ?? 0),
+      },
+    ],
+  };
+}
 
 // =================================================================
 // --- Main Screen Component ---
@@ -207,17 +251,28 @@ export default function LogScreen() {
   };
 
   const handleSearch = async () => {
-    if (!search.trim()) return;
+    const q = search.trim();
+    if (!q) return;
+
     setSearchLoading(true);
     setResults([]);
     setSelectedFood(null);
     setEditingEntry(null);
 
     try {
-      const foods = await searchFoods(search);
+      const res = await SearchFoods(q);
+
+      if (!res.success) {
+        console.error("Search failed:", res.message);
+        setResults([]);
+        return;
+      }
+
+      const foods = (res.data ?? []).map(mapFoodSearchItemToFood);
       setResults(foods);
     } catch (error) {
       console.error("Search failed:", error);
+      setResults([]);
     } finally {
       setSearchLoading(false);
     }
@@ -361,9 +416,12 @@ export default function LogScreen() {
               <Text style={styles.selectedFoodDetails}>
                 {currentFood.name} - Serving: {currentFood.servingSize}
               </Text>
-              <Text style={styles.selectedFoodDetails}>
-                {currentFood.englishName}
-              </Text>
+
+              {currentFood.englishName ? (
+                <Text style={styles.selectedFoodDetails}>
+                  {currentFood.englishName}
+                </Text>
+              ) : null}
 
               {/* QUANTITY CONTROL SECTION */}
               <View style={styles.quantityControl}>
