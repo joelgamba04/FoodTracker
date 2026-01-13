@@ -12,6 +12,6 @@ export interface AddFoodLogEntryResponse {
 }
 
 export interface UpdateFoodLogEntryBody {
-  quantity?: number;
-  measure_id?: number;    
+  quantity: number;
+  measure_id: number;
 }

@@ -16,9 +16,9 @@ type ApiResponse<T> = {
 const ROUTES = {
   addEntry: () => "/meal/meal-logs",
   updateEntry: (id: number) =>
-    `/meal/meal-log/${encodeURIComponent(String(id))}`,
+    `/meal/meal-logs/${encodeURIComponent(String(id))}`,
   deleteEntry: (id: number) =>
-    `/meal/meal-log/${encodeURIComponent(String(id))}`,
+    `/meal/meal-logs/${encodeURIComponent(String(id))}`,
 };
 
 

@@ -17,7 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 // Context and Models
 import { useFoodLog } from "@/context/FoodLogContext";
 import { Food, FoodLogEntry } from "@/models/models";
-import { AddFoodLogEntry } from "@/services/foodLogService";
+import { AddFoodLogEntry, UpdateFoodLog } from "@/services/foodLogService";
 import { SearchFoods } from "@/services/foodSearchService";
 // =================================================================
 
@@ -285,14 +285,48 @@ export default function LogScreen() {
     const qty = Number(quantity);
     if (!Number.isFinite(qty) || qty <= 0) return;
 
-    // If editing, just update locally for now (server update can be manual later)
     if (editingEntry) {
-      updateEntry(editingEntry.localId, qty);
-      setEditingEntry(null);
+      const localId = editingEntry.localId;
 
+      // 1) Update locally right away
+      updateEntry(localId, qty);
+
+      // Reset UI immediately
+      setEditingEntry(null);
       setQuantity("1");
       setSearch("");
       setResults([]);
+
+      // 2) If it was never uploaded, you can't update server yet
+      const serverId = editingEntry.serverFoodEntryId;
+      if (!serverId) {
+        patchEntry(localId, {
+          syncStatus: "failed",
+          lastSyncError:
+            "This entry is not saved on the server yet. Upload first.",
+        });
+        return;
+      }
+
+      // 3) Attempt server update
+      patchEntry(localId, { syncStatus: "pending", lastSyncError: null });
+
+      try {
+        const foodId = Number(editingEntry.food.id); // measure_id == food_id
+
+        await UpdateFoodLog(serverId, {
+          quantity: qty,
+          measure_id: foodId,
+        });
+
+        patchEntry(localId, { syncStatus: "synced", lastSyncError: null });
+      } catch (e: any) {
+        patchEntry(localId, {
+          syncStatus: "failed",
+          lastSyncError: e?.message ?? "Failed to update on server",
+        });
+      }
+
       return;
     }
 
