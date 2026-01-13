@@ -17,7 +17,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 // Context and Models
 import { useFoodLog } from "@/context/FoodLogContext";
 import { Food, FoodLogEntry } from "@/models/models";
-import { AddFoodLogEntry, UpdateFoodLog } from "@/services/foodLogService";
+import {
+  AddFoodLogEntry,
+  DeleteFoodLogEntry,
+  UpdateFoodLog,
+} from "@/services/foodLogService";
 import { SearchFoods } from "@/services/foodSearchService";
 // =================================================================
 
@@ -85,7 +89,7 @@ type LoggedItemProps = {
   item: FoodLogEntry;
   onEdit: (entry: FoodLogEntry) => void;
   // Now triggers a callback with the item details to start the removal process in the parent component
-  onStartRemove: (entryId: string, foodName: string, quantity: number) => void;
+  onStartRemove: (entry: FoodLogEntry) => void;
 };
 
 const LoggedItem: React.FC<LoggedItemProps> = ({
@@ -104,7 +108,7 @@ const LoggedItem: React.FC<LoggedItemProps> = ({
 
   const handleRemovePress = () => {
     // Call the parent handler instead of managing local modal state
-    onStartRemove(item.localId, item.food.name, item.quantity);
+    onStartRemove(item);
   };
 
   return (
@@ -196,11 +200,7 @@ export default function LogScreen() {
   const [mealType, setMealType] = useState<1 | 2 | 3>(1);
 
   // --- NEW STATE FOR MODAL CONTROL ---
-  const [entryToDelete, setEntryToDelete] = useState<{
-    id: string;
-    foodName: string;
-    quantity: number;
-  } | null>(null);
+  const [entryToDelete, setEntryToDelete] = useState<FoodLogEntry | null>(null);
 
   // Destructure actions from the context
   const {
@@ -409,20 +409,30 @@ export default function LogScreen() {
     setSearch("");
   }, []);
 
-  // --- NEW HANDLERS FOR MODAL ---
-  const handleStartRemove = (
-    id: string,
-    foodName: string,
-    quantity: number
-  ) => {
-    // Set the data for the item to be deleted, which makes the modal visible
-    setEntryToDelete({ id, foodName, quantity });
+  const handleStartRemove = (entry: FoodLogEntry) => {
+    setEntryToDelete(entry);
   };
 
-  const handleConfirmDeletion = () => {
-    if (entryToDelete) {
-      removeEntry(entryToDelete.id);
-      setEntryToDelete(null); // Hide modal
+  const handleConfirmDeletion = async () => {
+    if (!entryToDelete) return;
+
+    const entry = entryToDelete;
+
+    // close modal immediately
+    setEntryToDelete(null);
+
+    // 1) remove locally first (instant UI)
+    removeEntry(entry.localId);
+
+    // 2) if it was never uploaded, stop here
+    if (!entry.serverFoodEntryId) return;
+
+    // 3) attempt server delete
+    try {
+      await DeleteFoodLogEntry(entry.serverFoodEntryId);
+    } catch (e: any) {
+      // Optional rollback (recommended early dev so you notice failures)
+      addEntry(entry);
     }
   };
 
@@ -454,7 +464,7 @@ export default function LogScreen() {
 
   // Determine modal message
   const modalMessage = entryToDelete
-    ? `Are you sure you want to remove ${entryToDelete.foodName} (${entryToDelete.quantity} servings)? This action cannot be undone.`
+    ? `Are you sure you want to remove ${entryToDelete.food.name} (${entryToDelete.quantity} servings)? This action cannot be undone.`
     : "";
 
   return (
@@ -590,7 +600,7 @@ export default function LogScreen() {
                     key={item.localId}
                     item={item}
                     onEdit={handleEditStart}
-                    onStartRemove={handleStartRemove} // Pass the new handler
+                    onStartRemove={() => handleStartRemove(item)}
                   />
                 ))
               ) : (
