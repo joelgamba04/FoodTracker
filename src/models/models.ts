@@ -1,6 +1,8 @@
 // Food, Nutrient, and DailyLog models for FoodTracker
 // src/models/models.ts
 
+export type SyncStatus = "pending" | "synced" | "failed";
+
 export interface Nutrient {
   name: string; // e.g., Protein, Carbs, Fat, Vitamin C
   unit: string; // e.g., g, mg
@@ -17,10 +19,18 @@ export interface Food {
 }
 
 export interface FoodLogEntry {
-  id: string;
+  localId: string;
+  serverId?: number | null;
+
   timestamp: any;
   food: Food;
   quantity: number; // number of servings
+
+  syncStatus: SyncStatus;
+  lastSyncError?: string | null;
+  serverMealId?: number | null;
+  serverFoodEntryId?: number | null;
+  mealType?: 1 | 2 | 3;
 }
 
 export interface UserProfile {

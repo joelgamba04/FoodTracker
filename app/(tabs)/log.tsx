@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 // Context and Models
 import { useFoodLog } from "@/context/FoodLogContext";
 import { Food, FoodLogEntry } from "@/models/models";
+import { AddFoodLogEntry } from "@/services/foodLogService";
 import { SearchFoods } from "@/services/foodSearchService";
 // =================================================================
 
@@ -103,7 +104,7 @@ const LoggedItem: React.FC<LoggedItemProps> = ({
 
   const handleRemovePress = () => {
     // Call the parent handler instead of managing local modal state
-    onStartRemove(item.id, item.food.name, item.quantity);
+    onStartRemove(item.localId, item.food.name, item.quantity);
   };
 
   return (
@@ -192,6 +193,7 @@ export default function LogScreen() {
   const [searchLoading, setSearchLoading] = useState(false);
 
   const [editingEntry, setEditingEntry] = useState<FoodLogEntry | null>(null);
+  const [mealType, setMealType] = useState<1 | 2 | 3>(1);
 
   // --- NEW STATE FOR MODAL CONTROL ---
   const [entryToDelete, setEntryToDelete] = useState<{
@@ -207,6 +209,7 @@ export default function LogScreen() {
     removeEntry,
     updateEntry,
     isLoading: isLogLoading,
+    patchEntry,
   } = useFoodLog();
 
   const { start, end } = getTodayWindow();
@@ -278,29 +281,80 @@ export default function LogScreen() {
     }
   };
 
-  const handleLogAction = () => {
+  const handleLogAction = async () => {
     const qty = Number(quantity);
-    if (qty <= 0) {
+    if (!Number.isFinite(qty) || qty <= 0) return;
+
+    // If editing, just update locally for now (server update can be manual later)
+    if (editingEntry) {
+      updateEntry(editingEntry.localId, qty);
+      setEditingEntry(null);
+
+      setQuantity("1");
+      setSearch("");
+      setResults([]);
       return;
     }
 
-    if (editingEntry) {
-      updateEntry(editingEntry.id, qty);
-      setEditingEntry(null);
-    } else if (selectedFood) {
-      const newEntry: FoodLogEntry = {
-        id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
-        food: selectedFood,
-        quantity: qty,
-        timestamp: new Date(),
-      };
-      addEntry(newEntry);
-      setSelectedFood(null);
-    }
+    if (!selectedFood) return;
 
+    const localId =
+      Date.now().toString() + Math.random().toString(36).substring(2, 9);
+
+    const newEntry: FoodLogEntry = {
+      localId,
+      food: selectedFood,
+      quantity: qty,
+      timestamp: new Date(),
+
+      mealType, // 1/2/3 if you have it
+      syncStatus: "pending",
+      serverMealId: null,
+      serverFoodEntryId: null,
+      lastSyncError: null,
+    };
+
+    // 1) Local-first: instant UI
+    addEntry(newEntry);
+
+    // reset UI immediately (do not wait for network)
+    setSelectedFood(null);
     setQuantity("1");
     setSearch("");
     setResults([]);
+
+    // 2) Best-effort upload
+    try {
+      const foodId = Number(newEntry.food.id);
+
+      const res = await AddFoodLogEntry({
+        food_id: foodId,
+        measure_id: foodId, // per backend rule
+        quantity: newEntry.quantity,
+        meal_type: newEntry.mealType ?? 1,
+        notes: "",
+      });
+
+      if (!res.success) {
+        patchEntry(localId, {
+          syncStatus: "failed",
+          lastSyncError: res.message ?? "Upload failed",
+        });
+        return;
+      }
+
+      patchEntry(localId, {
+        syncStatus: "synced",
+        serverMealId: res.data.meal,
+        serverFoodEntryId: res.data.foodEntry,
+        lastSyncError: null,
+      });
+    } catch (e: any) {
+      patchEntry(localId, {
+        syncStatus: "failed",
+        lastSyncError: e?.message ?? "Network error",
+      });
+    }
   };
 
   // Unified handler for QuickLog and SearchResult tap (No Change)
@@ -499,7 +553,7 @@ export default function LogScreen() {
                 // Use the new prop onStartRemove
                 todayLog.map((item) => (
                   <LoggedItem
-                    key={item.id}
+                    key={item.localId}
                     item={item}
                     onEdit={handleEditStart}
                     onStartRemove={handleStartRemove} // Pass the new handler

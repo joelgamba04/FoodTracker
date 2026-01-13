@@ -6,7 +6,6 @@ import React, {
   useEffect,
   useState,
 } from "react";
-// ✅ Import local persistence functions from the new file
 
 import { loadJSON, saveJSON, storage } from "@/lib/storage";
 
@@ -18,6 +17,7 @@ interface FoodLogContextType {
   addEntry: (entry: FoodLogEntry) => void;
   removeEntry: (entryId: string) => void;
   updateEntry: (entryId: string, newQuantity: number) => void;
+  patchEntry: (localId: string, partial: Partial<FoodLogEntry>) => void;
   clearAll: () => void;
   isLoading: boolean;
 }
@@ -67,19 +67,29 @@ export const FoodLogProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const removeEntry = useCallback((entryId: string) => {
-    setLog((prev) => prev.filter((e) => e.id !== entryId));
+    setLog((prev) => prev.filter((e) => e.localId !== entryId));
   }, []);
 
   const updateEntry = useCallback(
     (entryId: string, newQuantity: number) => {
       if (newQuantity <= 0) return removeEntry(entryId);
+
       setLog((prev) =>
         prev.map((e) =>
-          e.id === entryId ? { ...e, quantity: newQuantity } : e
+          e.localId === entryId ? { ...e, quantity: newQuantity } : e
         )
       );
     },
     [removeEntry]
+  );
+
+  const patchEntry = useCallback(
+    (localId: string, partial: Partial<FoodLogEntry>) => {
+      setLog((prev) =>
+        prev.map((e) => (e.localId === localId ? { ...e, ...partial } : e))
+      );
+    },
+    []
   );
 
   const clearAll = useCallback(() => {
@@ -87,12 +97,13 @@ export const FoodLogProvider: React.FC<{ children: React.ReactNode }> = ({
     storage.removeItem(KEY);
   }, []);
 
-  const contextValue = {
+  const contextValue: FoodLogContextType = {
     log,
     addEntry,
     removeEntry,
     updateEntry,
-    clearAll: () => setLog([]),
+    patchEntry,
+    clearAll,
     isLoading,
   };
 

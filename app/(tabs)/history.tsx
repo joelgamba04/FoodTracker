@@ -166,7 +166,7 @@ export default function HistoryScreen() {
 
       <SectionList
         sections={filtered}
-        keyExtractor={(item: FoodLogEntry) => item.id}
+        keyExtractor={(item: FoodLogEntry) => item.localId}
         renderSectionHeader={({ section }) => (
           <View style={styles.secHeader}>
             <Text style={styles.secTitle}>{section.title}</Text>
