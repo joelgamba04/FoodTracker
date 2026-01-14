@@ -12,7 +12,10 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 // --- Theme Constants ---
 const PRIMARY_BLUE = "#007AFF";
@@ -121,6 +124,8 @@ export default function NutritionScreen() {
   const { rdi } = useProfile();
 
   const { start, end } = getTodayWindow();
+  const insets = useSafeAreaInsets();
+
   const todayLog = log.filter((e) => {
     const ts = new Date(e.timestamp as any);
     return ts >= start && ts < end;
@@ -154,7 +159,13 @@ export default function NutritionScreen() {
   const macroNutrients: NutrientKey[] = ["Carbohydrate", "Protein", "Fat"];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: BACKGROUND_COLOR,
+        paddingBottom: 50 + insets.bottom,
+      }}
+    >
       <ScrollView style={styles.container}>
         <Text style={styles.mainHeading}>📊 Daily Nutrition Summary</Text>
 

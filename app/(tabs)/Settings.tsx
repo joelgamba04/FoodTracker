@@ -9,7 +9,10 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 // --- Theme Constants (Matching previous screens) ---
 const PRIMARY_BLUE = "#007AFF";
@@ -55,8 +58,16 @@ export default function SettingsScreen() {
 
   const macros: NutrientKey[] = ["Calories", "Carbohydrate", "Protein", "Fat"];
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: BACKGROUND_COLOR,
+        paddingBottom: 50 + insets.bottom,
+      }}
+    >
       <ScrollView style={styles.container}>
         <Text style={styles.heading}>Your Daily Goals</Text>
 

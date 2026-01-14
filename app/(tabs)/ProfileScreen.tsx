@@ -12,7 +12,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 const PRIMARY_BLUE = "#007AFF";
 const ACCENT_GREEN = "#4CD964";
@@ -121,6 +124,7 @@ export default function ProfileScreen() {
   const [form, setForm] = useState(profile);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
 
   // keep local form in sync when context profile changes (e.g. first load)
   useEffect(() => {
@@ -169,7 +173,13 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: BACKGROUND_COLOR,
+        paddingBottom: 50 + insets.bottom,
+      }}
+    >
       <ScrollView style={styles.container}>
         <Text style={styles.heading}>👤 Your Personal Profile</Text>
 

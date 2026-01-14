@@ -10,7 +10,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 const formatDate = (date: Date) =>
   date.toLocaleDateString(undefined, {
@@ -100,6 +103,7 @@ export default function HistoryScreen() {
   const { log, isLoading } = useFoodLog();
   const [query, setQuery] = useState("");
   const [range, setRange] = useState<"all" | "7" | "30">("all");
+  const insets = useSafeAreaInsets();
 
   const filtered = useMemo(() => {
     const lower = query.trim().toLowerCase();
@@ -135,7 +139,7 @@ export default function HistoryScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, paddingBottom: 50 + insets.bottom }}>
       {/* Controls */}
       <View style={styles.controls}>
         <TextInput

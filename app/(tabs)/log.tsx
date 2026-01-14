@@ -11,7 +11,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 // =================================================================
 // Context and Models
@@ -201,6 +204,8 @@ export default function LogScreen() {
 
   // --- NEW STATE FOR MODAL CONTROL ---
   const [entryToDelete, setEntryToDelete] = useState<FoodLogEntry | null>(null);
+
+  const insets = useSafeAreaInsets();
 
   // Destructure actions from the context
   const {
@@ -468,7 +473,13 @@ export default function LogScreen() {
     : "";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f4f7f9" }}>
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: "#f4f7f9",
+        paddingBottom: 50 + insets.bottom,
+      }}
+    >
       <View style={styles.container}>
         <Text style={styles.heading}>🍽️ Log Your Meal</Text>
 
