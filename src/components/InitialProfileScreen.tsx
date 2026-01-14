@@ -10,7 +10,6 @@ import {
   StyleSheet,
   Switch,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -23,6 +22,7 @@ import {
   kgToLb,
   lbToKg,
 } from "@/utils/imperialMetricHelper";
+import { InputWithUnit } from "./ui/inputWithUnit";
 
 type ProfileField = "age" | "sex" | "height" | "weight";
 
@@ -241,14 +241,11 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
 
           {/* Age */}
           <Text style={styles.label}>Age</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Yrs"
-            placeholderTextColor={MUTED}
-            keyboardType="numeric"
+          <InputWithUnit
             value={String(form.age ?? "")}
+            placeholder="Yrs"
             onChangeText={(v) => handleChange("age", v.replace(/[^0-9]/g, ""))}
-            returnKeyType="next"
+            unit="yrs"
           />
 
           <View style={styles.verticalSpacer} />
@@ -286,12 +283,9 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
           {useImperial ? (
             <View style={styles.row2}>
               <View style={styles.col}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="ft"
-                  placeholderTextColor={MUTED}
-                  keyboardType="numeric"
+                <InputWithUnit
                   value={heightFt}
+                  placeholder="0"
                   onChangeText={(v) => {
                     const clean = v.replace(/[^0-9]/g, "");
                     setHeightFt(clean);
@@ -301,15 +295,14 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
                     const cm = ftInToCm(ft, inches);
                     handleChange("height", cm ? cm.toFixed(1) : "");
                   }}
+                  unit="ft"
                 />
               </View>
               <View style={styles.col}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="in"
-                  placeholderTextColor={MUTED}
-                  keyboardType="numeric"
+                <InputWithUnit
                   value={heightIn}
+                  placeholder="0"
+                  unit="in"
                   onChangeText={(v) => {
                     const clean = v.replace(/[^0-9]/g, "");
                     setHeightIn(clean);
@@ -323,12 +316,10 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
               </View>
             </View>
           ) : (
-            <TextInput
-              style={styles.input}
-              placeholder="Cm"
-              placeholderTextColor={MUTED}
-              keyboardType="numeric"
+            <InputWithUnit
               value={String(form.height ?? "")}
+              placeholder="0"
+              unit="cm"
               onChangeText={(v) =>
                 handleChange("height", v.replace(/[^0-9.]/g, ""))
               }
@@ -337,10 +328,9 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
 
           {/* Weight */}
           <Text style={styles.label}>Weight</Text>
-          <TextInput
-            style={styles.input}
+          <InputWithUnit
+            unit={useImperial ? "lb" : "kg"}
             placeholder={useImperial ? "lb" : "Kg"}
-            placeholderTextColor={MUTED}
             keyboardType="numeric"
             value={
               useImperial
