@@ -1,8 +1,11 @@
 // src/components/InitialProfileScreen.tsx
 import { loadJSON, saveJSON } from "@/lib/storage";
 import { UserProfile, defaultProfile } from "@/models/models";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,36 +19,44 @@ import { PROFILE_DRAFT_KEY as USER_PROFILE_KEY } from "@/constants/storageKeys";
 
 type ProfileField = "age" | "sex" | "height" | "weight";
 
+// UI-only fields shown in the screenshot
+type InitialProfileForm = UserProfile & {
+  firstName?: string;
+  lastName?: string;
+};
+
 interface InitialProfileScreenProps {
   onComplete: (profile: UserProfile) => void;
 }
 
-const PRIMARY_BLUE = "#007AFF";
-const ACCENT_GREEN = "#4CD964";
-const BACKGROUND_COLOR = "#f4f7f9";
-const BORDER_COLOR = "#ddd";
+const PRIMARY_BLUE = "#0A66FF"; // closer to screenshot button blue
+const BG = "#FFFFFF";
+const MUTED = "#8A8F98";
+const TEXT = "#0B0F14";
+const FIELD_BG = "#F3F5F8";
 
 const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
   onComplete,
 }) => {
-  const [profile, setProfile] = useState<UserProfile>(defaultProfile);
+  const [form, setForm] = useState<InitialProfileForm>(defaultProfile as any);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Pre-fill with existing profile if present
+  // Pre-fill with existing draft if present
   useEffect(() => {
     let active = true;
+
     (async () => {
       try {
-        const stored = await loadJSON<UserProfile>(USER_PROFILE_KEY);
+        const stored = await loadJSON<InitialProfileForm>(USER_PROFILE_KEY);
         if (active && stored) {
-          setProfile({
-            ...defaultProfile,
+          setForm({
+            ...(defaultProfile as any),
             ...stored,
-            age: String(stored.age ?? ""),
-            height: String(stored.height ?? ""),
-            weight: String(stored.weight ?? ""),
+            age: String((stored as any).age ?? ""),
+            height: String((stored as any).height ?? ""),
+            weight: String((stored as any).weight ?? ""),
           });
         }
       } catch (e) {
@@ -54,19 +65,25 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
         if (active) setLoading(false);
       }
     })();
+
     return () => {
       active = false;
     };
   }, []);
 
-  const handleChange = useCallback((field: ProfileField, value: string) => {
-    setProfile((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  }, []);
+  const handleChange = useCallback(
+    (field: keyof InitialProfileForm, value: string) => {
+      setForm((prev) => ({ ...prev, [field]: value }));
+    },
+    []
+  );
 
-  const validate = (profile: UserProfile): string | null => {
+  const genderLabel = useMemo(() => {
+    // “Gender” field placeholder style like screenshot
+    return form.sex ? String(form.sex) : "Placeholder";
+  }, [form.sex]);
+
+  const validate = (profile: InitialProfileForm): string | null => {
     if (!profile.age || !profile.height || !profile.weight) {
       return "Please enter your age, height, and weight.";
     }
@@ -86,16 +103,21 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
   };
 
   const handleSubmit = async () => {
-    const maybeError = validate(profile);
+    const maybeError = validate(form);
     if (maybeError) {
       setError(maybeError);
       return;
     }
+
     setError(null);
     setSaving(true);
+
     try {
-      await saveJSON(USER_PROFILE_KEY, profile);
-      onComplete(profile);
+      // Save the whole form (including optional first/last name) to draft key
+      await saveJSON(USER_PROFILE_KEY, form);
+
+      // Call onComplete with required profile type (extra props are harmless at runtime)
+      onComplete(form as unknown as UserProfile);
     } catch (e) {
       console.error("InitialProfileScreen: failed to save profile", e);
       setError("Failed to save your details. Please try again.");
@@ -104,269 +126,285 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
     }
   };
 
+  const toggleGender = () => {
+    // simple toggle; replace with picker later if you want
+    const next = form.sex === "Male" ? "Female" : "Male";
+    handleChange("sex", next);
+  };
+
   if (loading) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Preparing your profile…</Text>
+      <SafeAreaView style={[styles.screen, styles.center]}>
+        <ActivityIndicator size="large" color={PRIMARY_BLUE} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
-      <ScrollView style={styles.container}>
-        <Text style={styles.heading}>👤 Tell us about you</Text>
-        <Text style={styles.subheading}>
-          These details will help Taguig NutriApp provide more relevant
-          nutrition feedback.
-        </Text>
+    <SafeAreaView style={styles.screen}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Top helper text */}
+          <Text style={styles.helper}>
+            These details will help Taguig NutriApp provide{"\n"}
+            more relevant nutrition feedback
+          </Text>
 
-        {/* Sex selection */}
-        <View style={styles.card}>
-          <Text style={styles.cardHeader}>Basic Information</Text>
+          {/* Avatar */}
+          <View style={styles.avatarWrap}>
+            <View style={styles.avatarCircle}>
+              <View style={styles.avatarHead} />
+              <View style={styles.avatarBody} />
+            </View>
 
-          <View style={styles.row}>
-            <Text style={styles.label}>Sex:</Text>
-            <View style={styles.sexPillsContainer}>
-              {["Male", "Female"].map((s) => (
-                <TouchableOpacity
-                  key={s}
-                  style={[
-                    styles.pill,
-                    profile.sex === s ? styles.pillActive : styles.pillInactive,
-                    { flex: 1, marginRight: s === "Male" ? 10 : 0 },
-                  ]}
-                  onPress={() => handleChange("sex", s)}
-                >
-                  <Text
-                    style={[
-                      styles.pillText,
-                      profile.sex === s
-                        ? styles.pillTextActive
-                        : styles.pillTextInactive,
-                    ]}
-                  >
-                    {s}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+            <View style={styles.avatarPlus}>
+              <Text style={styles.avatarPlusText}>+</Text>
             </View>
           </View>
 
-          <FormInput
-            label="Age"
-            unit=""
-            keyboardType="numeric"
-            value={profile.age}
-            onChangeText={(val) =>
-              handleChange("age", val.replace(/[^0-9]/g, ""))
-            }
-          />
-          <FormInput
-            label="Height"
-            unit="cm"
-            keyboardType="numeric"
-            value={profile.height}
-            onChangeText={(val) =>
-              handleChange("height", val.replace(/[^0-9.]/g, ""))
-            }
-          />
-          <FormInput
-            label="Weight"
-            unit="kg"
-            keyboardType="numeric"
-            value={profile.weight}
-            onChangeText={(val) =>
-              handleChange("weight", val.replace(/[^0-9.]/g, ""))
-            }
-          />
-        </View>
+          {/* Title */}
+          <Text style={styles.title}>Create Profile</Text>
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {/* First/Last name row */}
+          <View style={styles.row2}>
+            <View style={styles.col}>
+              <Text style={styles.label}>First Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Placeholder"
+                placeholderTextColor={MUTED}
+                value={(form.firstName ?? "") as string}
+                onChangeText={(v) => handleChange("firstName", v)}
+                autoCapitalize="words"
+                returnKeyType="next"
+              />
+            </View>
 
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={handleSubmit}
-          disabled={saving}
-        >
-          <Text style={styles.saveButtonText}>
-            {saving ? "Saving…" : "Save & Continue"}
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
+            <View style={styles.col}>
+              <Text style={styles.label}>Last Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Placeholder"
+                placeholderTextColor={MUTED}
+                value={(form.lastName ?? "") as string}
+                onChangeText={(v) => handleChange("lastName", v)}
+                autoCapitalize="words"
+                returnKeyType="next"
+              />
+            </View>
+          </View>
+
+          {/* Gender */}
+          <Text style={styles.label}>Gender</Text>
+          <TouchableOpacity
+            style={styles.inputPressable}
+            activeOpacity={0.85}
+            onPress={toggleGender}
+          >
+            <Text style={styles.inputPressableText}>{genderLabel}</Text>
+          </TouchableOpacity>
+
+          {/* Age */}
+          <Text style={styles.label}>Age</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Placeholder"
+            placeholderTextColor={MUTED}
+            keyboardType="numeric"
+            value={String(form.age ?? "")}
+            onChangeText={(v) => handleChange("age", v.replace(/[^0-9]/g, ""))}
+            returnKeyType="next"
+          />
+
+          {/* Height */}
+          <Text style={styles.label}>Height</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Cm"
+            placeholderTextColor={MUTED}
+            keyboardType="numeric"
+            value={String(form.height ?? "")}
+            onChangeText={(v) =>
+              handleChange("height", v.replace(/[^0-9.]/g, ""))
+            }
+            returnKeyType="next"
+          />
+
+          {/* Weight */}
+          <Text style={styles.label}>Weight</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Kg"
+            placeholderTextColor={MUTED}
+            keyboardType="numeric"
+            value={String(form.weight ?? "")}
+            onChangeText={(v) =>
+              handleChange("weight", v.replace(/[^0-9.]/g, ""))
+            }
+            returnKeyType="done"
+          />
+
+          {/* Error */}
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          {/* Save button */}
+          <TouchableOpacity
+            style={[styles.button, saving && { opacity: 0.75 }]}
+            onPress={handleSubmit}
+            disabled={saving}
+            activeOpacity={0.9}
+          >
+            <Text style={styles.buttonText}>
+              {saving ? "Saving..." : "Save & continue"}
+            </Text>
+          </TouchableOpacity>
+
+          <View style={{ height: 28 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
-// Reusable input (copied from your ProfileScreen style)
-interface FormInputProps {
-  label: string;
-  unit: string;
-  keyboardType: "numeric" | "default";
-  value: string;
-  onChangeText: (text: string) => void;
-}
-
-const FormInput: React.FC<FormInputProps> = ({
-  label,
-  unit,
-  keyboardType,
-  value,
-  onChangeText,
-}) => (
-  <View style={styles.inputRow}>
-    <Text style={styles.label}>{label}:</Text>
-    <View style={styles.inputGroup}>
-      <TextInput
-        style={styles.input}
-        keyboardType={keyboardType}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={`Enter ${label.toLowerCase()}…`}
-        placeholderTextColor="#999"
-      />
-      {unit ? <Text style={styles.inputUnit}>{unit}</Text> : null}
-    </View>
-  </View>
-);
-
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    backgroundColor: BACKGROUND_COLOR,
+    backgroundColor: BG,
   },
-  loadingContainer: {
-    flex: 1,
+  content: {
+    paddingHorizontal: 18,
+    paddingTop: 14,
+  },
+  center: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: BACKGROUND_COLOR,
-  },
-  loadingText: {
-    fontSize: 18,
-    color: PRIMARY_BLUE,
-    fontWeight: "600",
-  },
-  heading: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: PRIMARY_BLUE,
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  subheading: {
-    fontSize: 14,
-    color: "#555",
-    textAlign: "center",
-    marginBottom: 20,
   },
 
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
+  helper: {
+    textAlign: "center",
+    color: MUTED,
+    fontSize: 13,
+    lineHeight: 18,
     marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  cardHeader: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: PRIMARY_BLUE,
-    marginBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER_COLOR,
-    paddingBottom: 8,
   },
 
-  row: {
-    marginBottom: 15,
+  avatarWrap: {
+    alignSelf: "center",
+    marginBottom: 14,
+    position: "relative",
   },
-  inputRow: {
-    marginBottom: 15,
-  },
-  label: {
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 6,
-    fontSize: 15,
-  },
-  inputGroup: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: BORDER_COLOR,
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  input: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    color: "#333",
-  },
-  inputUnit: {
-    paddingRight: 15,
-    fontSize: 16,
-    color: PRIMARY_BLUE,
-    fontWeight: "bold",
-  },
-
-  sexPillsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 5,
-  },
-  pill: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 2,
+  avatarCircle: {
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    backgroundColor: "#D1D3D8",
+    justifyContent: "center",
     alignItems: "center",
   },
-  pillActive: {
-    backgroundColor: PRIMARY_BLUE,
-    borderColor: PRIMARY_BLUE,
-  },
-  pillInactive: {
-    backgroundColor: "#fff",
-    borderColor: BORDER_COLOR,
-  },
-  pillText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  pillTextActive: {
-    color: "#fff",
-  },
-  pillTextInactive: {
-    color: "#555",
-  },
-
-  errorText: {
-    fontSize: 14,
-    color: "red",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-
-  saveButton: {
-    backgroundColor: ACCENT_GREEN,
-    paddingVertical: 15,
+  avatarHead: {
+    width: 20,
+    height: 20,
     borderRadius: 10,
-    marginTop: 10,
-    marginBottom: 40,
+    backgroundColor: "#FFFFFF",
+    opacity: 0.9,
+    marginBottom: 6,
+  },
+  avatarBody: {
+    width: 40,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#FFFFFF",
+    opacity: 0.9,
+  },
+  avatarPlus: {
+    position: "absolute",
+    right: -2,
+    bottom: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: PRIMARY_BLUE,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: BG,
+  },
+  avatarPlusText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 14,
+    lineHeight: 14,
+    marginTop: -1,
+  },
+
+  title: {
+    fontSize: 32,
+    fontWeight: "800",
+    color: TEXT,
+    marginBottom: 18,
+  },
+
+  row2: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  col: {
+    flex: 1,
+  },
+
+  label: {
+    color: TEXT,
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 8,
+    marginTop: 12,
+  },
+
+  input: {
+    height: 48,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    backgroundColor: FIELD_BG,
+    color: TEXT,
+    fontSize: 14,
+  },
+
+  inputPressable: {
+    height: 48,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    backgroundColor: FIELD_BG,
+    justifyContent: "center",
+  },
+  inputPressableText: {
+    color: MUTED, // matches placeholder look in screenshot
+    fontSize: 14,
+  },
+
+  error: {
+    marginTop: 12,
+    color: "#D92D20",
+    textAlign: "center",
+    fontSize: 13,
+  },
+
+  button: {
+    marginTop: 18,
+    height: 52,
+    borderRadius: 10,
+    backgroundColor: PRIMARY_BLUE,
+    justifyContent: "center",
     alignItems: "center",
   },
-  saveButtonText: {
+  buttonText: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: "700",
   },
 });
