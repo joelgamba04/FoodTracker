@@ -8,6 +8,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -16,6 +17,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { PROFILE_DRAFT_KEY as USER_PROFILE_KEY } from "@/constants/storageKeys";
+import {
+  cmToFtIn,
+  ftInToCm,
+  kgToLb,
+  lbToKg,
+} from "@/utils/imperialMetricHelper";
 
 type ProfileField = "age" | "sex" | "height" | "weight";
 
@@ -42,6 +49,9 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [useImperial, setUseImperial] = useState(false);
+  const [heightFt, setHeightFt] = useState("");
+  const [heightIn, setHeightIn] = useState("");
 
   // Pre-fill with existing draft if present
   useEffect(() => {
@@ -70,6 +80,17 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!useImperial) return;
+
+    const cm = Number(form.height);
+    if (Number.isFinite(cm) && cm > 0) {
+      const { ft, inches } = cmToFtIn(cm);
+      setHeightFt(String(ft));
+      setHeightIn(String(inches));
+    }
+  }, [useImperial, form.height]);
 
   const handleChange = useCallback(
     (field: keyof InitialProfileForm, value: string) => {
@@ -163,16 +184,16 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
               <View style={styles.avatarBody} />
             </View>
 
-            <View style={styles.avatarPlus}>
+            {/* <View style={styles.avatarPlus}>
               <Text style={styles.avatarPlusText}>+</Text>
-            </View>
+            </View> */}
           </View>
 
           {/* Title */}
           <Text style={styles.title}>Create Profile</Text>
 
           {/* First/Last name row */}
-          <View style={styles.row2}>
+          {/* <View style={styles.row2}>
             <View style={styles.col}>
               <Text style={styles.label}>First Name</Text>
               <TextInput
@@ -198,23 +219,31 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
                 returnKeyType="next"
               />
             </View>
-          </View>
+          </View> */}
 
           {/* Gender */}
-          <Text style={styles.label}>Gender</Text>
+          <Text style={styles.label}>Sex</Text>
           <TouchableOpacity
-            style={styles.inputPressable}
+            style={[styles.inputPressable, styles.genderRow]}
             activeOpacity={0.85}
             onPress={toggleGender}
           >
-            <Text style={styles.inputPressableText}>{genderLabel}</Text>
+            <Text
+              style={form.sex ? styles.genderValue : styles.inputPressableText}
+            >
+              {form.sex ? String(form.sex) : "Select gender"}
+            </Text>
+            <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
+          <Text style={styles.genderHint}>Tap to change</Text>
+
+          <View style={styles.verticalSpacer} />
 
           {/* Age */}
           <Text style={styles.label}>Age</Text>
           <TextInput
             style={styles.input}
-            placeholder="Placeholder"
+            placeholder="Yrs"
             placeholderTextColor={MUTED}
             keyboardType="numeric"
             value={String(form.age ?? "")}
@@ -222,34 +251,122 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
             returnKeyType="next"
           />
 
+          <View style={styles.verticalSpacer} />
+
+          {/* Units toggle */}
+
+          <View style={styles.unitRow}>
+            <Text style={styles.unitTitle}>Units</Text>
+
+            <View style={styles.unitToggle}>
+              <Text
+                style={[
+                  styles.unitLabel,
+                  !useImperial && styles.unitLabelActive,
+                ]}
+              >
+                Metric
+              </Text>
+
+              <Switch value={useImperial} onValueChange={setUseImperial} />
+
+              <Text
+                style={[
+                  styles.unitLabel,
+                  useImperial && styles.unitLabelActive,
+                ]}
+              >
+                Imperial
+              </Text>
+            </View>
+          </View>
+
           {/* Height */}
           <Text style={styles.label}>Height</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Cm"
-            placeholderTextColor={MUTED}
-            keyboardType="numeric"
-            value={String(form.height ?? "")}
-            onChangeText={(v) =>
-              handleChange("height", v.replace(/[^0-9.]/g, ""))
-            }
-            returnKeyType="next"
-          />
+          {useImperial ? (
+            <View style={styles.row2}>
+              <View style={styles.col}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="ft"
+                  placeholderTextColor={MUTED}
+                  keyboardType="numeric"
+                  value={heightFt}
+                  onChangeText={(v) => {
+                    const clean = v.replace(/[^0-9]/g, "");
+                    setHeightFt(clean);
+
+                    const ft = Number(clean || 0);
+                    const inches = Number(heightIn || 0);
+                    const cm = ftInToCm(ft, inches);
+                    handleChange("height", cm ? cm.toFixed(1) : "");
+                  }}
+                />
+              </View>
+              <View style={styles.col}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="in"
+                  placeholderTextColor={MUTED}
+                  keyboardType="numeric"
+                  value={heightIn}
+                  onChangeText={(v) => {
+                    const clean = v.replace(/[^0-9]/g, "");
+                    setHeightIn(clean);
+
+                    const ft = Number(heightFt || 0);
+                    const inches = Number(clean || 0);
+                    const cm = ftInToCm(ft, inches);
+                    handleChange("height", cm ? cm.toFixed(1) : "");
+                  }}
+                />
+              </View>
+            </View>
+          ) : (
+            <TextInput
+              style={styles.input}
+              placeholder="Cm"
+              placeholderTextColor={MUTED}
+              keyboardType="numeric"
+              value={String(form.height ?? "")}
+              onChangeText={(v) =>
+                handleChange("height", v.replace(/[^0-9.]/g, ""))
+              }
+            />
+          )}
 
           {/* Weight */}
           <Text style={styles.label}>Weight</Text>
           <TextInput
             style={styles.input}
-            placeholder="Kg"
+            placeholder={useImperial ? "lb" : "Kg"}
             placeholderTextColor={MUTED}
             keyboardType="numeric"
-            value={String(form.weight ?? "")}
-            onChangeText={(v) =>
-              handleChange("weight", v.replace(/[^0-9.]/g, ""))
+            value={
+              useImperial
+                ? (() => {
+                    const kg = Number(form.weight);
+                    return Number.isFinite(kg) && kg > 0
+                      ? kgToLb(kg).toFixed(0)
+                      : "";
+                  })()
+                : String(form.weight ?? "")
             }
-            returnKeyType="done"
+            onChangeText={(v) => {
+              const clean = v.replace(/[^0-9.]/g, "");
+              if (!useImperial) {
+                handleChange("weight", clean);
+                return;
+              }
+              const lb = Number(clean);
+              if (!Number.isFinite(lb) || lb <= 0) {
+                handleChange("weight", "");
+                return;
+              }
+              const kg = lbToKg(lb);
+              handleChange("weight", kg.toFixed(1));
+            }}
           />
-
           {/* Error */}
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -407,6 +524,52 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
   },
+  genderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  genderValue: {
+    color: TEXT,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  genderHint: {
+    color: MUTED,
+    fontSize: 12,
+    marginTop: 4,
+  },
+  chevron: {
+    color: MUTED,
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  unitRow: {
+    marginTop: 6,
+    marginBottom: 6,
+  },
+  unitTitle: {
+    color: TEXT,
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+  unitToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  unitLabel: {
+    color: MUTED,
+    fontSize: 13,
+    fontWeight: "600",
+    width: 64,
+    textAlign: "center",
+  },
+  unitLabelActive: {
+    color: TEXT,
+  },
+  verticalSpacer: { height: 12 },
 });
 
 export default InitialProfileScreen;
