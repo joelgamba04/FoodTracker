@@ -2,6 +2,7 @@
 import {
   ACCESS_TOKEN_KEY,
   AUTH_USER_KEY,
+  PROFILE_CACHE_KEY,
   REFRESH_TOKEN_KEY,
 } from "@/constants/storageKeys";
 import { api } from "@/lib/apiClient";
@@ -71,9 +72,17 @@ export async function getStoredUser() {
 }
 
 export async function logout() {
-  await AsyncStorage.multiRemove([
-    ACCESS_TOKEN_KEY,
-    REFRESH_TOKEN_KEY,
-    AUTH_USER_KEY,
-  ]);
+  try {
+    await api("/auth/logout", {
+      method: "POST",
+    });
+  } catch (e) {
+    // ignore errors — logout should still proceed locally
+  } finally {
+    await AsyncStorage.multiRemove([
+      ACCESS_TOKEN_KEY,
+      REFRESH_TOKEN_KEY,
+      PROFILE_CACHE_KEY,
+    ]);
+  }
 }

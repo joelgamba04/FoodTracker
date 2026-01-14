@@ -1,7 +1,9 @@
 // app/(tabs)/ProfileScreen.tsx
+import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
 import React, { useCallback, useEffect, useState } from "react";
 import {
+  Alert,
   Platform,
   ScrollView,
   StyleSheet,
@@ -114,6 +116,7 @@ function getWeightStatus(form: {
 
 export default function ProfileScreen() {
   const { profile, updateProfile, saveProfileToServer } = useProfile();
+  const { logout } = useAuth();
 
   const [form, setForm] = useState(profile);
   const [saving, setSaving] = useState(false);
@@ -153,6 +156,17 @@ export default function ProfileScreen() {
 
   // derive current status from the form (live as user types)
   const weightStatus = getWeightStatus(form);
+
+  const handleLogout = () => {
+    Alert.alert("Log out", "Are you sure you want to log out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Log out",
+        style: "destructive",
+        onPress: logout,
+      },
+    ]);
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
@@ -293,6 +307,10 @@ export default function ProfileScreen() {
           <Text style={styles.saveButtonText}>
             {saving ? "Saving..." : "💾 Save Profile Changes"}
           </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+          <Text style={styles.logoutButtonText}>Log out</Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
@@ -521,4 +539,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   saveButtonText: { color: "#fff", fontSize: 18, fontWeight: "700" },
+
+  logoutButton: {
+    marginTop: 10,
+    paddingVertical: 14,
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#FF3B30",
+    alignItems: "center",
+  },
+  logoutButtonText: {
+    color: "#FF3B30",
+    fontSize: 16,
+    fontWeight: "600",
+  },
 });
