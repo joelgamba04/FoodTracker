@@ -1,10 +1,10 @@
 // src/components/FoodResultItem.tsx
 import { Food } from "@/models/models";
 import { COLORS } from "@/theme/color";
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-// --- FoodResultItem Component ---
 type FoodResultItemProps = {
   item: Food;
   onPress: (food: Food) => void;
@@ -14,46 +14,69 @@ export const FoodResultItem: React.FC<FoodResultItemProps> = ({
   item,
   onPress,
 }) => (
-  <TouchableOpacity style={styles.resultItem} onPress={() => onPress(item)}>
-    <View>
-      <Text style={styles.resultItemName}>{item.name}</Text>
-      {item.englishName ? (
-        <Text style={styles.resultItemName}>{item.englishName}</Text>
-      ) : null}
-      <Text style={styles.resultItemDetails}>
-        Serving: {item.servingSize || "N/A"}
+  <TouchableOpacity
+    style={styles.row}
+    onPress={() => onPress(item)}
+    activeOpacity={0.85}
+  >
+    <View style={{ flex: 1, minWidth: 0 }}>
+      <Text style={styles.name} numberOfLines={1}>
+        {item.name}
+      </Text>
+      {!!item.englishName && (
+        <Text style={styles.eng} numberOfLines={1}>
+          {item.englishName}
+        </Text>
+      )}
+      <Text style={styles.meta} numberOfLines={1}>
+        {item.servingSize || "1 serving"}
       </Text>
     </View>
-    <Text style={styles.resultItemActionText}>+</Text>
+
+    <View style={styles.right}>
+      <Ionicons name="add" size={18} color={COLORS.textPrimary} />
+    </View>
   </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
-  // --- Food Result Item Styles ---
-
-  resultItem: {
+  row: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 12,
-    paddingHorizontal: 15,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.grayLight,
+    paddingHorizontal: 12,
+    backgroundColor: COLORS.surfaceMuted,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.surfaceBorder,
+    marginBottom: 10,
   },
-  resultItemName: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#333",
+  name: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
   },
-  resultItemDetails: {
-    fontSize: 12,
-    color: COLORS.grayDark,
+  eng: {
     marginTop: 2,
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: "600",
   },
-  resultItemActionText: {
-    fontSize: 24,
-    color: COLORS.primary,
-    fontWeight: "bold",
+  meta: {
+    marginTop: 2,
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: "600",
+  },
+  right: {
+    marginLeft: 10,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: COLORS.surfaceBorder,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: COLORS.surfaceBorder,
   },
 });

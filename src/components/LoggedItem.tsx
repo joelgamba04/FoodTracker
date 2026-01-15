@@ -1,6 +1,7 @@
 // src/components/LoggedItem.tsx
 import { FoodLogEntry } from "@/models/models";
 import { COLORS } from "@/theme/color";
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
   Platform,
@@ -13,9 +14,14 @@ import {
 type LoggedItemProps = {
   item: FoodLogEntry;
   onEdit: (entry: FoodLogEntry) => void;
-  // Now triggers a callback with the item details to start the removal process in the parent component
   onStartRemove: (entry: FoodLogEntry) => void;
 };
+
+function getCalories(entry: FoodLogEntry) {
+  const cals =
+    entry.food.nutrients?.find((n) => n.name === "Calories")?.amount ?? 0;
+  return cals * (entry.quantity ?? 1);
+}
 
 export const LoggedItem: React.FC<LoggedItemProps> = ({
   item,
@@ -24,44 +30,48 @@ export const LoggedItem: React.FC<LoggedItemProps> = ({
 }) => {
   const timestamp =
     item.timestamp instanceof Date ? item.timestamp : new Date(item.timestamp);
+
   const timeString = timestamp.toLocaleTimeString([], {
-    hour: "2-digit",
+    hour: "numeric",
     minute: "2-digit",
   });
 
-  const handleRemovePress = () => {
-    // Call the parent handler instead of managing local modal state
-    onStartRemove(item);
-  };
+  const calories = getCalories(item);
 
   return (
-    <View style={styles.logItemContainer}>
-      <View style={styles.logItemDetailsContainer}>
-        <Text style={styles.logItemText}>
-          <Text style={styles.logItemQuantity}>{item.quantity}x </Text>
-          {item.food.name}
-        </Text>
-        {item.food.englishName ? (
-          <Text style={{ color: "#777" }}>{item.food.englishName}</Text>
-        ) : null}
-        <Text style={styles.logItemTimestamp}>{timeString}</Text>
-      </View>
-      <View style={styles.logItemActions}>
+    <View style={styles.wrap}>
+      {/* time label */}
+      <Text style={styles.time}>{timeString}</Text>
+
+      <View style={styles.card}>
+        {/* image placeholder */}
+        <View style={styles.thumb} />
+
+        <View style={styles.center}>
+          <Text style={styles.title} numberOfLines={1}>
+            {item.quantity} {item.food.name}
+          </Text>
+
+          <Text style={styles.sub} numberOfLines={1}>
+            {item.food.servingSize || "Serving"} • {Math.round(calories)} kcal
+          </Text>
+        </View>
+
         <TouchableOpacity
-          style={styles.actionButton}
           onPress={() => onEdit(item)}
+          style={styles.iconBtn}
+          hitSlop={10}
         >
-          <Text style={[styles.actionButtonText, { color: COLORS.primary }]}>
-            Edit
-          </Text>
+          <Ionicons name="options-outline" size={18} color="#6B7280" />
         </TouchableOpacity>
+
+        {/* Optional: keep delete accessible (long press on card) */}
         <TouchableOpacity
-          style={styles.actionButton}
-          onPress={handleRemovePress} // Triggers parent handler
+          onPress={() => onStartRemove(item)}
+          style={styles.deleteBtn}
+          hitSlop={10}
         >
-          <Text style={[styles.actionButtonText, { color: COLORS.danger }]}>
-            Delete
-          </Text>
+          <Ionicons name="trash-outline" size={18} color="#6B7280" />
         </TouchableOpacity>
       </View>
     </View>
@@ -69,53 +79,60 @@ export const LoggedItem: React.FC<LoggedItemProps> = ({
 };
 
 const styles = StyleSheet.create({
-  logItemContainer: {
+  wrap: {
+    marginBottom: 14,
+  },
+  time: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginBottom: 6,
+  },
+  card: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    marginBottom: 8,
+    backgroundColor: COLORS.surfaceMuted,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.surfaceBorder,
+    padding: 10,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
       },
-      android: { elevation: 1 },
+      android: { elevation: 2 },
     }),
   },
-  logItemDetailsContainer: {
-    flex: 1,
+  thumb: {
+    width: 42,
+    height: 42,
+    borderRadius: 8,
+    backgroundColor: COLORS.surfaceBorder,
     marginRight: 10,
   },
-  logItemText: {
-    fontSize: 16,
-    color: "#333",
+  center: {
+    flex: 1,
+    minWidth: 0,
   },
-  logItemQuantity: {
-    fontWeight: "bold",
-    color: COLORS.primary,
-  },
-  logItemTimestamp: {
-    fontSize: 12,
-    color: COLORS.grayDark,
-  },
-  // Styles for actions
-  logItemActions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  actionButton: {
-    marginLeft: 10,
-    paddingVertical: 5,
-    paddingHorizontal: 8,
-  },
-  actionButtonText: {
+  title: {
     fontSize: 14,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+  },
+  sub: {
+    marginTop: 4,
+    fontSize: 12,
+    color: COLORS.textSecondary,
     fontWeight: "600",
+  },
+  iconBtn: {
+    paddingHorizontal: 6,
+    paddingVertical: 6,
+  },
+  deleteBtn: {
+    paddingHorizontal: 6,
+    paddingVertical: 6,
   },
 });

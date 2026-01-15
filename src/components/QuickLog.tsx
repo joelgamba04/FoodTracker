@@ -22,20 +22,23 @@ export const QuickLog: React.FC<QuickLogProps> = ({
   if (!favorites.length) return null;
 
   return (
-    <View style={styles.quickLogContainer}>
-      <Text style={styles.quickLogHeading}>⚡ Quick Log</Text>
+    <View style={styles.wrap}>
+      <Text style={styles.title}>Quick Log</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.quickLogScrollViewContent}
+        contentContainerStyle={styles.row}
       >
         {favorites.map((food) => (
           <TouchableOpacity
             key={food.id}
             style={styles.pill}
             onPress={() => onQuickAdd(food)}
+            activeOpacity={0.85}
           >
-            <Text style={styles.pillText}>{food.name}</Text>
+            <Text style={styles.pillText} numberOfLines={1}>
+              {food.name}
+            </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -44,32 +47,31 @@ export const QuickLog: React.FC<QuickLogProps> = ({
 };
 
 const styles = StyleSheet.create({
-  quickLogContainer: {
-    paddingTop: 5,
-    paddingBottom: 5,
-    backgroundColor: COLORS.bg,
+  wrap: {
+    marginTop: 14,
   },
-  quickLogHeading: {
-    fontSize: 16,
+  title: {
+    fontSize: 14,
     fontWeight: "700",
-    color: "#333",
+    color: COLORS.textPrimary,
     marginBottom: 10,
   },
-  quickLogScrollViewContent: {
-    paddingBottom: 5,
+  row: {
+    paddingBottom: 2,
   },
   pill: {
-    backgroundColor: "#E0E7FF",
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    marginRight: 8,
+    backgroundColor: COLORS.surfaceMuted,
     borderWidth: 1,
-    borderColor: "#C5D0FF",
+    borderColor: COLORS.surfaceBorder,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 999,
+    marginRight: 10,
+    maxWidth: 180,
   },
   pillText: {
-    color: "#0055FF",
-    fontWeight: "600",
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: "700",
+    color: COLORS.textSecondary,
   },
 });

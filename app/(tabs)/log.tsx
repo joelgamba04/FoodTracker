@@ -1,5 +1,5 @@
-//app/(tabs)/log.tsx
-// Main Log Screen with Edit and Delete Functionality
+// app/(tabs)/log.tsx
+import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -16,8 +16,6 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
-// =================================================================
-// Context and Models
 import { useFoodLog } from "@/context/FoodLogContext";
 import { Food, FoodLogEntry } from "@/models/models";
 import {
@@ -26,7 +24,6 @@ import {
   updateFoodLog,
 } from "@/services/foodLogService";
 import { searchFoods } from "@/services/foodSearchService";
-// =================================================================
 
 import CustomConfirmationModal from "@/components/CustomConfirmationModal";
 import { FoodResultItem } from "@/components/FoodResultItem";
@@ -36,11 +33,6 @@ import { mapFoodDetailToFood } from "@/mappers/foodMapper";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
 
-// =================================================================
-// --- Main Screen Component ---
-// This component is renamed and exported directly.
-// The FoodLogProvider is assumed to be wrapping the entire app/navigation.
-// =================================================================
 export default function LogScreen() {
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState("1");
@@ -51,12 +43,10 @@ export default function LogScreen() {
   const [editingEntry, setEditingEntry] = useState<FoodLogEntry | null>(null);
   const [mealType, setMealType] = useState<1 | 2 | 3>(1);
 
-  // --- NEW STATE FOR MODAL CONTROL ---
   const [entryToDelete, setEntryToDelete] = useState<FoodLogEntry | null>(null);
 
   const insets = useSafeAreaInsets();
 
-  // Destructure actions from the context
   const {
     log,
     addEntry,
@@ -68,37 +58,31 @@ export default function LogScreen() {
 
   const { start, end } = getTodayWindow();
   const todayLog = log.filter((e) => {
-    const ts = new Date(e.timestamp as any);
+    const ts =
+      e.timestamp instanceof Date ? e.timestamp : new Date(e.timestamp);
     return ts >= start && ts < end;
   });
 
   const favoriteFoods = useMemo(() => {
     if (!log || log.length === 0) return [];
-
     const counts: Record<string, { food: Food; count: number }> = {};
 
     for (const entry of log) {
       const food = entry.food as Food;
-      if (!food || !food.id) continue;
+      if (!food?.id) continue;
 
-      if (!counts[food.id]) {
-        counts[food.id] = { food, count: 0 };
-      }
-
-      const qty = entry.quantity ?? 1;
-      counts[food.id].count += qty;
+      if (!counts[food.id]) counts[food.id] = { food, count: 0 };
+      counts[food.id].count += entry.quantity ?? 1;
     }
 
     return Object.values(counts)
-      .sort((a, b) => b.count - a.count) // highest count first
-      .slice(0, 5) // top 5
-      .map((item) => item.food);
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+      .map((x) => x.food);
   }, [log]);
 
-  // --- Quantity Handlers ---
   const handleQuantityChange = (text: string) => {
-    const cleanedText = text.replace(/[^0-9.]/g, "");
-    setQuantity(cleanedText);
+    setQuantity(text.replace(/[^0-9.]/g, ""));
   };
 
   const adjustQuantity = (delta: number) => {
@@ -120,7 +104,6 @@ export default function LogScreen() {
       const res = await searchFoods(query);
 
       if (!res.success) {
-        console.error("Search failed:", res.message);
         setResults([]);
         return;
       }
@@ -142,37 +125,27 @@ export default function LogScreen() {
     if (editingEntry) {
       const localId = editingEntry.localId;
 
-      // 1) Update locally right away
       updateEntry(localId, qty);
 
-      // Reset UI immediately
       setEditingEntry(null);
       setQuantity("1");
       setSearch("");
       setResults([]);
 
-      // 2) If it was never uploaded, you can't update server yet
       const serverId = editingEntry.serverFoodEntryId;
       if (!serverId) {
         patchEntry(localId, {
           syncStatus: "failed",
-          lastSyncError:
-            "This entry is not saved on the server yet. Upload first.",
+          lastSyncError: "This entry is not saved on the server yet.",
         });
         return;
       }
 
-      // 3) Attempt server update
       patchEntry(localId, { syncStatus: "pending", lastSyncError: null });
 
       try {
-        const foodId = Number(editingEntry.food.id); // measure_id == food_id
-
-        await updateFoodLog(serverId, {
-          quantity: qty,
-          measure_id: foodId,
-        });
-
+        const foodId = Number(editingEntry.food.id);
+        await updateFoodLog(serverId, { quantity: qty, measure_id: foodId });
         patchEntry(localId, { syncStatus: "synced", lastSyncError: null });
       } catch (e: any) {
         patchEntry(localId, {
@@ -180,7 +153,6 @@ export default function LogScreen() {
           lastSyncError: e?.message ?? "Failed to update on server",
         });
       }
-
       return;
     }
 
@@ -194,30 +166,26 @@ export default function LogScreen() {
       food: selectedFood,
       quantity: qty,
       timestamp: new Date(),
-
-      mealType, // 1/2/3 if you have it
+      mealType,
       syncStatus: "pending",
       serverMealId: null,
       serverFoodEntryId: null,
       lastSyncError: null,
     };
 
-    // 1) Local-first: instant UI
     addEntry(newEntry);
 
-    // reset UI immediately (do not wait for network)
     setSelectedFood(null);
     setQuantity("1");
     setSearch("");
     setResults([]);
 
-    // 2) Best-effort upload
     try {
       const foodId = Number(newEntry.food.id);
 
       const res = await addFoodLogEntry({
         food_id: foodId,
-        measure_id: foodId, // per backend rule
+        measure_id: foodId,
         quantity: newEntry.quantity,
         meal_type: newEntry.mealType ?? 1,
         notes: "",
@@ -245,7 +213,6 @@ export default function LogScreen() {
     }
   };
 
-  // Unified handler for QuickLog and SearchResult tap (No Change)
   const handleSelectFood = useCallback((foodItem: Food) => {
     setSelectedFood(foodItem);
     setEditingEntry(null);
@@ -254,7 +221,6 @@ export default function LogScreen() {
     setSearch("");
   }, []);
 
-  // Handler to start editing a log entry
   const handleEditStart = useCallback((entry: FoodLogEntry) => {
     setEditingEntry(entry);
     setSelectedFood(null);
@@ -263,180 +229,167 @@ export default function LogScreen() {
     setSearch("");
   }, []);
 
-  const handleStartRemove = (entry: FoodLogEntry) => {
-    setEntryToDelete(entry);
-  };
+  const handleStartRemove = (entry: FoodLogEntry) => setEntryToDelete(entry);
 
   const handleConfirmDeletion = async () => {
     if (!entryToDelete) return;
 
     const entry = entryToDelete;
-
-    // close modal immediately
     setEntryToDelete(null);
 
-    // 1) remove locally first (instant UI)
     removeEntry(entry.localId);
 
-    // 2) if it was never uploaded, stop here
     if (!entry.serverFoodEntryId) return;
 
-    // 3) attempt server delete
     try {
       await deleteFoodLogEntry(entry.serverFoodEntryId);
     } catch (e: any) {
-      // Optional rollback (recommended early dev so you notice failures)
+      // optional rollback
       addEntry(entry);
     }
   };
 
-  const handleCancelDeletion = () => {
-    setEntryToDelete(null); // Hide modal
-  };
-  // -----------------------------
+  const handleCancelDeletion = () => setEntryToDelete(null);
 
-  // Determine which input/action area to show (No Change)
-  const isSearching = !!search.trim() && !searchLoading;
   const isShowingResults = results.length > 0 && !selectedFood && !editingEntry;
-  const isShowingActionForm = selectedFood || editingEntry;
-  const isShowingLoggedFood = todayLog.length > 0;
+  const isShowingActionForm = !!selectedFood || !!editingEntry;
 
-  // Set the current food for display in the action form (No Change)
   const currentFood = editingEntry ? editingEntry.food : selectedFood;
-  const actionButtonText = editingEntry ? `Update` : `Log`;
+  const actionButtonText = editingEntry ? "Update" : "Log";
   const cancelButtonText = editingEntry ? "Cancel Edit" : "Clear Selection";
 
-  // Show global loading state (No Change)
   if (isLogLoading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.listEmptyText}>Loading saved log data...</Text>
+        <Text style={styles.helperText}>Loading saved log data...</Text>
       </SafeAreaView>
     );
   }
 
-  // Determine modal message
   const modalMessage = entryToDelete
-    ? `Are you sure you want to remove ${entryToDelete.food.name} (${entryToDelete.quantity} servings)? This action cannot be undone.`
+    ? `Remove ${entryToDelete.food.name} (${entryToDelete.quantity} servings)?`
     : "";
 
   return (
     <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: COLORS.bg,
+        backgroundColor: COLORS.background,
         paddingBottom: 50 + insets.bottom,
       }}
     >
       <View style={styles.container}>
-        <Text style={styles.heading}>🍽️ Log Your Meal</Text>
+        {/* Title */}
+        <Text style={styles.title}>Log Your Meal</Text>
 
-        {/* --- Food Search Section --- */}
-        <View style={styles.searchBarContainer}>
+        {/* Search pill */}
+        <View style={styles.searchPill}>
+          <Ionicons name="search" size={18} color={COLORS.textMuted} />
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder="Search for food, e.g., 'rice', 'gabi'"
-            placeholderTextColor="#888"
-            style={styles.input}
+            placeholder="Search"
+            placeholderTextColor={COLORS.textMuted}
+            style={styles.searchInput}
             onSubmitEditing={handleSearch}
+            returnKeyType="search"
           />
           <TouchableOpacity
-            style={styles.searchButton}
             onPress={handleSearch}
             disabled={searchLoading || !search.trim()}
+            style={styles.searchRightIcon}
           >
             {searchLoading ? (
-              <ActivityIndicator color="#fff" size="small" />
+              <ActivityIndicator size="small" color={COLORS.textMuted} />
             ) : (
-              <Text style={styles.searchButtonText}>Search</Text>
+              <Ionicons
+                name="chevron-down"
+                size={18}
+                color={COLORS.textMuted}
+              />
             )}
           </TouchableOpacity>
         </View>
 
-        {/* --- QUICK LOG INTEGRATION --- */}
-        {!isSearching && !isShowingActionForm && (
+        {/* Quick log */}
+        {!isShowingResults && !isShowingActionForm && (
           <QuickLog favorites={favoriteFoods} onQuickAdd={handleSelectFood} />
         )}
 
-        {/* --- Main Scrollable Content Area --- */}
         <ScrollView
           style={styles.contentScroll}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {/* --- Selected Food / Editing Input Section --- */}
+          {/* Selected food / edit panel (keep for now; UI update later if needed) */}
           {isShowingActionForm && currentFood && (
-            <View style={styles.selectedFoodContainer}>
-              <Text style={styles.selectedFoodTitle}>
-                {editingEntry ? "Editing Log Entry" : "Add New Food"}
+            <View style={styles.actionCard}>
+              <Text style={styles.actionTitle}>
+                {editingEntry ? "Editing" : "Selected"}
               </Text>
-              <Text style={styles.selectedFoodDetails}>
-                {currentFood.name} - Serving: {currentFood.servingSize}
+              <Text style={styles.actionFoodName}>{currentFood.name}</Text>
+              {!!currentFood.englishName && (
+                <Text style={styles.actionSub}>{currentFood.englishName}</Text>
+              )}
+              <Text style={styles.actionSub}>
+                {currentFood.servingSize || "1 serving"}
               </Text>
 
-              {currentFood.englishName ? (
-                <Text style={styles.selectedFoodDetails}>
-                  {currentFood.englishName}
-                </Text>
-              ) : null}
-
-              {/* QUANTITY CONTROL SECTION */}
-              <View style={styles.quantityControl}>
-                {/* Minus Button */}
+              <View style={styles.quantityRow}>
                 <TouchableOpacity
-                  style={styles.quantityButton}
+                  style={[
+                    styles.qtyBtn,
+                    Number(quantity) <= 1 && styles.qtyBtnDisabled,
+                  ]}
                   onPress={() => adjustQuantity(-1)}
                   disabled={Number(quantity) <= 1}
                 >
-                  <Text style={styles.quantityButtonText}>-</Text>
+                  <Text style={styles.qtyBtnText}>-</Text>
                 </TouchableOpacity>
 
-                {/* Quantity Input */}
                 <TextInput
-                  style={styles.quantityInput}
+                  style={styles.qtyInput}
                   keyboardType="numeric"
                   value={quantity}
                   onChangeText={handleQuantityChange}
                   maxLength={4}
                 />
 
-                {/* Plus Button */}
                 <TouchableOpacity
-                  style={styles.quantityButton}
+                  style={styles.qtyBtn}
                   onPress={() => adjustQuantity(1)}
                 >
-                  <Text style={styles.quantityButtonText}>+</Text>
+                  <Text style={styles.qtyBtnText}>+</Text>
                 </TouchableOpacity>
               </View>
 
-              {/* Log Button */}
               <TouchableOpacity
-                style={styles.logButton}
+                style={styles.primaryBtn}
                 onPress={handleLogAction}
-                // Also disabled if the quantity is 0
                 disabled={Number(quantity) <= 0}
               >
-                <Text style={styles.logButtonText}>{actionButtonText}</Text>
+                <Text style={styles.primaryBtnText}>{actionButtonText}</Text>
               </TouchableOpacity>
-              {/* Cancel Button */}
+
               <TouchableOpacity
-                style={[styles.logButton, styles.cancelButton]}
+                style={styles.secondaryBtn}
                 onPress={() => {
                   setEditingEntry(null);
                   setSelectedFood(null);
                   setQuantity("1");
                 }}
               >
-                <Text style={styles.logButtonText}>{cancelButtonText}</Text>
+                <Text style={styles.secondaryBtnText}>{cancelButtonText}</Text>
               </TouchableOpacity>
             </View>
           )}
 
-          {/* --- Search Results List --- */}
+          {/* Search results */}
           {isShowingResults && (
-            <>
-              <Text style={styles.logHeading}>Search Results</Text>
+            <View style={{ marginTop: 8 }}>
+              <Text style={styles.sectionLabel}>Search Results</Text>
+              <View style={styles.sectionDivider} />
               {results.map((item) => (
                 <FoodResultItem
                   key={item.id}
@@ -444,17 +397,23 @@ export default function LogScreen() {
                   onPress={handleSelectFood}
                 />
               ))}
-            </>
+            </View>
           )}
 
-          {/* --- Today's Log Section --- */}
+          {/* Today's Log */}
           {!isShowingResults && !isShowingActionForm && (
-            <>
-              <Text style={styles.logHeading}>
-                📝 Today's Log — {new Date().toLocaleDateString()}
-              </Text>
-              {isShowingLoggedFood ? (
-                // Use the new prop onStartRemove
+            <View style={{ marginTop: 14 }}>
+              <View style={styles.sectionHeaderRow}>
+                <Ionicons
+                  name="restaurant-outline"
+                  size={16}
+                  color={COLORS.iconPrimary}
+                />
+                <Text style={styles.sectionLabel}>Today’s Log</Text>
+              </View>
+              <View style={styles.sectionDivider} />
+
+              {todayLog.length > 0 ? (
                 todayLog.map((item) => (
                   <LoggedItem
                     key={item.localId}
@@ -464,19 +423,18 @@ export default function LogScreen() {
                   />
                 ))
               ) : (
-                <Text style={styles.listEmptyText}>
-                  Nothing logged yet. Start searching or use Quick Log!
+                <Text style={styles.helperText}>
+                  Nothing logged yet. Search or use Quick Log.
                 </Text>
               )}
-            </>
+            </View>
           )}
 
-          <View style={{ height: 30 }} />
+          <View style={{ height: 24 }} />
         </ScrollView>
 
-        {/* --- MOVED MODAL TO THE ROOT OF LogScreen --- */}
         <CustomConfirmationModal
-          isVisible={!!entryToDelete} // Modal is visible if entryToDelete is set
+          isVisible={!!entryToDelete}
           title="Confirm Deletion"
           message={modalMessage}
           onConfirm={handleConfirmDeletion}
@@ -487,172 +445,172 @@ export default function LogScreen() {
   );
 }
 
-// =================================================================
-// --- Stylesheet ---
-// =================================================================
-
 const styles = StyleSheet.create({
-  // Global Styles
   container: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    backgroundColor: COLORS.bg,
-  },
-  contentScroll: {
-    flex: 1,
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    backgroundColor: COLORS.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: COLORS.bg,
+    backgroundColor: COLORS.background,
   },
-  heading: {
+  title: {
     fontSize: 26,
-    fontWeight: "700",
-    color: COLORS.primary,
-    marginBottom: 20,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
     textAlign: "center",
+    marginBottom: 14,
   },
 
-  // --- Search Bar Styles ---
-  searchBarContainer: {
+  searchPill: {
     flexDirection: "row",
-    marginBottom: 10,
-    borderRadius: 10,
-    backgroundColor: "#fff",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: { elevation: 3 },
-    }),
-  },
-  input: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    color: "#333",
-  },
-  searchButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 20,
-    justifyContent: "center",
     alignItems: "center",
-    borderTopRightRadius: 10,
-    borderBottomRightRadius: 10,
-  },
-  searchButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-
-  resultsList: {
-    maxHeight: 200,
-    marginBottom: 15,
-  },
-  listEmptyText: {
-    textAlign: "center",
-    color: COLORS.grayDark,
-    padding: 10,
-    fontStyle: "italic",
-  },
-
-  // --- Selected Food & Quantity Control Styles ---
-  selectedFoodContainer: {
-    padding: 16,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    marginVertical: 10,
+    backgroundColor: COLORS.surfaceMuted,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    height: 44,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: COLORS.surfaceBorder,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    paddingVertical: 0,
+  },
+  searchRightIcon: {
+    paddingLeft: 10,
+    paddingVertical: 8,
+  },
+
+  contentScroll: {
+    flex: 1,
+    marginTop: 10,
+  },
+
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#111",
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: COLORS.surfaceBorder,
+    marginTop: 10,
+    marginBottom: 12,
+  },
+
+  helperText: {
+    color: "#8A8F98",
+    fontSize: 13,
+    lineHeight: 18,
+  },
+
+  // Action card (temporary UI – can be redesigned later)
+  actionCard: {
+    marginTop: 10,
+    backgroundColor: COLORS.background,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: COLORS.surfaceBorder,
     ...Platform.select({
       ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
+        shadowColor: COLORS.shadow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
       },
       android: { elevation: 2 },
     }),
   },
-  selectedFoodTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 4,
+  actionTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: COLORS.textSecondary,
+    marginBottom: 6,
   },
-  selectedFoodDetails: {
-    fontSize: 14,
-    color: "#888",
-    marginBottom: 15,
+  actionFoodName: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
   },
-  // Quantity Control
-  quantityControl: {
+  actionSub: {
+    marginTop: 2,
+    fontSize: 13,
+    color: COLORS.textSecondary,
+  },
+
+  quantityRow: {
+    marginTop: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10,
+    gap: 10,
   },
-  quantityButton: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
+  qtyBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: COLORS.textPrimary,
     alignItems: "center",
-    marginHorizontal: 10,
+    justifyContent: "center",
   },
-  quantityButtonText: {
-    fontSize: 24,
-    color: "#fff",
-    fontWeight: "300",
+  qtyBtnDisabled: {
+    opacity: 0.35,
   },
-  quantityInput: {
-    width: 70,
-    height: 45,
-    textAlign: "center",
+  qtyBtnText: {
+    color: COLORS.textInverse,
     fontSize: 20,
     fontWeight: "700",
-    color: "#333",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 5,
   },
-
-  // Log Button Style
-  logButton: {
-    backgroundColor: COLORS.accent,
-    paddingVertical: 12,
+  qtyInput: {
+    width: 72,
+    height: 42,
     borderRadius: 10,
-    marginTop: 10,
-    alignItems: "center",
-  },
-  logButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  cancelButton: {
-    backgroundColor: COLORS.grayDark,
+    backgroundColor: COLORS.surfaceMuted,
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+    borderWidth: 1,
+    borderColor: COLORS.surfaceBorder,
   },
 
-  // --- Today's Log Styles ---
-  logHeading: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#333",
-    marginTop: 15,
-    marginBottom: 10,
-    paddingBottom: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.grayLight,
+  primaryBtn: {
+    marginTop: 12,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  primaryBtnText: {
+    color: COLORS.textInverse,
+    fontWeight: "800",
+    fontSize: 15,
+  },
+  secondaryBtn: {
+    marginTop: 10,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: COLORS.surfaceMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  secondaryBtnText: {
+    color: COLORS.textPrimary,
+    fontWeight: "800",
+    fontSize: 15,
   },
 });
