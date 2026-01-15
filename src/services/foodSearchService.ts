@@ -1,8 +1,8 @@
 // src/services/foodSearchService.ts
 import { api } from "@/lib/apiClient";
 import type {
-    FoodSearchResult,
-    ViewFoodDetailResponse
+  FoodSearchResult,
+  ViewFoodDetailResponse,
 } from "@/models/foodModels"; // adjust if your path differs
 
 /**
@@ -19,9 +19,7 @@ const ROUTES = {
   searchByName: (query: string) =>
     `/food/search?query=${encodeURIComponent(query)}`,
   searchByCategory: (categoryId: number) =>
-    `/food/categoryId${encodeURIComponent(
-      String(categoryId)
-    )}`,
+    `/food/categoryId${encodeURIComponent(String(categoryId))}`,
 };
 
 /**
@@ -42,7 +40,7 @@ export async function ViewFoodDetail(
 /**
  * Search foods by NAME (Filipino/English, depends on backend implementation).
  */
-export async function SearchFoods(query: string): Promise<FoodSearchResult> {
+export async function searchFoods(query: string): Promise<FoodSearchResult> {
   const q = (query ?? "").trim();
   if (!q) {
     // Return an empty result shape that matches your API response type

@@ -22,7 +22,9 @@ const ROUTES = {
 };
 
 
-export const AddFoodLogEntry = async (foodLogEntryBody: AddFoodLogEntryBody) => {
+export const addFoodLogEntry = async (
+  foodLogEntryBody: AddFoodLogEntryBody
+) => {
   const res = await api<ApiResponse<AddFoodLogEntryResponse>>(
     ROUTES.addEntry(),
     {
@@ -41,29 +43,27 @@ export const AddFoodLogEntry = async (foodLogEntryBody: AddFoodLogEntryBody) => 
   return res;
 };
 
-export const UpdateFoodLog = async (
+export const updateFoodLog = async (
   id: number,
   updateFoodLogEntryBody: UpdateFoodLogEntryBody
 ) => {
-
   const res = await api<ApiResponse<unknown>>(ROUTES.updateEntry(id), {
     method: "PUT",
     body: JSON.stringify(updateFoodLogEntryBody),
   });
-    if (!res.success) { 
-        throw new Error(res.message || "Failed to update food log entry");
-    }
-    return res;
+  if (!res.success) {
+    throw new Error(res.message || "Failed to update food log entry");
+  }
+  return res;
 };
 
-export const DeleteFoodLogEntry = async (id: number) => {
+export const deleteFoodLogEntry = async (id: number) => {
+  const res = await api<ApiResponse<unknown>>(ROUTES.deleteEntry(id), {
+    method: "DELETE",
+  });
 
-    const res = await api<ApiResponse<unknown>>(ROUTES.deleteEntry(id), {
-      method: "DELETE",
-    });
-    
-    if (!res.success) {
-        throw new Error(res.message || "Failed to delete food log entry");
-    }
-    return res;
-}
+  if (!res.success) {
+    throw new Error(res.message || "Failed to delete food log entry");
+  }
+  return res;
+};

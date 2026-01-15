@@ -21,65 +21,20 @@ import {
 import { useFoodLog } from "@/context/FoodLogContext";
 import { Food, FoodLogEntry } from "@/models/models";
 import {
-  AddFoodLogEntry,
-  DeleteFoodLogEntry,
-  UpdateFoodLog,
+  addFoodLogEntry,
+  deleteFoodLogEntry,
+  updateFoodLog,
 } from "@/services/foodLogService";
-import { SearchFoods } from "@/services/foodSearchService";
+import { searchFoods } from "@/services/foodSearchService";
 // =================================================================
 
 import CustomConfirmationModal from "@/components/CustomConfirmationModal";
 import { FoodResultItem } from "@/components/FoodResultItem";
 import { LoggedItem } from "@/components/LoggedItem";
 import { QuickLog } from "@/components/QuickLog";
-import { FoodDetail } from "@/models/foodModels";
+import { mapFoodDetailToFood } from "@/mappers/foodMapper";
+import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
-
-// --- Theme Constants ---
-const PRIMARY_COLOR = "#007AFF"; // Blue
-const ACCENT_COLOR = "#4CD964"; // Green (Log/Update)
-const DANGER_RED = "#FF3B30"; // Red for delete
-const GRAY_LIGHT = "#e8e8e8";
-const GRAY_DARK = "#555";
-
-function mapFoodSearchItemToFood(item: FoodDetail): Food {
-  const defaultMeasure =
-    item.measures?.find((m) => m.is_default === 1) ?? item.measures?.[0];
-
-  const servingSize =
-    defaultMeasure?.measure_label && defaultMeasure?.weight_g
-      ? `${defaultMeasure.measure_label} (${Number(defaultMeasure.weight_g)}g)`
-      : defaultMeasure?.measure_label ?? "1 serving";
-
-  return {
-    id: String(item.food_id),
-    name: item.filipino_name,
-    englishName: item.english_name,
-    servingSize,
-    nutrients: [
-      {
-        name: "Calories",
-        unit: "kcal",
-        amount: Number(item.energy_kcal ?? 0),
-      },
-      {
-        name: "Carbohydrate",
-        unit: "g",
-        amount: Number(item.carbohydrate_g ?? 0),
-      },
-      {
-        name: "Protein",
-        unit: "g",
-        amount: Number(item.protein_g ?? 0),
-      },
-      {
-        name: "Fat",
-        unit: "g",
-        amount: Number(item.fat_g ?? 0),
-      },
-    ],
-  };
-}
 
 // =================================================================
 // --- Main Screen Component ---
@@ -153,8 +108,8 @@ export default function LogScreen() {
   };
 
   const handleSearch = async () => {
-    const q = search.trim();
-    if (!q) return;
+    const query = search.trim();
+    if (!query) return;
 
     setSearchLoading(true);
     setResults([]);
@@ -162,7 +117,7 @@ export default function LogScreen() {
     setEditingEntry(null);
 
     try {
-      const res = await SearchFoods(q);
+      const res = await searchFoods(query);
 
       if (!res.success) {
         console.error("Search failed:", res.message);
@@ -170,7 +125,7 @@ export default function LogScreen() {
         return;
       }
 
-      const foods = (res.data ?? []).map(mapFoodSearchItemToFood);
+      const foods = (res.data ?? []).map(mapFoodDetailToFood);
       setResults(foods);
     } catch (error) {
       console.error("Search failed:", error);
@@ -213,7 +168,7 @@ export default function LogScreen() {
       try {
         const foodId = Number(editingEntry.food.id); // measure_id == food_id
 
-        await UpdateFoodLog(serverId, {
+        await updateFoodLog(serverId, {
           quantity: qty,
           measure_id: foodId,
         });
@@ -260,7 +215,7 @@ export default function LogScreen() {
     try {
       const foodId = Number(newEntry.food.id);
 
-      const res = await AddFoodLogEntry({
+      const res = await addFoodLogEntry({
         food_id: foodId,
         measure_id: foodId, // per backend rule
         quantity: newEntry.quantity,
@@ -328,7 +283,7 @@ export default function LogScreen() {
 
     // 3) attempt server delete
     try {
-      await DeleteFoodLogEntry(entry.serverFoodEntryId);
+      await deleteFoodLogEntry(entry.serverFoodEntryId);
     } catch (e: any) {
       // Optional rollback (recommended early dev so you notice failures)
       addEntry(entry);
@@ -355,7 +310,7 @@ export default function LogScreen() {
   if (isLogLoading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={PRIMARY_COLOR} />
+        <ActivityIndicator size="large" color={COLORS.primary} />
         <Text style={styles.listEmptyText}>Loading saved log data...</Text>
       </SafeAreaView>
     );
@@ -370,7 +325,7 @@ export default function LogScreen() {
     <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: "#f4f7f9",
+        backgroundColor: COLORS.bg,
         paddingBottom: 50 + insets.bottom,
       }}
     >
@@ -505,7 +460,7 @@ export default function LogScreen() {
                     key={item.localId}
                     item={item}
                     onEdit={handleEditStart}
-                    onStartRemove={() => handleStartRemove(item)}
+                    onStartRemove={handleStartRemove}
                   />
                 ))
               ) : (
@@ -542,7 +497,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
-    backgroundColor: "#f4f7f9",
+    backgroundColor: COLORS.bg,
   },
   contentScroll: {
     flex: 1,
@@ -551,12 +506,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f4f7f9",
+    backgroundColor: COLORS.bg,
   },
   heading: {
     fontSize: 26,
     fontWeight: "700",
-    color: PRIMARY_COLOR,
+    color: COLORS.primary,
     marginBottom: 20,
     textAlign: "center",
   },
@@ -585,7 +540,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   searchButton: {
-    backgroundColor: PRIMARY_COLOR,
+    backgroundColor: COLORS.primary,
     paddingHorizontal: 20,
     justifyContent: "center",
     alignItems: "center",
@@ -604,7 +559,7 @@ const styles = StyleSheet.create({
   },
   listEmptyText: {
     textAlign: "center",
-    color: GRAY_DARK,
+    color: COLORS.grayDark,
     padding: 10,
     fontStyle: "italic",
   },
@@ -649,7 +604,7 @@ const styles = StyleSheet.create({
     width: 45,
     height: 45,
     borderRadius: 22.5,
-    backgroundColor: PRIMARY_COLOR,
+    backgroundColor: COLORS.primary,
     justifyContent: "center",
     alignItems: "center",
     marginHorizontal: 10,
@@ -674,7 +629,7 @@ const styles = StyleSheet.create({
 
   // Log Button Style
   logButton: {
-    backgroundColor: ACCENT_COLOR,
+    backgroundColor: COLORS.accent,
     paddingVertical: 12,
     borderRadius: 10,
     marginTop: 10,
@@ -686,7 +641,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   cancelButton: {
-    backgroundColor: GRAY_DARK,
+    backgroundColor: COLORS.grayDark,
   },
 
   // --- Today's Log Styles ---
@@ -698,6 +653,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingBottom: 5,
     borderBottomWidth: 1,
-    borderBottomColor: GRAY_LIGHT,
+    borderBottomColor: COLORS.grayLight,
   },
 });

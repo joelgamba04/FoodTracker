@@ -1,12 +1,14 @@
 // src/components/LoggedItem.tsx
 import { FoodLogEntry } from "@/models/models";
+import { COLORS } from "@/theme/color";
 import React from "react";
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
-const PRIMARY_COLOR = "#007AFF";
-const ACCENT_COLOR = "#4CD964";
-const DANGER_RED = "#FF3B30"; 
-const GRAY_DARK = "#555";
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 type LoggedItemProps = {
   item: FoodLogEntry;
@@ -49,7 +51,7 @@ export const LoggedItem: React.FC<LoggedItemProps> = ({
           style={styles.actionButton}
           onPress={() => onEdit(item)}
         >
-          <Text style={[styles.actionButtonText, { color: PRIMARY_COLOR }]}>
+          <Text style={[styles.actionButtonText, { color: COLORS.primary }]}>
             Edit
           </Text>
         </TouchableOpacity>
@@ -57,7 +59,7 @@ export const LoggedItem: React.FC<LoggedItemProps> = ({
           style={styles.actionButton}
           onPress={handleRemovePress} // Triggers parent handler
         >
-          <Text style={[styles.actionButtonText, { color: DANGER_RED }]}>
+          <Text style={[styles.actionButtonText, { color: COLORS.danger }]}>
             Delete
           </Text>
         </TouchableOpacity>
@@ -96,11 +98,11 @@ const styles = StyleSheet.create({
   },
   logItemQuantity: {
     fontWeight: "bold",
-    color: PRIMARY_COLOR,
+    color: COLORS.primary,
   },
   logItemTimestamp: {
     fontSize: 12,
-    color: GRAY_DARK,
+    color: COLORS.grayDark,
   },
   // Styles for actions
   logItemActions: {
