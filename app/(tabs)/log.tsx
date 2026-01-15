@@ -28,7 +28,10 @@ import {
 import { SearchFoods } from "@/services/foodSearchService";
 // =================================================================
 
-import CustomConfirmationModal from "@/components/CustomConfirmationModal"; // <--- Imported Modal
+import CustomConfirmationModal from "@/components/CustomConfirmationModal";
+import { FoodResultItem } from "@/components/FoodResultItem";
+import { LoggedItem } from "@/components/LoggedItem";
+import { QuickLog } from "@/components/QuickLog";
 import { FoodDetail } from "@/models/foodModels";
 import { getTodayWindow } from "@/utils/date";
 
@@ -38,115 +41,6 @@ const ACCENT_COLOR = "#4CD964"; // Green (Log/Update)
 const DANGER_RED = "#FF3B30"; // Red for delete
 const GRAY_LIGHT = "#e8e8e8";
 const GRAY_DARK = "#555";
-
-// --- QuickLog Component (No Change) ---
-interface QuickLogProps {
-  favorites: Food[];
-  onQuickAdd: (food: Food) => void;
-}
-
-const QuickLog: React.FC<QuickLogProps> = ({ favorites, onQuickAdd }) => (
-  <View style={styles.quickLogContainer}>
-    <Text style={styles.quickLogHeading}>⚡ Quick Log</Text>
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.quickLogScrollViewContent}
-    >
-      {favorites.map((food) => (
-        <TouchableOpacity
-          key={food.id}
-          style={styles.pill}
-          onPress={() => onQuickAdd(food)}
-        >
-          <Text style={styles.pillText}>{food.name}</Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
-  </View>
-);
-
-// --- FoodResultItem Component ---
-type FoodResultItemProps = {
-  item: Food;
-  onPress: (food: Food) => void;
-};
-
-const FoodResultItem: React.FC<FoodResultItemProps> = ({ item, onPress }) => (
-  <TouchableOpacity style={styles.resultItem} onPress={() => onPress(item)}>
-    <View>
-      <Text style={styles.resultItemName}>{item.name}</Text>
-      {item.englishName ? (
-        <Text style={styles.resultItemName}>{item.englishName}</Text>
-      ) : null}
-      <Text style={styles.resultItemDetails}>
-        Serving: {item.servingSize || "N/A"}
-      </Text>
-    </View>
-    <Text style={styles.resultItemActionText}>+</Text>
-  </TouchableOpacity>
-);
-
-// --- LoggedItem Component (MODIFIED for Edit/Delete) ---
-type LoggedItemProps = {
-  item: FoodLogEntry;
-  onEdit: (entry: FoodLogEntry) => void;
-  // Now triggers a callback with the item details to start the removal process in the parent component
-  onStartRemove: (entry: FoodLogEntry) => void;
-};
-
-const LoggedItem: React.FC<LoggedItemProps> = ({
-  item,
-  onEdit,
-  onStartRemove,
-}) => {
-  // Local state for modal visibility removed
-
-  const timestamp =
-    item.timestamp instanceof Date ? item.timestamp : new Date(item.timestamp);
-  const timeString = timestamp.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  const handleRemovePress = () => {
-    // Call the parent handler instead of managing local modal state
-    onStartRemove(item);
-  };
-
-  return (
-    <View style={styles.logItemContainer}>
-      <View style={styles.logItemDetailsContainer}>
-        <Text style={styles.logItemText}>
-          <Text style={styles.logItemQuantity}>{item.quantity}x </Text>
-          {item.food.name}
-        </Text>
-        {item.food.englishName ? (
-          <Text style={{ color: "#777" }}>{item.food.englishName}</Text>
-        ) : null}
-        <Text style={styles.logItemTimestamp}>{timeString}</Text>
-      </View>
-      <View style={styles.logItemActions}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onEdit(item)}
-        >
-          <Text style={[styles.actionButtonText, { color: PRIMARY_COLOR }]}>
-            Edit
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={handleRemovePress} // Triggers parent handler
-        >
-          <Text style={[styles.actionButtonText, { color: DANGER_RED }]}>
-            Delete
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-};
 
 function mapFoodSearchItemToFood(item: FoodDetail): Food {
   const defaultMeasure =
@@ -704,65 +598,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // --- Quick Log Styles ---
-  quickLogContainer: {
-    paddingTop: 5,
-    paddingBottom: 5,
-    backgroundColor: "#f4f7f9",
-  },
-  quickLogHeading: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 10,
-  },
-  quickLogScrollViewContent: {
-    paddingBottom: 5,
-  },
-  pill: {
-    backgroundColor: "#E0E7FF",
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: "#C5D0FF",
-  },
-  pillText: {
-    color: "#0055FF",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-
-  // --- Search Results List Styles ---
   resultsList: {
     maxHeight: 200,
     marginBottom: 15,
-  },
-  resultItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: GRAY_LIGHT,
-  },
-  resultItemName: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#333",
-  },
-  resultItemDetails: {
-    fontSize: 12,
-    color: GRAY_DARK,
-    marginTop: 2,
-  },
-  resultItemActionText: {
-    fontSize: 24,
-    color: PRIMARY_COLOR,
-    fontWeight: "bold",
   },
   listEmptyText: {
     textAlign: "center",
@@ -861,54 +699,5 @@ const styles = StyleSheet.create({
     paddingBottom: 5,
     borderBottomWidth: 1,
     borderBottomColor: GRAY_LIGHT,
-  },
-  logItemContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    marginBottom: 8,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-      },
-      android: { elevation: 1 },
-    }),
-  },
-  logItemDetailsContainer: {
-    flex: 1,
-    marginRight: 10,
-  },
-  logItemText: {
-    fontSize: 16,
-    color: "#333",
-  },
-  logItemQuantity: {
-    fontWeight: "bold",
-    color: PRIMARY_COLOR,
-  },
-  logItemTimestamp: {
-    fontSize: 12,
-    color: GRAY_DARK,
-  },
-  // Styles for actions
-  logItemActions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  actionButton: {
-    marginLeft: 10,
-    paddingVertical: 5,
-    paddingHorizontal: 8,
-  },
-  actionButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
   },
 });
