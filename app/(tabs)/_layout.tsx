@@ -16,9 +16,9 @@ function TabIcon({
   return (
     <View
       style={{
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 50,
+        height: 50,
+        borderRadius: 25,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: "transparent",

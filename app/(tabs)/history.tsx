@@ -142,7 +142,7 @@ export default function HistoryScreen() {
       style={{
         flex: 1,
         backgroundColor: COLORS.background,
-        paddingBottom: 50 + insets.bottom,
+        paddingBottom: insets.bottom,
       }}
     >
       {/* Controls */}

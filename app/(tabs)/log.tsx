@@ -276,7 +276,7 @@ export default function LogScreen() {
       style={{
         flex: 1,
         backgroundColor: COLORS.background,
-        paddingBottom: 50 + insets.bottom,
+        paddingBottom: insets.bottom,
       }}
     >
       <View style={styles.container}>

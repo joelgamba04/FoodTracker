@@ -73,7 +73,7 @@ export default function NutritionScreen() {
       style={{
         flex: 1,
         backgroundColor: COLORS.background,
-        paddingBottom: 50 + insets.bottom,
+        paddingBottom: insets.bottom,
       }}
     >
       <ScrollView style={styles.container}>
