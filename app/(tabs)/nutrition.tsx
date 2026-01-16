@@ -1,29 +1,16 @@
 // app/(tabs)/nutrition.tsx
+import NutrientCard from "@/components/NutrientCard";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { NutrientKey, useProfile } from "@/context/ProfileContext";
 import { Nutrient } from "@/models/models";
+import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
 import React from "react";
-import {
-  DimensionValue,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-
-// --- Theme Constants ---
-const PRIMARY_BLUE = "#007AFF";
-const ACCENT_GREEN = "#4CD964";
-const WARNING_YELLOW = "#FFCC00";
-const DANGER_RED = "#FF3B30";
-const GRAY_LIGHT = "#e8e8e8";
-const BACKGROUND_COLOR = "#f4f7f9";
 
 // --- Helper Functions ---
 function calculateTotals(log: any[]): Nutrient[] {
@@ -40,83 +27,6 @@ function calculateTotals(log: any[]): Nutrient[] {
   });
   return Object.values(totals);
 }
-
-function getBarColor(percent: number) {
-  if (percent > 1.2) return DANGER_RED;
-  if (percent < 0.6) return WARNING_YELLOW;
-  return ACCENT_GREEN;
-}
-
-// --- Reusable Nutrient Card Component ---
-interface NutrientCardProps {
-  name: string;
-  consumed: number;
-  recommended: number;
-  unit: string;
-  isMacro?: boolean;
-}
-
-const NutrientCard: React.FC<NutrientCardProps> = ({
-  name,
-  consumed,
-  recommended,
-  unit,
-  isMacro = false,
-}) => {
-  const percent = recommended > 0 ? consumed / recommended : 0;
-  const MAX_BAR_PERCENT = 1.5;
-  const cappedPercent = Math.min(percent, MAX_BAR_PERCENT);
-  const visualWidthPercent = (cappedPercent / MAX_BAR_PERCENT) * 100;
-
-  const barWidth: DimensionValue = `${visualWidthPercent}%`;
-  const color = getBarColor(percent);
-  const markerPosition = `${(1 / MAX_BAR_PERCENT) * 100}%`;
-
-  return (
-    <View style={[styles.card, isMacro && styles.macroCard]}>
-      <View style={styles.cardHeader}>
-        <Text style={[styles.cardTitle, isMacro && styles.macroTitle]}>
-          {name}
-        </Text>
-        <Text style={styles.cardGoal}>
-          Goal: {recommended.toFixed(0)}
-          {unit}
-        </Text>
-      </View>
-
-      <View style={styles.barContainer}>
-        <View style={styles.barBackground}>
-          <View
-            style={[
-              styles.bar,
-              {
-                width: barWidth,
-                backgroundColor: color,
-              },
-            ]}
-          />
-          <View style={[styles.marker, { left: markerPosition }]} />
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.consumedText}>
-            Consumed:{" "}
-            <Text style={{ color }}>
-              {consumed.toFixed(name === "Calories" ? 0 : 1)}
-            </Text>
-            {unit}
-          </Text>
-          {percent > 1.2 ? (
-            <Text style={styles.statusTextRed}>⚠️ Over Target</Text>
-          ) : percent < 0.6 ? (
-            <Text style={styles.statusTextYellow}>📉 Lacking</Text>
-          ) : (
-            <Text style={styles.statusTextGreen}>✅ On Track</Text>
-          )}
-        </View>
-      </View>
-    </View>
-  );
-};
 
 // --- Main Screen Component ---
 export default function NutritionScreen() {
@@ -141,7 +51,7 @@ export default function NutritionScreen() {
           { alignItems: "center", justifyContent: "center" },
         ]}
       >
-        <Text style={styles.emptyHeading}>📊 Nutrition Overview</Text>
+        <Text style={styles.emptyHeading}>Nutrition Overview</Text>
         <Text style={styles.emptyText}>Nothing to analyze yet!</Text>
         <Text style={styles.emptyText}>
           Log some food to see your daily totals and progress.
@@ -162,12 +72,12 @@ export default function NutritionScreen() {
     <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: BACKGROUND_COLOR,
+        backgroundColor: COLORS.background,
         paddingBottom: 50 + insets.bottom,
       }}
     >
       <ScrollView style={styles.container}>
-        <Text style={styles.mainHeading}>📊 Daily Nutrition Summary</Text>
+        <Text style={styles.mainHeading}>Daily Nutrition Summary</Text>
 
         {/* --- CALORIES SECTION --- */}
         <Text style={styles.sectionTitle}>Calories Goal</Text>
@@ -211,124 +121,32 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 10,
-    backgroundColor: BACKGROUND_COLOR,
+    backgroundColor: COLORS.background,
   },
   mainHeading: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: "700",
-    color: PRIMARY_BLUE,
+    color: COLORS.textPrimary,
     marginBottom: 20,
-    textAlign: "left",
+    textAlign: "center",
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#333",
+    color: COLORS.textPrimary,
     marginTop: 15,
     marginBottom: 10,
   },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 5,
-      },
-    }),
-  },
-  macroCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: PRIMARY_BLUE,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "baseline",
-    marginBottom: 10,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  macroTitle: {
-    color: PRIMARY_BLUE,
-  },
-  cardGoal: {
-    fontSize: 14,
-    color: "#888",
-    fontWeight: "500",
-  },
-  barContainer: {
-    marginTop: 5,
-  },
-  barBackground: {
-    height: 12,
-    backgroundColor: GRAY_LIGHT,
-    borderRadius: 6,
-    position: "relative",
-    overflow: "hidden",
-    width: "100%",
-  },
-  bar: {
-    height: "100%",
-    borderRadius: 6,
-    position: "absolute",
-    left: 0,
-    top: 0,
-  },
-  marker: {
-    position: "absolute",
-    top: 0,
-    width: 2,
-    height: "100%",
-    backgroundColor: PRIMARY_BLUE,
-    borderRadius: 1,
-    zIndex: 10,
-  },
-  summaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 8,
-    alignItems: "center",
-  },
-  consumedText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#333",
-  },
-  statusTextGreen: {
-    color: ACCENT_GREEN,
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  statusTextYellow: {
-    color: WARNING_YELLOW,
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  statusTextRed: {
-    color: DANGER_RED,
-    fontWeight: "bold",
-    fontSize: 14,
-  },
+
   emptyHeading: {
     fontSize: 24,
     fontWeight: "700",
-    color: PRIMARY_BLUE,
+    color: COLORS.textPrimary,
     marginBottom: 40,
   },
   emptyText: {
     fontSize: 16,
-    color: "#757575",
+    color: COLORS.textSecondary,
     textAlign: "center",
     marginHorizontal: 40,
     lineHeight: 24,

@@ -6,6 +6,9 @@ export const COLORS = {
    * ========================= */
   primary: "#2563EB", // Blue primary action (Save, Log, CTA)
   primaryMuted: "#DBEAFE",
+  accentGreen: "#4CD964",
+  warningYellow: "#FFCC00",
+  dangerRed: "#FF3B30",
 
   /* =========================
    * Text
