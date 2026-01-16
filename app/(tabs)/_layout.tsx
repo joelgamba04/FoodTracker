@@ -1,8 +1,9 @@
 // app/(tabs)/_layout.tsx
+import StickyTabBar from "@/components/StickyTabBar";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
-import { Platform, View } from "react-native";
+import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function TabIcon({
@@ -20,7 +21,7 @@ function TabIcon({
         borderRadius: 22,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: focused ? "#FFFFFF" : "transparent",
+        backgroundColor: "transparent",
       }}
     >
       <Ionicons name={name} size={22} color={focused ? "#000000" : "#FFFFFF"} />
@@ -37,47 +38,9 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      tabBar={(props) => <StickyTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-
-        // remove default label
-        tabBarShowLabel: false,
-
-        // the black "pill" container
-        tabBarStyle: {
-          position: "absolute",
-          left: H_PADDING,
-          right: H_PADDING,
-          bottom: Math.max(insets.bottom, 12), // keeps it above gesture/nav areas
-          height: BAR_HEIGHT,
-          borderRadius: 999,
-          backgroundColor: "#000000",
-
-          // subtle elevation/shadow
-          ...Platform.select({
-            android: { elevation: 10 },
-            ios: {
-              shadowColor: "#000",
-              shadowOpacity: 0.18,
-              shadowRadius: 14,
-              shadowOffset: { width: 0, height: 8 },
-            },
-          }),
-
-          // reduce border line iOS sometimes shows
-          borderTopWidth: 0,
-        },
-
-        // item spacing
-        tabBarItemStyle: {
-          height: BAR_HEIGHT,
-          paddingVertical: 10,
-        },
-
-        // keep icons centered
-        tabBarIconStyle: {
-          flex: 1,
-        },
       }}
     >
       <Tabs.Screen
@@ -93,7 +56,7 @@ export default function TabLayout() {
         name="nutrition"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon name="bar-chart" focused={focused} />
+            <TabIcon name="stats-chart" focused={focused} />
           ),
         }}
       />
