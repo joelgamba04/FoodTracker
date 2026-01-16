@@ -45,7 +45,7 @@ export const LoggedItem: React.FC<LoggedItemProps> = ({
 
       <View style={styles.card}>
         {/* image placeholder */}
-        <View style={styles.thumb} />
+        {/* <View style={styles.thumb} /> */}
 
         <View style={styles.center}>
           <Text style={styles.title} numberOfLines={1}>
