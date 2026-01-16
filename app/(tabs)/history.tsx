@@ -1,5 +1,9 @@
+// src/app/(tabs)/history.tsx
+import { LoggedItem } from "@/components/LoggedItem";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { FoodLogEntry } from "@/models/models";
+import { COLORS } from "@/theme/color";
+import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -23,8 +27,7 @@ const formatDate = (date: Date) =>
     year: "numeric",
   });
 
-const formatTime = (date: Date) =>
-  date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+const sumBy = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
 const getCalories = (entry: FoodLogEntry) => {
   const list = entry.food?.nutrients ?? [];
@@ -33,9 +36,6 @@ const getCalories = (entry: FoodLogEntry) => {
   return cal * (entry.quantity ?? 1);
 };
 
-const sumBy = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
-
-// Compute macro totals for a set of entries
 function dayTotals(entries: FoodLogEntry[]) {
   const pick = (name: string) =>
     sumBy(
@@ -54,7 +54,6 @@ function dayTotals(entries: FoodLogEntry[]) {
   };
 }
 
-// Group entries by yyyy-mm-dd
 function groupByDay(all: FoodLogEntry[]) {
   const map = new Map<string, FoodLogEntry[]>();
   for (const e of all) {
@@ -63,22 +62,21 @@ function groupByDay(all: FoodLogEntry[]) {
       2,
       "0"
     )}-${String(date.getDate()).padStart(2, "0")}`;
+
     const arr = map.get(key) ?? [];
     arr.push(e);
     map.set(key, arr);
   }
-  // Convert to sections sorted desc by date
+
   const sections = Array.from(map.entries())
     .map(([key, entries]) => {
-      const date = new Date(key);
       const totals = dayTotals(entries);
       return {
-        title: `${formatDate(
-          new Date(entries[0].timestamp as any)
-        )} — ${Math.round(totals.kcal)} kcal`,
-        subtitle: `P ${Math.round(totals.protein)}g • C ${Math.round(
+        title: `${formatDate(new Date(entries[0].timestamp as any))}`,
+        subtitle: `Protein ${Math.round(totals.protein)}g • Carbs ${Math.round(
           totals.carbs
-        )}g • F ${Math.round(totals.fat)}g`,
+        )}g • Fat ${Math.round(totals.fat)}g`,
+        kcal: Math.round(totals.kcal),
         dateKey: key,
         data: entries.sort(
           (a, b) =>
@@ -91,7 +89,6 @@ function groupByDay(all: FoodLogEntry[]) {
   return sections;
 }
 
-// Date filter helpers
 const daysAgo = (daysAgo: number) => {
   const date = new Date();
   date.setDate(date.getDate() - daysAgo);
@@ -105,17 +102,19 @@ export default function HistoryScreen() {
   const [range, setRange] = useState<"all" | "7" | "30">("all");
   const insets = useSafeAreaInsets();
 
-  const filtered = useMemo(() => {
+  const filteredSections = useMemo(() => {
     const lower = query.trim().toLowerCase();
     const after =
       range === "7" ? daysAgo(7) : range === "30" ? daysAgo(30) : null;
 
-    const base = (log ?? []).filter((foodLogEntry: FoodLogEntry) => {
-      const ts = new Date(foodLogEntry.timestamp as any);
+    const base = (log ?? []).filter((entry: FoodLogEntry) => {
+      const ts = new Date(entry.timestamp as any);
       if (after && ts < after) return false;
+
       if (!lower) return true;
-      const name = foodLogEntry.food?.name?.toLowerCase() ?? "";
-      return name.includes(lower);
+      const name = entry.food?.name?.toLowerCase() ?? "";
+      const english = entry.food?.englishName?.toLowerCase() ?? "";
+      return name.includes(lower) || english.includes(lower);
     });
 
     return groupByDay(base);
@@ -139,29 +138,49 @@ export default function HistoryScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, paddingBottom: 50 + insets.bottom }}>
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: COLORS.background,
+        paddingBottom: 50 + insets.bottom,
+      }}
+    >
       {/* Controls */}
       <View style={styles.controls}>
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search foods…"
-          placeholderTextColor="#888"
-          style={styles.search}
-        />
+        {/* Search pill (same look as log page) */}
+        <View style={styles.searchPill}>
+          <Ionicons name="search" size={18} color={COLORS.textMuted} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Placeholder"
+            placeholderTextColor={COLORS.textMuted}
+            style={styles.searchInput}
+            returnKeyType="search"
+          />
+          <TouchableOpacity
+            onPress={() => {}}
+            style={styles.searchRightIcon}
+            hitSlop={10}
+          >
+            <Ionicons name="chevron-down" size={18} color={COLORS.textMuted} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Range buttons */}
         <View style={styles.rangeWrap}>
           <RangeButton
-            label="All"
+            label="ALL"
             active={range === "all"}
             onPress={() => setRange("all")}
           />
           <RangeButton
-            label="7d"
+            label="7D"
             active={range === "7"}
             onPress={() => setRange("7")}
           />
           <RangeButton
-            label="30d"
+            label="30D"
             active={range === "30"}
             onPress={() => setRange("30")}
           />
@@ -169,44 +188,35 @@ export default function HistoryScreen() {
       </View>
 
       <SectionList
-        sections={filtered}
+        sections={filteredSections}
         keyExtractor={(item: FoodLogEntry) => item.localId}
+        contentContainerStyle={styles.listPad}
+        showsVerticalScrollIndicator={false}
         renderSectionHeader={({ section }) => (
-          <View style={styles.secHeader}>
-            <Text style={styles.secTitle}>{section.title}</Text>
-            <Text style={styles.secSubtitle}>{section.subtitle}</Text>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeaderTop}>
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+              <Text style={styles.sectionKcal}>{section.kcal} kcal</Text>
+            </View>
+            <Text style={styles.sectionSubtitle}>{section.subtitle}</Text>
+            <View style={styles.sectionDivider} />
           </View>
         )}
         renderItem={({ item }) => (
-          <View style={styles.itemRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.itemTitle}>
-                {item.food?.name ?? "Unnamed item"}
-              </Text>
-              <Text style={styles.itemTitle}>
-                {item.food?.englishName ?? "Unnamed item"}
-              </Text>
-              <Text style={styles.itemSub}>
-                {formatTime(new Date(item.timestamp as any))}
-              </Text>
-            </View>
-            <View style={{ alignItems: "flex-end" }}>
-              <Text style={styles.itemKcal}>
-                {Math.round(getCalories(item))}
-              </Text>
-              <Text style={styles.itemKcalUnit}>kcal</Text>
-            </View>
-          </View>
+          <LoggedItem
+            item={item}
+            // History is read-only for now:
+            onEdit={() => {}}
+            onStartRemove={() => {}}
+            disableActions={true}
+          />
         )}
-        ItemSeparatorComponent={() => <View style={styles.sep} />}
-        SectionSeparatorComponent={() => <View style={{ height: 12 }} />}
-        contentContainerStyle={styles.listPad}
+        SectionSeparatorComponent={() => <View style={{ height: 10 }} />}
       />
     </SafeAreaView>
   );
 }
 
-// ——— Small components
 function RangeButton({
   label,
   active,
@@ -220,6 +230,7 @@ function RangeButton({
     <TouchableOpacity
       onPress={onPress}
       style={[styles.rangeBtn, active ? styles.rangeBtnActive : null]}
+      activeOpacity={0.85}
     >
       <Text style={[styles.rangeText, active ? styles.rangeTextActive : null]}>
         {label}
@@ -228,69 +239,108 @@ function RangeButton({
   );
 }
 
-// ——— Styles
-const BLUE = "#007AFF";
-const DANGER = "#d7263d";
 const styles = StyleSheet.create({
   center: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
+    backgroundColor: COLORS.background,
   },
-  dim: { opacity: 0.7, marginTop: 6 },
-  h1: { fontSize: 20, fontWeight: "700" },
+  dim: { opacity: 0.7, marginTop: 6, color: COLORS.textSecondary },
+  h1: { fontSize: 20, fontWeight: "700", color: COLORS.textPrimary },
+
   controls: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 10,
+    backgroundColor: COLORS.background,
     gap: 10,
-    backgroundColor: "#f4f7f9",
   },
-  search: {
+
+  // Search pill (same design language as log page)
+  searchPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.surfaceMuted,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    height: 44,
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#fff",
+    borderColor: COLORS.surfaceBorder,
   },
-  rangeWrap: { flexDirection: "row", gap: 8 },
-  rangeBtn: {
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    paddingVertical: 0,
+  },
+  searchRightIcon: {
+    paddingLeft: 10,
     paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    backgroundColor: "#fff",
   },
-  rangeBtnActive: { borderColor: BLUE, backgroundColor: "#eef5ff" },
-  rangeText: { color: "#333", fontWeight: "600" },
-  rangeTextActive: { color: BLUE },
-  listPad: { padding: 16, paddingBottom: 100 },
-  secHeader: { marginTop: 8, marginBottom: 6 },
-  secTitle: { fontSize: 16, fontWeight: "700", color: BLUE },
-  secSubtitle: { fontSize: 12, opacity: 0.7 },
-  itemRow: {
+
+  rangeWrap: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  rangeBtn: {
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.surfaceBorder,
+    backgroundColor: COLORS.background,
+  },
+  rangeBtnActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primaryMuted,
+  },
+  rangeText: {
+    color: COLORS.textPrimary,
+    fontWeight: "800",
+    fontSize: 12,
+    letterSpacing: 0.4,
+  },
+  rangeTextActive: {
+    color: COLORS.primary,
+  },
+
+  listPad: {
+    paddingHorizontal: 18,
+    paddingTop: 6,
+    paddingBottom: 100,
+  },
+
+  sectionHeader: {
+    marginTop: 8,
+    marginBottom: 6,
+  },
+  sectionHeaderTop: {
     flexDirection: "row",
     alignItems: "baseline",
-    paddingVertical: 10,
+    justifyContent: "space-between",
   },
-  itemTitle: { fontWeight: "600", fontSize: 15 },
-  itemSub: { opacity: 0.6, marginTop: 2 },
-  itemKcal: { fontSize: 18, fontWeight: "800" },
-  itemKcalUnit: { fontSize: 12, opacity: 0.6, marginTop: 2 },
-  sep: { height: 1, backgroundColor: "#eee" },
-  footer: {
-    position: "absolute",
-    bottom: 12,
-    left: 16,
-    right: 16,
-    flexDirection: "row",
-    gap: 10,
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: COLORS.textMuted,
   },
-  btn: { flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 10 },
-  btnText: { color: "#fff", fontWeight: "700" },
-  btnOutline: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#ddd" },
-  btnOutlineText: { color: "#333" },
-  btnDanger: { backgroundColor: DANGER },
+  sectionKcal: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: COLORS.textMuted,
+  },
+  sectionSubtitle: {
+    marginTop: 2,
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: "600",
+  },
+  sectionDivider: {
+    marginTop: 10,
+    height: 1,
+    backgroundColor: COLORS.surfaceBorder,
+  },
 });

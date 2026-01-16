@@ -15,6 +15,7 @@ type LoggedItemProps = {
   item: FoodLogEntry;
   onEdit: (entry: FoodLogEntry) => void;
   onStartRemove: (entry: FoodLogEntry) => void;
+  disableActions?: boolean;
 };
 
 function getCalories(entry: FoodLogEntry) {
@@ -27,6 +28,7 @@ export const LoggedItem: React.FC<LoggedItemProps> = ({
   item,
   onEdit,
   onStartRemove,
+  disableActions,
 }) => {
   const timestamp =
     item.timestamp instanceof Date ? item.timestamp : new Date(item.timestamp);
@@ -56,23 +58,24 @@ export const LoggedItem: React.FC<LoggedItemProps> = ({
             {item.food.servingSize || "Serving"} • {Math.round(calories)} kcal
           </Text>
         </View>
-
-        <TouchableOpacity
-          onPress={() => onEdit(item)}
-          style={styles.iconBtn}
-          hitSlop={10}
-        >
-          <Ionicons name="options-outline" size={18} color="#6B7280" />
-        </TouchableOpacity>
-
-        {/* Optional: keep delete accessible (long press on card) */}
-        <TouchableOpacity
-          onPress={() => onStartRemove(item)}
-          style={styles.deleteBtn}
-          hitSlop={10}
-        >
-          <Ionicons name="trash-outline" size={18} color="#6B7280" />
-        </TouchableOpacity>
+        {!disableActions && (
+          <>
+            <TouchableOpacity
+              onPress={() => onEdit(item)}
+              style={styles.iconBtn}
+              hitSlop={10}
+            >
+              <Ionicons name="options-outline" size={18} color="#6B7280" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => onStartRemove(item)}
+              style={styles.deleteBtn}
+              hitSlop={10}
+            >
+              <Ionicons name="trash-outline" size={18} color="#6B7280" />
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </View>
   );
