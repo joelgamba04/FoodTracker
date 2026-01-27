@@ -10,6 +10,9 @@ export const COLORS = {
   warningYellow: "#FFCC00",
   dangerRed: "#FF3B30",
 
+  softBlue: "#5A9BFF",
+  softOrange: "#FFB347",
+
   /* =========================
    * Text
    * ========================= */

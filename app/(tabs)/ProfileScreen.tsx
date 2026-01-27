@@ -78,7 +78,7 @@ function getWeightStatus(form: {
     return {
       category: "normal",
       label: "Within typical range",
-      color: COLORS.textPrimary,
+      color: COLORS.accentGreen,
       dotPosition: "center",
       message:
         "You’re within a common range for many adults. Keep focusing on balanced meals, movement, and good sleep to support your overall wellness.",
@@ -89,7 +89,7 @@ function getWeightStatus(form: {
     return {
       category: "under",
       label: "Lighter than typical",
-      color: COLORS.textSecondary,
+      color: COLORS.softBlue,
       dotPosition: "left",
       message:
         "You’re currently in a lighter range. If you feel well and energetic, that can be okay — but if you have concerns, a quick chat with a health professional is always best.",
@@ -99,7 +99,7 @@ function getWeightStatus(form: {
   return {
     category: "over",
     label: "Above typical range",
-    color: COLORS.textSecondary,
+    color: COLORS.softOrange,
     dotPosition: "right",
     message:
       "You’re gently above the usual range. This is not a diagnosis — it’s just a guide. Small, sustainable changes in movement and food choices can already support your health.",
@@ -123,7 +123,7 @@ export default function ProfileScreen() {
     (field: ProfileField, value: string) => {
       setForm((prev) => ({ ...prev, [field]: value }));
     },
-    []
+    [],
   );
 
   const handleSave = async () => {
