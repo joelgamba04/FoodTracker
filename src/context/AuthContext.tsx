@@ -1,10 +1,13 @@
 // src/context/AuthContext.tsx
 
+import { setAuthFatalHandler } from "@/services/authFatalService";
 import {
   login as doLogin,
   logout as doLogout,
   getStoredUser,
 } from "@/services/authService";
+import { clearTokens } from "@/services/tokenService";
+import { router } from "expo-router";
 import React, {
   createContext,
   useContext,
@@ -39,6 +42,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
+  useEffect(() => {
+    setAuthFatalHandler(async (reason) => {
+      console.error("AUTH FATAL:", reason);
+
+      // clear tokens + any auth state
+      await clearTokens();
+
+      // update context state
+      setUser(null);
+      setIsAuthenticated(false);
+
+      // to login
+      router.replace("/login");
+    });
+  }, []);
+
   const login = async (email: string, password: string) => {
     const u = await doLogin(email, password);
     setUser(u);
@@ -51,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({ user, isAuthLoading, login, logout }),
-    [user, isAuthLoading]
+    [user, isAuthLoading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

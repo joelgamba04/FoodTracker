@@ -1,8 +1,9 @@
 import { API_ROUTE_BASE_URL } from "@/constants/apiRouteBaseURL";
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "@/constants/storageKeys";
+import { authFatal } from "@/services/authFatalService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = API_ROUTE_BASE_URL
+const BASE_URL = API_ROUTE_BASE_URL;
 
 type RefreshResponse = {
   success: boolean;
@@ -39,4 +40,32 @@ export async function refreshAccessToken(): Promise<string> {
   }
 
   return data.data.accessToken;
+}
+
+export async function getAccessToken(): Promise<string | null> {
+  try {
+    const token = await AsyncStorage.getItem("@access_token");
+    if (!token) {
+      authFatal("missing_access_token");
+      return null;
+    }
+    return token;
+  } catch {
+    authFatal("storage_error");
+    return null;
+  }
+}
+
+export async function getRefreshToken(): Promise<string | null> {
+  try {
+    const token = await AsyncStorage.getItem("@refresh_token");
+    if (!token) {
+      authFatal("missing_refresh_token");
+      return null;
+    }
+    return token;
+  } catch {
+    authFatal("storage_error");
+    return null;
+  }
 }
