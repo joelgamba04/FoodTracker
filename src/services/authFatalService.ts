@@ -1,20 +1,37 @@
 // src/services/authFatalService.ts
-type AuthFatalReason =
+export type AuthFatalReason =
   | "missing_access_token"
   | "missing_refresh_token"
   | "refresh_failed"
-  | "refresh_invalid"
-  | "storage_error";
+  | "storage_error"
+  | "unauthorized_after_refresh"
+  | "force_logout";
 
-let handler: ((reason: AuthFatalReason) => void) | null = null;
+type AuthFatalHandler = (reason: AuthFatalReason) => void;
 
-export function setAuthFatalHandler(fn: (reason: AuthFatalReason) => void) {
+let handler: AuthFatalHandler | null = null;
+
+/**
+ * Register the global auth-fatal handler.
+ * Called ONCE inside AuthProvider.
+ */
+export function setAuthFatalHandler(fn: AuthFatalHandler) {
   handler = fn;
 }
 
-export function authFatal(reason: AuthFatalReason) {
-  // Keep it safe: never throw here
-  try {
-    handler?.(reason);
-  } catch {}
+/**
+ * Trigger a fatal authentication error.
+ * This will force logout.
+ */
+export function authFatal(reason: AuthFatalReason): never {
+  console.error("AUTH FATAL:", reason);
+
+  if (handler) {
+    handler(reason);
+  } else {
+    console.warn("authFatal called but no handler registered");
+  }
+
+  // Always throw to stop execution
+  throw new Error(`AUTH_FATAL:${reason}`);
 }

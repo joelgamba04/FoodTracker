@@ -44,6 +44,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setAuthFatalHandler(async (reason) => {
+      let handling = false;
+      if (handling) return;
+      handling = true;
+
       console.error("AUTH FATAL:", reason);
 
       // clear tokens + any auth state
@@ -51,7 +55,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // update context state
       setUser(null);
-      setIsAuthenticated(false);
 
       // to login
       router.replace("/login");

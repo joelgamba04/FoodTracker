@@ -5,19 +5,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BASE_URL = API_ROUTE_BASE_URL;
 
-type RefreshResponse = {
-  success: boolean;
-  data: {
-    accessToken: string;
-    refreshToken?: string; // if you rotate refresh tokens
-  };
-  message?: string;
-};
-
-export async function refreshAccessToken(): Promise<string> {
-  const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
+export const refreshAccessToken = async (): Promise<string> => {
+  const refreshToken = await getRefreshToken();
   if (!refreshToken) {
-    throw new Error("Missing refresh token");
+    authFatal("missing_refresh_token");
   }
 
   const res = await fetch(`${BASE_URL}/auth/refresh`, {
@@ -26,46 +17,60 @@ export async function refreshAccessToken(): Promise<string> {
     body: JSON.stringify({ refreshToken }),
   });
 
-  const data: RefreshResponse = await res.json();
-
-  if (!res.ok || !data?.success || !data?.data?.accessToken) {
-    throw new Error(data?.message || "Refresh failed");
-  }
-
-  await AsyncStorage.setItem(ACCESS_TOKEN_KEY, data.data.accessToken);
-
-  // If backend rotates refresh tokens, persist the new one
-  if (data.data.refreshToken) {
-    await AsyncStorage.setItem(REFRESH_TOKEN_KEY, data.data.refreshToken);
-  }
-
-  return data.data.accessToken;
-}
-
-export async function getAccessToken(): Promise<string | null> {
+  let response: any = null;
   try {
-    const token = await AsyncStorage.getItem("@access_token");
+    response = await res.json();
+  } catch {
+    // bad payload, handle below
+  }
+
+  if (!res.ok || !response?.success || !response?.data?.accessToken) {
+    authFatal("refresh_failed"); // logout signal
+  }
+
+  await AsyncStorage.setItem(ACCESS_TOKEN_KEY, response.data.accessToken);
+
+  if (response.data.refreshToken) {
+    await AsyncStorage.setItem(REFRESH_TOKEN_KEY, response.data.refreshToken);
+  }
+
+  return response.data.accessToken;
+};
+
+export const getAccessToken = async (): Promise<string | null> => {
+  try {
+    const token = await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
     if (!token) {
       authFatal("missing_access_token");
-      return null;
     }
     return token;
   } catch {
     authFatal("storage_error");
-    return null;
   }
-}
+};
 
-export async function getRefreshToken(): Promise<string | null> {
+export const getRefreshToken = async (): Promise<string | null> => {
   try {
-    const token = await AsyncStorage.getItem("@refresh_token");
+    const token = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
     if (!token) {
       authFatal("missing_refresh_token");
-      return null;
     }
     return token;
   } catch {
     authFatal("storage_error");
-    return null;
   }
-}
+};
+
+export const clearTokens = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(ACCESS_TOKEN_KEY);
+  } catch {
+    authFatal("storage_error");
+  }
+
+  try {
+    await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
+  } catch {
+    authFatal("storage_error");
+  }
+};
