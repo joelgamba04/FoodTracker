@@ -81,6 +81,8 @@ export const api = async <T>(
   // Read body ONCE and reuse
   const body = await parseJsonOrText(res);
 
+  console.log(`API Response Body: ${url} body=`, body);
+
   // If token invalid/expired and we haven't retried, refresh then retry once
   if (authEnabled && !_retried && isTokenError(res.status, body)) {
     try {
