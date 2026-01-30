@@ -47,6 +47,7 @@ export const getAccessToken = async (): Promise<string | null> => {
   } catch {
     authFatal("storage_error");
   }
+  return null;
 };
 
 export const getRefreshToken = async (): Promise<string | null> => {
@@ -59,6 +60,7 @@ export const getRefreshToken = async (): Promise<string | null> => {
   } catch {
     authFatal("storage_error");
   }
+  return null;
 };
 
 export const clearTokens = async (): Promise<void> => {

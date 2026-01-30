@@ -15,23 +15,23 @@ let handler: AuthFatalHandler | null = null;
  * Register the global auth-fatal handler.
  * Called ONCE inside AuthProvider.
  */
-export function setAuthFatalHandler(fn: AuthFatalHandler) {
+export const setAuthFatalHandler = (fn: AuthFatalHandler) => {
   handler = fn;
-}
+};
 
 /**
  * Trigger a fatal authentication error.
  * This will force logout.
  */
-export function authFatal(reason: AuthFatalReason): never {
+export const authFatal = (reason: AuthFatalReason): never => {
   console.error("AUTH FATAL:", reason);
 
   if (handler) {
-    handler(reason);
+    void handler?.(reason); // fire-and-forget (but supports async)
   } else {
     console.warn("authFatal called but no handler registered");
   }
 
   // Always throw to stop execution
   throw new Error(`AUTH_FATAL:${reason}`);
-}
+};

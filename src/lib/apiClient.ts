@@ -66,6 +66,9 @@ export const api = async <T>(
   if (authEnabled) {
     const token = await getAccessToken();
     if (token) headers.Authorization = `Bearer ${token}`;
+    else {
+      authFatal("missing_access_token");
+    }
   }
 
   const res = await fetch(url, {
@@ -104,6 +107,7 @@ export const api = async <T>(
       if (isTokenError(retryRes.status, retryBody)) {
         // ✅ This is a hard auth failure -> logout
         authFatal("unauthorized_after_refresh");
+        throw new Error("Unauthorized after refresh"); // to satisfy TS return type
       }
 
       if (!retryRes.ok) {
