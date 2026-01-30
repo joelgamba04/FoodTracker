@@ -7,6 +7,7 @@ import {
   getStoredUser,
 } from "@/services/authService";
 import { clearTokens } from "@/services/tokenService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, {
   createContext,
@@ -68,6 +69,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     await doLogout();
+
+    await clearTokens();
+    await AsyncStorage.clear();
     setUser(null);
   };
 
