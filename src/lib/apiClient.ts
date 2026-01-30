@@ -105,6 +105,10 @@ export const api = async <T>(
       });
 
       const retryBody = await parseJsonOrText(retryRes);
+      console.log(
+        `API Retry Response: ${url} status=${retryRes.status} body=`,
+        retryBody,
+      );
 
       if (isTokenError(retryRes.status, retryBody)) {
         // ✅ This is a hard auth failure -> logout
