@@ -243,18 +243,37 @@ export default function ProfileScreen() {
             </Text>
           ) : (
             <>
-              <View style={styles.statusTag}>
-                <Text style={styles.statusTagText}>{weightStatus.label}</Text>
+              <View
+                style={[styles.statusTag, { borderColor: weightStatus.color }]}
+              >
+                <Text
+                  style={[styles.statusTagText, { color: weightStatus.color }]}
+                >
+                  {weightStatus.label}
+                </Text>
               </View>
 
               <View style={styles.band}>
-                <View style={styles.bandSeg} />
-                <View style={styles.bandSeg} />
-                <View style={styles.bandSeg} />
+                <View
+                  style={[styles.bandSeg, { backgroundColor: COLORS.softBlue }]}
+                />
+                <View
+                  style={[
+                    styles.bandSeg,
+                    { backgroundColor: COLORS.accentGreen },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.bandSeg,
+                    { backgroundColor: COLORS.softOrange },
+                  ]}
+                />
 
                 <View
                   style={[
                     styles.bandDot,
+                    { backgroundColor: weightStatus.color },
                     weightStatus.dotPosition === "left" && styles.bandDotLeft,
                     weightStatus.dotPosition === "center" &&
                       styles.bandDotCenter,
@@ -445,18 +464,24 @@ const styles = StyleSheet.create({
   },
   bandSeg: {
     flex: 1,
-    height: 5,
+    height: 8,
     borderRadius: 999,
-    backgroundColor: COLORS.divider,
     marginHorizontal: 3,
+    opacity: 0.95,
   },
   bandDot: {
     position: "absolute",
-    top: -5,
-    width: 16,
-    height: 16,
+    top: -7,
+    width: 22,
+    height: 22,
     borderRadius: 999,
-    backgroundColor: COLORS.textPrimary,
+    borderWidth: 3,
+    borderColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
   },
   bandDotLeft: { left: 0 },
   bandDotCenter: { left: "50%", marginLeft: -8 },
