@@ -12,6 +12,7 @@ export const COLORS = {
 
   softBlue: "#5A9BFF",
   softOrange: "#FFB347",
+  softGray: "#F3F4F6",
 
   /* =========================
    * Text
@@ -53,4 +54,9 @@ export const COLORS = {
    * Utility
    * ========================= */
   transparent: "transparent",
+  border: "#E5E7EB",
+  errorBg: "#FEF2F2",
+  errorBorder: "#FECACA",
+  disabledBg: "#D1D5DB",
+  disabledText: "#4B5563",
 };
