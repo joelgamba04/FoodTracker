@@ -21,7 +21,7 @@ const { width } = Dimensions.get("window");
 const CARD_MAX_WIDTH = Math.min(420, width - 36);
 
 export const LoginScreen = () => {
-  const { login } = useAuth();
+  const { login, loginAsGuest } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
@@ -142,6 +142,10 @@ export const LoginScreen = () => {
               </Text>
             </TouchableOpacity>
 
+            <TouchableOpacity onPress={loginAsGuest} style={styles.guestBtn}>
+              <Text style={styles.guestText}>Continue as Guest</Text>
+            </TouchableOpacity>
+
             <Text style={styles.legal}>
               By continuing, you agree to the app’s terms and disclaimers.
             </Text>
@@ -256,7 +260,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   input: {
-    backgroundColor: "#fff",
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: 14,
@@ -297,16 +301,30 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   primaryBtnDisabled: {
-    backgroundColor: "#D1D5DB",
+    backgroundColor: COLORS.disabledBg,
   },
   primaryBtnText: {
-    color: "#fff",
+    color: COLORS.textInverse,
     fontWeight: "900",
     fontSize: 14,
     letterSpacing: 0.3,
   },
   primaryBtnTextDisabled: {
-    color: "#4B5563",
+    color: COLORS.disabledText,
+  },
+
+  guestBtn: {
+    marginTop: 14,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surfaceMuted,
+  },
+  guestText: {
+    textAlign: "center",
+    fontWeight: "700",
+    color: COLORS.textPrimary,
   },
 
   legal: {

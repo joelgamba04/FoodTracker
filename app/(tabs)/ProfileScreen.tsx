@@ -108,7 +108,7 @@ function getWeightStatus(form: {
 
 export default function ProfileScreen() {
   const { profile, updateProfile, saveProfileToServer } = useProfile();
-  const { logout } = useAuth();
+  const { logout, authMode } = useAuth();
 
   const [form, setForm] = useState(profile);
   const [saving, setSaving] = useState(false);
@@ -131,7 +131,10 @@ export default function ProfileScreen() {
     setError(null);
     try {
       await updateProfile(form);
-      await saveProfileToServer(form);
+
+      if (authMode != "guest") {
+        await saveProfileToServer(form);
+      }
     } catch (e: any) {
       console.error("Error updating profile:", e);
       setError("Failed to save your profile. Please try again.");

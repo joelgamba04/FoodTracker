@@ -29,11 +29,13 @@ import CustomConfirmationModal from "@/components/CustomConfirmationModal";
 import { FoodResultItem } from "@/components/FoodResultItem";
 import { LoggedItem } from "@/components/LoggedItem";
 import { QuickLog } from "@/components/QuickLog";
+import { useAuth } from "@/context/AuthContext";
 import { mapFoodDetailToFood } from "@/mappers/foodMapper";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
 
 export default function LogScreen() {
+  const { authMode } = useAuth();
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState("1");
   const [search, setSearch] = useState("");
@@ -143,6 +145,14 @@ export default function LogScreen() {
 
       patchEntry(localId, { syncStatus: "pending", lastSyncError: null });
 
+      if (authMode === "guest") {
+        patchEntry(localId, {
+          syncStatus: "failed",
+          lastSyncError: "Guest users cannot update food logs on the server.",
+        });
+        return;
+      }
+
       try {
         const foodId = Number(editingEntry.food.id);
         await updateFoodLog(serverId, { quantity: qty, measure_id: foodId });
@@ -179,6 +189,14 @@ export default function LogScreen() {
     setQuantity("1");
     setSearch("");
     setResults([]);
+
+    if (authMode === "guest") {
+      patchEntry(localId, {
+        syncStatus: "failed",
+        lastSyncError: "Guest users cannot save food logs to the server.",
+      });
+      return;
+    }
 
     try {
       const foodId = Number(newEntry.food.id);
@@ -240,6 +258,10 @@ export default function LogScreen() {
     removeEntry(entry.localId);
 
     if (!entry.serverFoodEntryId) return;
+
+    if (authMode === "guest") {
+      return;
+    }
 
     try {
       await deleteFoodLogEntry(entry.serverFoodEntryId);

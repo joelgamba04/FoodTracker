@@ -72,7 +72,7 @@ function isProfileComplete(profile: UserProfile | null): boolean {
 }
 
 function AuthGate() {
-  const { user, isAuthLoading } = useAuth();
+  const { authMode, isAuthLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
@@ -81,9 +81,11 @@ function AuthGate() {
 
     const inAuthGroup = segments?.[0] === "(auth)";
 
-    if (!user && !inAuthGroup) router.replace("/(auth)/login");
-    if (user && inAuthGroup) router.replace("/(tabs)");
-  }, [user, isAuthLoading, segments, router]);
+    if (authMode === "signed_out" && !inAuthGroup)
+      router.replace("/(auth)/login");
+    if ((authMode === "authenticated" || authMode === "guest") && inAuthGroup)
+      router.replace("/(tabs)");
+  }, [authMode, isAuthLoading, segments, router]);
 
   if (isAuthLoading) {
     return (
@@ -110,7 +112,7 @@ function AppBootstrap() {
 
   const currentDisclaimer = useMemo(
     () => DISCLAIMERS[disclaimerStep],
-    [disclaimerStep]
+    [disclaimerStep],
   );
 
   // load local cached profile once

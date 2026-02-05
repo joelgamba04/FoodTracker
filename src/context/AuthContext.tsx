@@ -1,5 +1,6 @@
 // src/context/AuthContext.tsx
 
+import { AuthContextValue, AuthState } from "@/models/authModel";
 import { setAuthFatalHandler } from "@/services/authFatalService";
 import {
   login as doLogin,
@@ -17,26 +18,23 @@ import React, {
   useState,
 } from "react";
 
-type User = { user_id: number; email: string };
-
-type AuthContextValue = {
-  user: User | null;
-  isAuthLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-};
-
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [authState, setAuthState] = useState<AuthState>({
+    mode: "signed_out",
+    user: null,
+  });
 
   useEffect(() => {
     (async () => {
       try {
         const stored = await getStoredUser();
-        setUser(stored);
+        setAuthState({
+          mode: "authenticated",
+          user: stored,
+        });
       } finally {
         setIsAuthLoading(false);
       }
@@ -55,7 +53,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await clearTokens();
 
       // update context state
-      setUser(null);
+      setAuthState({
+        mode: "signed_out",
+        user: null,
+      });
 
       // to login
       router.replace("/login");
@@ -64,20 +65,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const u = await doLogin(email, password);
-    setUser(u);
+
+    setAuthState({
+      mode: "authenticated",
+      user: u,
+    });
   };
 
   const logout = async () => {
-    await doLogout();
+    if (authState.mode != "guest") {
+      await doLogout();
+    }
 
     await clearTokens();
     await AsyncStorage.clear();
-    setUser(null);
+    setAuthState({
+      mode: "signed_out",
+      user: null,
+    });
+  };
+
+  const loginAsGuest = async () => {
+    // IMPORTANT: clear any previous auth state
+    await AsyncStorage.clear();
+
+    setAuthState({
+      mode: "guest",
+      user: null,
+    });
+
+    router.replace("/(tabs)/log");
   };
 
   const value = useMemo(
-    () => ({ user, isAuthLoading, login, logout }),
-    [user, isAuthLoading],
+    () => ({
+      user: authState.user,
+      isAuthLoading,
+      login,
+      logout,
+      authMode: authState.mode,
+      loginAsGuest,
+    }),
+    [authState, isAuthLoading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

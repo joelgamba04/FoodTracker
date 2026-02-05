@@ -26,7 +26,7 @@ const ROUTES = {
  * View full details for a single food item.
  */
 export async function ViewFoodDetail(
-  foodId: number
+  foodId: number,
 ): Promise<ViewFoodDetailResponse> {
   if (!Number.isFinite(foodId) || foodId <= 0) {
     throw new Error("Invalid foodId");
@@ -34,6 +34,7 @@ export async function ViewFoodDetail(
 
   return await api<ViewFoodDetailResponse>(ROUTES.viewFood(foodId), {
     method: "GET",
+    auth: false,
   });
 }
 
@@ -49,6 +50,7 @@ export async function searchFoods(query: string): Promise<FoodSearchResult> {
 
   return await api<FoodSearchResult>(ROUTES.searchByName(q), {
     method: "GET",
+    auth: false,
   });
 }
 
@@ -57,13 +59,14 @@ export async function searchFoods(query: string): Promise<FoodSearchResult> {
  * (New function to match your requirement “search by category”.)
  */
 export async function SearchFoodsByCategory(
-  categoryId: number
+  categoryId: number,
 ): Promise<FoodSearchResult> {
   if (!Number.isFinite(categoryId) || categoryId <= 0) {
     throw new Error("Invalid categoryId");
   }
 
   return await api<FoodSearchResult>(ROUTES.searchByCategory(categoryId), {
-    method: "GET", 
+    method: "GET",
+    auth: false,
   });
 }
