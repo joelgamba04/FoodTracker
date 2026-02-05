@@ -130,7 +130,7 @@ export const LoginScreen = () => {
                 !canSubmit && styles.primaryBtnDisabled,
               ]}
               disabled={!canSubmit}
-              onPress={() => {}}
+              onPress={onSubmit}
             >
               <Text
                 style={[
