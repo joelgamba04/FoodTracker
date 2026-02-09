@@ -1,9 +1,8 @@
 // src/services/authService.ts
 import {
   ACCESS_TOKEN_KEY,
-  AUTH_USER_KEY,
-  PROFILE_CACHE_KEY,
   REFRESH_TOKEN_KEY,
+  USER_PROFILE_KEY,
 } from "@/constants/storageKeys";
 import { api } from "@/lib/apiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -46,14 +45,14 @@ export async function login(email: string, password: string) {
   // 5) Save user (optional but recommended)
   const user = result.data?.user;
   if (user) {
-    await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+    await AsyncStorage.setItem(USER_PROFILE_KEY, JSON.stringify(user));
   }
 
   return user ?? null;
 }
 
 export async function getStoredUser() {
-  const raw = await AsyncStorage.getItem(AUTH_USER_KEY);
+  const raw = await AsyncStorage.getItem(USER_PROFILE_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 
@@ -68,7 +67,7 @@ export async function logout() {
     await AsyncStorage.multiRemove([
       ACCESS_TOKEN_KEY,
       REFRESH_TOKEN_KEY,
-      PROFILE_CACHE_KEY,
+      USER_PROFILE_KEY,
     ]);
   }
 }

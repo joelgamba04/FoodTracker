@@ -33,10 +33,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [authState.mode]);
 
   useEffect(() => {
+    console.log("AuthContext initializing, checking stored user...");
     (async () => {
       try {
         const stored = await getStoredUser();
-        if (stored) {
+        console.log(
+          "AuthContext found stored user:",
+          stored,
+          "authState.mode:",
+          authState.mode,
+        );
+        if (stored && authState.mode !== "guest") {
           setAuthState({
             mode: "authenticated",
             user: stored,
@@ -71,6 +78,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
+    console.log("AuthContext, Attempting login for email:", email);
     const u = await doLogin(email, password);
 
     setAuthState({

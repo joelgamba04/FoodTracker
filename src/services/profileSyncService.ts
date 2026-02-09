@@ -1,12 +1,8 @@
 // src/services/profileSyncService.ts
 
-import {
-  AUTH_USER_KEY,
-  PROFILE_CACHE_KEY,
-  PROFILE_DRAFT_KEY,
-} from "@/constants/storageKeys";
+import { AUTH_USER_KEY, USER_PROFILE_KEY } from "@/constants/storageKeys";
 import { api } from "@/lib/apiClient";
-import { loadJSON, saveJSON } from "@/lib/storage";
+import { loadJSON } from "@/lib/storage";
 import { UserProfile } from "@/models/models";
 import { updateUserProfile } from "@/services/userService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -69,16 +65,12 @@ export const syncDraftIfServerEmpty = async (): Promise<{
   }
 
   // 2) Server is empty -> try draft
-  const draft = await loadJSON<UserProfile>(PROFILE_DRAFT_KEY);
+  const draft = await loadJSON<UserProfile>(USER_PROFILE_KEY);
   if (!draft) {
     // no draft available; nothing to promote
     return { didPromoteDraft: false, didUpdateServer: false };
   }
 
-  // 3) Promote draft to cache immediately (so UI reflects it)
-  await saveJSON(PROFILE_CACHE_KEY, draft);
-
-  // 4) Push to backend
   const userId = await getCurrentUserId();
   await updateUserProfile(userId, {
     gender_id: sexToGenderId(draft.sex),
@@ -88,24 +80,5 @@ export const syncDraftIfServerEmpty = async (): Promise<{
     activity_level: "active",
   });
 
-  // 5) Clear draft so it won’t repeat
-  await AsyncStorage.removeItem(PROFILE_DRAFT_KEY);
-
   return { didPromoteDraft: true, didUpdateServer: true };
-};
-
-// sync helper for guest users who want to keep their profile after login. Call this from your login flow after successful guest -> authenticated transition, passing the profile you want to promote (probably from cache).
-export const syncGuestProfile = async () => {
-  try {
-    const draft = await loadJSON<UserProfile>(PROFILE_DRAFT_KEY);
-    console.log("syncGuestProfile - loaded draft:", draft);
-    if (!draft) {
-      // no draft available; nothing to promote
-      return { didPromoteDraft: false, didUpdateServer: false };
-    }
-
-    await saveJSON(PROFILE_CACHE_KEY, draft);
-  } catch (e) {
-    console.warn("syncGuestProfile failed:", e);
-  }
 };

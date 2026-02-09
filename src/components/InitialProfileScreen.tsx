@@ -15,7 +15,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { PROFILE_DRAFT_KEY as USER_PROFILE_KEY } from "@/constants/storageKeys";
+import { USER_PROFILE_KEY } from "@/constants/storageKeys";
+import { useProfile } from "@/context/ProfileContext";
 import {
   cmToFtIn,
   ftInToCm,
@@ -52,6 +53,8 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
   const [useImperial, setUseImperial] = useState(false);
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
+
+  const { reloadLocalProfile } = useProfile();
 
   // Pre-fill with existing draft if present
   useEffect(() => {
@@ -136,6 +139,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
     try {
       // Save the whole form (including optional first/last name) to draft key
       await saveJSON(USER_PROFILE_KEY, form);
+      await reloadLocalProfile(); // ensure ProfileContext is in sync with the latest saved profile
 
       // Call onComplete with required profile type (extra props are harmless at runtime)
       onComplete(form as unknown as UserProfile);

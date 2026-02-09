@@ -17,7 +17,7 @@ import DisclaimerModal from "@/components/DisclaimerModal";
 import InitialProfileScreen from "@/components/InitialProfileScreen";
 import PostLoginSync from "@/components/PostLoginSync";
 
-import { PROFILE_CACHE_KEY } from "@/constants/storageKeys";
+import { USER_PROFILE_KEY } from "@/constants/storageKeys";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { FoodLogProvider } from "@/context/FoodLogContext";
 import { ProfileProvider } from "@/context/ProfileContext";
@@ -120,7 +120,7 @@ function AppBootstrap() {
     let active = true;
     (async () => {
       try {
-        const stored = await loadJSON<UserProfile>(PROFILE_CACHE_KEY);
+        const stored = await loadJSON<UserProfile>(USER_PROFILE_KEY);
         if (!active) return;
         setProfileStatus(isProfileComplete(stored) ? "complete" : "incomplete");
       } catch (e) {
@@ -162,7 +162,7 @@ function AppBootstrap() {
       <InitialProfileScreen
         key="initial-profile"
         onComplete={() => {
-          // InitialProfileScreen should save to PROFILE_CACHE_KEY internally.
+          // InitialProfileScreen should save to USER_PROFILE_KEY internally.
           setProfileStatus("complete");
         }}
       />

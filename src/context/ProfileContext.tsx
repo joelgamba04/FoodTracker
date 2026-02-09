@@ -11,8 +11,8 @@ import React, {
 } from "react";
 
 import { ARBITRARY_RDI } from "@/constants/recommendedDailyIntake";
-import { AUTH_USER_KEY, PROFILE_CACHE_KEY } from "@/constants/storageKeys";
-import { api } from "@/lib/apiClient"; // <-- make sure you have this
+import { AUTH_USER_KEY, USER_PROFILE_KEY } from "@/constants/storageKeys";
+import { api } from "@/lib/apiClient";
 import { calculateRecommendedIntake } from "@/lib/recommendedIntake";
 import { loadJSON, saveJSON } from "@/lib/storage";
 import { UserProfile } from "@/models/models";
@@ -53,6 +53,7 @@ interface ProfileContextType {
   // NEW: refresh from backend (GET /user/profile)
   refreshProfile: () => Promise<void>;
   saveProfileToServer: (nextProfile: UserProfile) => Promise<void>;
+  reloadLocalProfile: () => Promise<void>;
 }
 
 async function getCurrentUserId(): Promise<number> {
@@ -106,7 +107,8 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
   useEffect(() => {
     (async () => {
       try {
-        const cached = await loadJSON<UserProfile>(PROFILE_CACHE_KEY);
+        const cached = await loadJSON<UserProfile>(USER_PROFILE_KEY);
+        console.log("ProfileProvider: loaded cached profile", cached);
         if (cached) setProfile(cached);
       } catch (e) {
         console.warn("ProfileProvider: failed to load cached profile", e);
@@ -121,7 +123,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
     setProfile(newProfile);
 
     try {
-      await saveJSON(PROFILE_CACHE_KEY, newProfile);
+      await saveJSON(USER_PROFILE_KEY, newProfile);
     } catch (e) {
       console.warn("ProfileProvider: failed to save profile", e);
     }
@@ -141,18 +143,37 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
 
       // Cache the backend result as the new local profile
       try {
-        await saveJSON(PROFILE_CACHE_KEY, nextProfile);
+        await saveJSON(USER_PROFILE_KEY, nextProfile);
       } catch (e) {
         console.warn("ProfileProvider: failed to cache server profile", e);
       }
     } catch (e) {
       // Don’t hard-crash; rely on cached profile if available
       console.warn("ProfileProvider: refreshProfile failed", e);
+      reloadLocalProfile(); // fallback to cached profile if API call fails
     }
   }, []);
 
+  const reloadLocalProfile = async () => {
+    const cached = await loadJSON<UserProfile>(USER_PROFILE_KEY);
+    setProfile(
+      cached ?? {
+        age: "",
+        sex: "Male",
+        height: "",
+        weight: "",
+      },
+    );
+  };
+
   const saveProfileToServer = useCallback(
     async (nextProfile: UserProfile) => {
+      const raw = await AsyncStorage.getItem(AUTH_USER_KEY);
+      if (!raw) {
+        // guest mode or logged out — do nothing
+        return;
+      }
+
       const userId = await getCurrentUserId();
 
       const payload = {
@@ -168,7 +189,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
       // Recommended: refresh from backend so app stays aligned with server formatting
       await refreshProfile();
     },
-    [refreshProfile]
+    [refreshProfile],
   );
 
   return (
@@ -180,6 +201,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
         updateProfile,
         refreshProfile,
         saveProfileToServer,
+        reloadLocalProfile,
       }}
     >
       {children}
