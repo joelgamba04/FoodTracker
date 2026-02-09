@@ -2,17 +2,27 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
-import { syncDraftIfServerEmpty } from "@/services/profileSyncService";
+import {
+  syncDraftIfServerEmpty,
+  syncGuestProfile,
+} from "@/services/profileSyncService";
 import { useEffect, useRef } from "react";
 
-export default function PostLoginSync() {
-  const { user } = useAuth();
+export const PostLoginSync = () => {
+  const { authMode } = useAuth();
   const { refreshProfile } = useProfile();
 
   const didRunRef = useRef(false);
 
   useEffect(() => {
-    if (!user) return;
+    console.log("PostLoginSync useEffect triggered with authMode:", authMode);
+    if (authMode === "guest") {
+      console.log("Logged in as guest; skipping server profile sync.");
+      syncGuestProfile();
+      return;
+    }
+
+    if (authMode !== "authenticated") return;
     if (didRunRef.current) return;
     didRunRef.current = true;
 
@@ -37,7 +47,9 @@ export default function PostLoginSync() {
         } catch {}
       }
     })();
-  }, [user, refreshProfile]);
+  }, [authMode, refreshProfile]);
 
   return null;
-}
+};
+
+export default PostLoginSync;

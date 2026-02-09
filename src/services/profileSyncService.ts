@@ -25,26 +25,26 @@ type ApiUserProfileResponse = {
   } | null;
 };
 
-function sexToGenderId(sex: string) {
+const sexToGenderId = (sex: string) => {
   return sex === "Female" ? "2" : "1";
-}
+};
 
-async function getCurrentUserId(): Promise<number> {
+const getCurrentUserId = async (): Promise<number> => {
   const raw = await AsyncStorage.getItem(AUTH_USER_KEY);
   if (!raw) throw new Error("Not logged in");
   const user = JSON.parse(raw);
   if (!user?.user_id) throw new Error("Missing user_id");
   return user.user_id;
-}
+};
 
-function isServerProfileEmpty(p: ApiUserProfileResponse["data"]) {
+const isServerProfileEmpty = (p: ApiUserProfileResponse["data"]) => {
   if (!p) return true;
   const ageOk = Number.isFinite(p.age) && p.age > 0;
   const gOk = Number.isFinite(p.gender_id) && p.gender_id > 0;
   const hOk = !!p.height && parseFloat(p.height) > 0;
   const wOk = !!p.weight && parseFloat(p.weight) > 0;
   return !(ageOk && gOk && (hOk || wOk));
-}
+};
 
 /**
  * Post-login rule:
@@ -53,10 +53,10 @@ function isServerProfileEmpty(p: ApiUserProfileResponse["data"]) {
  *
  * Returns info to help you debug.
  */
-export async function syncDraftIfServerEmpty(): Promise<{
+export const syncDraftIfServerEmpty = async (): Promise<{
   didPromoteDraft: boolean;
   didUpdateServer: boolean;
-}> {
+}> => {
   // 1) Read server profile
   const server = await api<ApiUserProfileResponse>("/user/profile", {
     method: "GET",
@@ -64,6 +64,7 @@ export async function syncDraftIfServerEmpty(): Promise<{
 
   const empty = !server?.success || isServerProfileEmpty(server.data);
   if (!empty) {
+    console.log("Server profile not empty; no sync needed.");
     return { didPromoteDraft: false, didUpdateServer: false };
   }
 
@@ -91,4 +92,20 @@ export async function syncDraftIfServerEmpty(): Promise<{
   await AsyncStorage.removeItem(PROFILE_DRAFT_KEY);
 
   return { didPromoteDraft: true, didUpdateServer: true };
-}
+};
+
+// sync helper for guest users who want to keep their profile after login. Call this from your login flow after successful guest -> authenticated transition, passing the profile you want to promote (probably from cache).
+export const syncGuestProfile = async () => {
+  try {
+    const draft = await loadJSON<UserProfile>(PROFILE_DRAFT_KEY);
+    console.log("syncGuestProfile - loaded draft:", draft);
+    if (!draft) {
+      // no draft available; nothing to promote
+      return { didPromoteDraft: false, didUpdateServer: false };
+    }
+
+    await saveJSON(PROFILE_CACHE_KEY, draft);
+  } catch (e) {
+    console.warn("syncGuestProfile failed:", e);
+  }
+};

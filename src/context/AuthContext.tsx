@@ -20,21 +20,28 @@ import React, {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authState, setAuthState] = useState<AuthState>({
     mode: "signed_out",
     user: null,
   });
 
+  // Track auth mode changes for debugging
+  useEffect(() => {
+    console.log("Auth mode changed:", authState.mode);
+  }, [authState.mode]);
+
   useEffect(() => {
     (async () => {
       try {
         const stored = await getStoredUser();
-        setAuthState({
-          mode: "authenticated",
-          user: stored,
-        });
+        if (stored) {
+          setAuthState({
+            mode: "authenticated",
+            user: stored,
+          });
+        }
       } finally {
         setIsAuthLoading(false);
       }
@@ -86,8 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loginAsGuest = async () => {
-    // IMPORTANT: clear any previous auth state
-    await AsyncStorage.clear();
+    await clearTokens();
 
     setAuthState({
       mode: "guest",
@@ -110,10 +116,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
+};
 
-export function useAuth() {
+export const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
-}
+};

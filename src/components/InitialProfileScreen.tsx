@@ -96,7 +96,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
     (field: keyof InitialProfileForm, value: string) => {
       setForm((prev) => ({ ...prev, [field]: value }));
     },
-    []
+    [],
   );
 
   const genderLabel = useMemo(() => {
@@ -139,6 +139,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
 
       // Call onComplete with required profile type (extra props are harmless at runtime)
       onComplete(form as unknown as UserProfile);
+      console.log("InitialProfileScreen: profile saved", form);
     } catch (e) {
       console.error("InitialProfileScreen: failed to save profile", e);
       setError("Failed to save your details. Please try again.");
