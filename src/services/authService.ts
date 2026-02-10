@@ -1,6 +1,8 @@
 // src/services/authService.ts
+import { AUTHENTICATED_AUTH_MODE } from "@/constants/authModeConstants";
 import {
   ACCESS_TOKEN_KEY,
+  AUTH_MODE_KEY,
   REFRESH_TOKEN_KEY,
   USER_PROFILE_KEY,
 } from "@/constants/storageKeys";
@@ -47,6 +49,8 @@ export async function login(email: string, password: string) {
   if (user) {
     await AsyncStorage.setItem(USER_PROFILE_KEY, JSON.stringify(user));
   }
+
+  await AsyncStorage.setItem(AUTH_MODE_KEY, AUTHENTICATED_AUTH_MODE);
 
   return user ?? null;
 }

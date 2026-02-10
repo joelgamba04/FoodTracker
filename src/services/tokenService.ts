@@ -1,5 +1,9 @@
 import { API_ROUTE_BASE_URL } from "@/constants/apiRouteBaseURL";
-import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "@/constants/storageKeys";
+import {
+  ACCESS_TOKEN_KEY,
+  AUTH_USER_KEY,
+  REFRESH_TOKEN_KEY,
+} from "@/constants/storageKeys";
 import { authFatal } from "@/services/authFatalService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -68,11 +72,20 @@ export const clearTokens = async (): Promise<void> => {
     await AsyncStorage.removeItem(ACCESS_TOKEN_KEY);
   } catch {
     authFatal("storage_error");
+    console.error("Failed to clear access token");
   }
 
   try {
     await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
   } catch {
     authFatal("storage_error");
+    console.error("Failed to clear refresh token");
+  }
+
+  try {
+    await AsyncStorage.removeItem(AUTH_USER_KEY);
+  } catch {
+    authFatal("storage_error");
+    console.error("Failed to clear auth user");
   }
 };

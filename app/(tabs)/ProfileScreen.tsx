@@ -1,3 +1,4 @@
+import { AUTHENTICATED_AUTH_MODE } from "@/constants/authModeConstants";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
 import { COLORS } from "@/theme/color";
@@ -132,7 +133,7 @@ export default function ProfileScreen() {
     try {
       await updateProfile(form);
 
-      if (authMode != "guest") {
+      if (authMode === AUTHENTICATED_AUTH_MODE) {
         await saveProfileToServer(form);
       }
     } catch (e: any) {

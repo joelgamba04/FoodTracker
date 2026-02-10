@@ -1,5 +1,11 @@
 // src/context/AuthContext.tsx
 
+import {
+  AUTHENTICATED_AUTH_MODE,
+  GUEST_AUTH_MODE,
+  SIGNED_OUT_AUTH_MODE,
+} from "@/constants/authModeConstants";
+import { AUTH_MODE_KEY } from "@/constants/storageKeys";
 import { AuthContextValue, AuthState } from "@/models/authModel";
 import { setAuthFatalHandler } from "@/services/authFatalService";
 import {
@@ -23,7 +29,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authState, setAuthState] = useState<AuthState>({
-    mode: "signed_out",
+    mode: SIGNED_OUT_AUTH_MODE,
     user: null,
   });
 
@@ -36,6 +42,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     console.log("AuthContext initializing, checking stored user...");
     (async () => {
       try {
+        const mode =
+          (await AsyncStorage.getItem(AUTH_MODE_KEY)) || SIGNED_OUT_AUTH_MODE;
+        console.log("AuthContext found stored auth mode:", mode);
+        if (mode === GUEST_AUTH_MODE) {
+          setAuthState({
+            mode: GUEST_AUTH_MODE,
+            user: null,
+          });
+          return;
+        }
+
         const stored = await getStoredUser();
         console.log(
           "AuthContext found stored user:",
@@ -43,9 +60,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           "authState.mode:",
           authState.mode,
         );
-        if (stored && authState.mode !== "guest") {
+        if (stored && mode === AUTHENTICATED_AUTH_MODE) {
           setAuthState({
-            mode: "authenticated",
+            mode: AUTHENTICATED_AUTH_MODE,
             user: stored,
           });
         }
@@ -68,7 +85,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // update context state
       setAuthState({
-        mode: "signed_out",
+        mode: SIGNED_OUT_AUTH_MODE,
         user: null,
       });
 
@@ -82,20 +99,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const u = await doLogin(email, password);
 
     setAuthState({
-      mode: "authenticated",
+      mode: AUTHENTICATED_AUTH_MODE,
       user: u,
     });
   };
 
   const logout = async () => {
-    if (authState.mode != "guest") {
+    if (authState.mode != GUEST_AUTH_MODE) {
       await doLogout();
     }
 
     await clearTokens();
     await AsyncStorage.clear();
     setAuthState({
-      mode: "signed_out",
+      mode: SIGNED_OUT_AUTH_MODE,
       user: null,
     });
   };
@@ -103,8 +120,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const loginAsGuest = async () => {
     await clearTokens();
 
+    await AsyncStorage.setItem(AUTH_MODE_KEY, GUEST_AUTH_MODE);
+
     setAuthState({
-      mode: "guest",
+      mode: GUEST_AUTH_MODE,
       user: null,
     });
 

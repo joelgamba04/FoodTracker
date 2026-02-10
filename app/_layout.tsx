@@ -17,6 +17,11 @@ import DisclaimerModal from "@/components/DisclaimerModal";
 import InitialProfileScreen from "@/components/InitialProfileScreen";
 import PostLoginSync from "@/components/PostLoginSync";
 
+import {
+  AUTHENTICATED_AUTH_MODE,
+  GUEST_AUTH_MODE,
+  SIGNED_OUT_AUTH_MODE,
+} from "@/constants/authModeConstants";
 import { USER_PROFILE_KEY } from "@/constants/storageKeys";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { FoodLogProvider } from "@/context/FoodLogContext";
@@ -81,9 +86,12 @@ function AuthGate() {
 
     const inAuthGroup = segments?.[0] === "(auth)";
 
-    if (authMode === "signed_out" && !inAuthGroup)
+    if (authMode === SIGNED_OUT_AUTH_MODE && !inAuthGroup)
       router.replace("/(auth)/login");
-    if ((authMode === "authenticated" || authMode === "guest") && inAuthGroup)
+    if (
+      (authMode === AUTHENTICATED_AUTH_MODE || authMode === GUEST_AUTH_MODE) &&
+      inAuthGroup
+    )
       router.replace("/(tabs)");
   }, [authMode, isAuthLoading, segments, router]);
 

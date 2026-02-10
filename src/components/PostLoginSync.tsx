@@ -1,5 +1,9 @@
 // src/components/PostLoginSync.tsx
 
+import {
+  AUTHENTICATED_AUTH_MODE,
+  GUEST_AUTH_MODE,
+} from "@/constants/authModeConstants";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
 import { syncDraftIfServerEmpty } from "@/services/profileSyncService";
@@ -13,12 +17,12 @@ export const PostLoginSync = () => {
 
   useEffect(() => {
     console.log("PostLoginSync useEffect triggered with authMode:", authMode);
-    if (authMode === "guest") {
+    if (authMode === GUEST_AUTH_MODE) {
       console.log("Logged in as guest; skipping server profile sync.");
       return;
     }
 
-    if (authMode !== "authenticated") return;
+    if (authMode !== AUTHENTICATED_AUTH_MODE) return;
     if (didRunRef.current) return;
     didRunRef.current = true;
 

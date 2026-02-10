@@ -29,6 +29,7 @@ import CustomConfirmationModal from "@/components/CustomConfirmationModal";
 import { FoodResultItem } from "@/components/FoodResultItem";
 import { LoggedItem } from "@/components/LoggedItem";
 import { QuickLog } from "@/components/QuickLog";
+import { GUEST_AUTH_MODE } from "@/constants/authModeConstants";
 import { useAuth } from "@/context/AuthContext";
 import { mapFoodDetailToFood } from "@/mappers/foodMapper";
 import { COLORS } from "@/theme/color";
@@ -145,7 +146,7 @@ export default function LogScreen() {
 
       patchEntry(localId, { syncStatus: "pending", lastSyncError: null });
 
-      if (authMode === "guest") {
+      if (authMode === GUEST_AUTH_MODE) {
         patchEntry(localId, {
           syncStatus: "failed",
           lastSyncError: "Guest users cannot update food logs on the server.",
@@ -190,7 +191,7 @@ export default function LogScreen() {
     setSearch("");
     setResults([]);
 
-    if (authMode === "guest") {
+    if (authMode === GUEST_AUTH_MODE) {
       patchEntry(localId, {
         syncStatus: "failed",
         lastSyncError: "Guest users cannot save food logs to the server.",
@@ -259,7 +260,7 @@ export default function LogScreen() {
 
     if (!entry.serverFoodEntryId) return;
 
-    if (authMode === "guest") {
+    if (authMode === GUEST_AUTH_MODE) {
       return;
     }
 

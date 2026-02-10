@@ -1,6 +1,15 @@
 // src/models/authModel.ts
 
-export type AuthModeType = "guest" | "authenticated" | "signed_out";
+import {
+  AUTHENTICATED_AUTH_MODE,
+  GUEST_AUTH_MODE,
+  SIGNED_OUT_AUTH_MODE,
+} from "@/constants/authModeConstants";
+
+export type AuthModeType =
+  | typeof GUEST_AUTH_MODE
+  | typeof AUTHENTICATED_AUTH_MODE
+  | typeof SIGNED_OUT_AUTH_MODE;
 
 export interface AuthState {
   mode: AuthModeType;
