@@ -62,7 +62,10 @@ export default function LogScreen() {
   const { start, end } = getTodayWindow();
   const todayLog = log.filter((e) => {
     const ts =
-      e.timestamp instanceof Date ? e.timestamp : new Date(e.timestamp);
+      typeof e.timestamp === "number"
+        ? new Date(e.timestamp)
+        : new Date(e.timestamp);
+
     return ts >= start && ts < end;
   });
 
@@ -176,7 +179,7 @@ export default function LogScreen() {
       localId,
       food: selectedFood,
       quantity: qty,
-      timestamp: new Date(),
+      timestamp: new Date().getTime(),
       mealType,
       syncStatus: "pending",
       serverMealId: null,

@@ -20,9 +20,9 @@ export interface Food {
 
 export interface FoodLogEntry {
   localId: string;
-  serverId?: number | null;
+  serverId?: number | null; // Optional server ID for syncing
 
-  timestamp: any;
+  timestamp: number; // Unix timestamp in milliseconds
   food: Food;
   quantity: number; // number of servings
 

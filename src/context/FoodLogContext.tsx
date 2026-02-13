@@ -7,18 +7,26 @@ import React, {
   useState,
 } from "react";
 
-import { loadJSON, saveJSON, storage } from "@/lib/storage";
+import { initDb } from "@/shared/storage/db";
+import {
+  clearAllFoodLogs,
+  deleteFoodLog,
+  insertFoodLog,
+  listAllFoodLogs,
+  patchFoodLog,
+  updateFoodLogQuantity,
+} from "@/shared/storage/foodRepo";
 
-const KEY = "@FoodLogToday";
-
-// --- Context Definition ---
 interface FoodLogContextType {
   log: FoodLogEntry[];
-  addEntry: (entry: FoodLogEntry) => void;
-  removeEntry: (entryId: string) => void;
-  updateEntry: (entryId: string, newQuantity: number) => void;
-  patchEntry: (localId: string, partial: Partial<FoodLogEntry>) => void;
-  clearAll: () => void;
+  addEntry: (entry: FoodLogEntry) => Promise<void>;
+  removeEntry: (entryId: string) => Promise<void>;
+  updateEntry: (entryId: string, newQuantity: number) => Promise<void>;
+  patchEntry: (
+    localId: string,
+    partial: Partial<FoodLogEntry>,
+  ) => Promise<void>;
+  clearAll: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -30,85 +38,94 @@ export const FoodLogProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [log, setLog] = useState<FoodLogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  // Flag to ensure the log is only saved AFTER the initial load is complete
-  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
 
-  // 1. Initial Load Effect: Load log from local storage on component mount
   useEffect(() => {
-    const initializeLog = async () => {
+    (async () => {
       try {
-        // Call the persistence utility function to fetch data
-        const loadedLog = await loadJSON<FoodLogEntry[]>(KEY, (arr) =>
-          arr.map((e: any) => ({ ...e, timestamp: new Date(e.timestamp) }))
-        );
-        if (loadedLog) {
-          setLog(loadedLog);
-        }
-      } catch (error) {
-        console.error(
-          "Failed to initialize food log from local storage:",
-          error
-        );
+        await initDb();
+        const rows = await listAllFoodLogs();
+        setLog(rows);
+      } catch (e) {
+        console.error("Failed to init/load food logs from SQLite:", e);
       } finally {
-        // Set loading to false once the initial load is complete, regardless of success
         setIsLoading(false);
-        setIsInitialLoadComplete(true);
       }
-    };
-    initializeLog();
+    })();
   }, []);
 
-  useEffect(() => {
-    if (isInitialLoadComplete) saveJSON(KEY, log);
-  }, [log, isInitialLoadComplete]);
-
-  const addEntry = useCallback((entry: FoodLogEntry) => {
-    setLog((prev) => [...prev, entry]);
+  const addEntry = useCallback(async (entry: FoodLogEntry) => {
+    setLog((prev) => [entry, ...prev]);
+    try {
+      await insertFoodLog(entry);
+    } catch (e) {
+      console.error("SQLite addEntryFoodLog failed:", e);
+    }
   }, []);
 
-  const removeEntry = useCallback((entryId: string) => {
+  const removeEntry = useCallback(async (entryId: string) => {
     setLog((prev) => prev.filter((e) => e.localId !== entryId));
+    try {
+      await deleteFoodLog(entryId);
+    } catch (e) {
+      console.error("SQLite removeEntryFoodLog failed:", e);
+    }
   }, []);
 
   const updateEntry = useCallback(
-    (entryId: string, newQuantity: number) => {
+    async (entryId: string, newQuantity: number) => {
       if (newQuantity <= 0) return removeEntry(entryId);
 
       setLog((prev) =>
         prev.map((e) =>
-          e.localId === entryId ? { ...e, quantity: newQuantity } : e
-        )
+          e.localId === entryId ? { ...e, quantity: newQuantity } : e,
+        ),
       );
+
+      try {
+        await updateFoodLogQuantity(entryId, newQuantity);
+      } catch (e) {
+        console.error("SQLite updateEntryFoodLogQuantity failed:", e);
+      }
     },
-    [removeEntry]
+    [removeEntry],
   );
 
   const patchEntry = useCallback(
-    (localId: string, partial: Partial<FoodLogEntry>) => {
+    async (localId: string, partial: Partial<FoodLogEntry>) => {
       setLog((prev) =>
-        prev.map((e) => (e.localId === localId ? { ...e, ...partial } : e))
+        prev.map((e) => (e.localId === localId ? { ...e, ...partial } : e)),
       );
+
+      try {
+        await patchFoodLog(localId, partial);
+      } catch (e) {
+        console.error("SQLite patchEntryFoodLog failed:", e);
+      }
     },
-    []
+    [],
   );
 
-  const clearAll = useCallback(() => {
+  const clearAll = useCallback(async () => {
     setLog([]);
-    storage.removeItem(KEY);
+    try {
+      await clearAllFoodLogs();
+    } catch (e) {
+      console.error("SQLite clearAllFoodLogs failed:", e);
+    }
   }, []);
 
-  const contextValue: FoodLogContextType = {
-    log,
-    addEntry,
-    removeEntry,
-    updateEntry,
-    patchEntry,
-    clearAll,
-    isLoading,
-  };
-
   return (
-    <FoodLogContext.Provider value={contextValue}>
+    <FoodLogContext.Provider
+      value={{
+        log,
+        addEntry,
+        removeEntry,
+        updateEntry,
+        patchEntry,
+        clearAll,
+        isLoading,
+      }}
+    >
       {children}
     </FoodLogContext.Provider>
   );
@@ -117,8 +134,7 @@ export const FoodLogProvider: React.FC<{ children: React.ReactNode }> = ({
 // --- Hook for Consumers ---
 export const useFoodLog = () => {
   const context = useContext(FoodLogContext);
-  if (context === undefined) {
+  if (!context)
     throw new Error("useFoodLog must be used within a FoodLogProvider");
-  }
   return context;
 };
