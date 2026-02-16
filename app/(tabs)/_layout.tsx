@@ -96,7 +96,7 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="Hydration"
+        name="hydration"
         options={{
           href: null, // Hides the tab
         }}

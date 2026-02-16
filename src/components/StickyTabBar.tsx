@@ -59,12 +59,12 @@ export default function StickyTabBar({
         const cur = layouts.current[activeVisibleIndex];
         if (cur) {
           pillX.value = cur.x;
-          pillW.value = cur.x;
+          pillW.value = cur.width;
           setReady(true);
         }
       }
     },
-    [activeVisibleIndex, ready, pillW, pillX, visibleRoutes.length]
+    [activeVisibleIndex, ready, pillW, pillX, visibleRoutes.length],
   );
 
   const animateToIndex = useCallback(
@@ -91,17 +91,17 @@ export default function StickyTabBar({
 
       pillX.value = withSequence(
         withTiming(left, { duration: 1 }),
-        withTiming(next.x, { duration: 220, easing: Easing.out(Easing.cubic) })
+        withTiming(next.x, { duration: 220, easing: Easing.out(Easing.cubic) }),
       );
       pillW.value = withSequence(
         withTiming(bridgeWidth, { duration: 1 }),
         withTiming(next.width, {
           duration: 220,
           easing: Easing.out(Easing.cubic),
-        })
+        }),
       );
     },
-    [pillW, pillX]
+    [pillW, pillX],
   );
 
   React.useEffect(() => {

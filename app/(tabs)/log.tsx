@@ -361,7 +361,7 @@ export default function LogScreen() {
         <View style={styles.waterCard}>
           <TouchableOpacity
             style={{ flex: 1 }}
-            onPress={() => router.push("/(tabs)/Hydration")}
+            onPress={() => router.push("/(tabs)/hydration")}
           >
             <Text style={styles.waterTitle}>Water</Text>
             <Text style={styles.waterValue}>{waterTotalTodayMl} ml today</Text>
