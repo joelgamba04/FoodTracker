@@ -10,47 +10,50 @@ import {
 } from "react-native";
 
 interface DisclaimerModalProps {
+  visible: boolean;
   title: string;
   children: React.ReactNode;
-  onAccept: () => void;
+  onAccept: () => Promise<void> | void;
   acceptLabel?: string;
 }
 
 const DisclaimerModal: React.FC<DisclaimerModalProps> = ({
+  visible,
   title,
   children,
   onAccept,
   acceptLabel = "I Understand and Accept",
 }) => {
-  const [isVisible, setIsVisible] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAccept = useCallback(() => {
+  const handleAccept = useCallback(async () => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
-    setIsVisible(false);
-    onAccept();
-    setIsSubmitting(false);
-  }, [onAccept]);
-
-  if (!isVisible) return null;
+    try {
+      await onAccept();
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [isSubmitting, onAccept]);
 
   return (
     <Modal
       animationType="fade"
       transparent
-      visible={isVisible}
+      visible={visible}
+      statusBarTranslucent
       onRequestClose={() => {
         // Prevent dismiss via back button without accepting
       }}
     >
-      <View style={styles.centeredView}>
+      <View
+        style={styles.centeredView}
+        pointerEvents={visible ? "auto" : "none"}
+      >
         <View style={styles.modalView}>
           <Text style={styles.modalTitle}>{title}</Text>
 
-          <ScrollView style={styles.disclaimerContent}>
-            {/* body/content passed from parent */}
-            {children}
-          </ScrollView>
+          <ScrollView style={styles.disclaimerContent}>{children}</ScrollView>
 
           <TouchableOpacity
             style={styles.acceptButton}

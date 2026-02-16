@@ -25,6 +25,7 @@ import {
 import { USER_PROFILE_KEY } from "@/constants/storageKeys";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { FoodLogProvider } from "@/context/FoodLogContext";
+import { HydrationProvider } from "@/context/hydrationContext";
 import { ProfileProvider } from "@/context/ProfileContext";
 import { loadJSON } from "@/lib/storage";
 import { UserProfile } from "@/models/models";
@@ -123,6 +124,8 @@ function AppBootstrap() {
     [disclaimerStep],
   );
 
+  const showDisclaimer = disclaimerStep < DISCLAIMERS.length;
+
   // load local cached profile once
   useEffect(() => {
     let active = true;
@@ -141,48 +144,34 @@ function AppBootstrap() {
     };
   }, []);
 
-  // 1) Disclaimers: always show in sequence
-  if (disclaimerStep < DISCLAIMERS.length) {
-    return (
-      <DisclaimerModal
-        key={currentDisclaimer.id}
-        title={currentDisclaimer.title}
-        onAccept={() => setDisclaimerStep((prev) => prev + 1)}
-      >
-        {currentDisclaimer.body}
-      </DisclaimerModal>
-    );
-  }
-
-  // 2) Profile cache check
-  if (profileStatus === "checking") {
-    // small loading screen while we read AsyncStorage
-    return (
-      <View style={styles.loadingScreen}>
-        <Text style={styles.loadingText}>Loading your profile…</Text>
-      </View>
-    );
-  }
-
-  // 3) Initial profile onboarding (before using app)
-  if (profileStatus === "incomplete") {
-    return (
-      <InitialProfileScreen
-        key="initial-profile"
-        onComplete={() => {
-          // InitialProfileScreen should save to USER_PROFILE_KEY internally.
-          setProfileStatus("complete");
-        }}
-      />
-    );
-  }
-
-  // 4) Normal app flow
   return (
     <>
-      <PostLoginSync />
-      <AuthGate />
-      <StatusBar style="auto" />
+      <DisclaimerModal
+        visible={showDisclaimer}
+        title={currentDisclaimer?.title ?? ""}
+        onAccept={() => setDisclaimerStep((prev) => prev + 1)}
+      >
+        {currentDisclaimer?.body}
+      </DisclaimerModal>
+
+      {!showDisclaimer ? (
+        profileStatus === "checking" ? (
+          <View style={styles.loadingScreen}>
+            <Text style={styles.loadingText}>Loading your profile…</Text>
+          </View>
+        ) : profileStatus === "incomplete" ? (
+          <InitialProfileScreen
+            key="initial-profile"
+            onComplete={() => setProfileStatus("complete")}
+          />
+        ) : (
+          <>
+            <PostLoginSync />
+            <AuthGate />
+            <StatusBar style="auto" />
+          </>
+        )
+      ) : null}
     </>
   );
 }
@@ -196,11 +185,13 @@ export default function RootLayout() {
         <ProfileProvider>
           <AuthProvider>
             <FoodLogProvider>
-              <ThemeProvider
-                value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-              >
-                <AppBootstrap />
-              </ThemeProvider>
+              <HydrationProvider>
+                <ThemeProvider
+                  value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+                >
+                  <AppBootstrap />
+                </ThemeProvider>
+              </HydrationProvider>
             </FoodLogProvider>
           </AuthProvider>
         </ProfileProvider>

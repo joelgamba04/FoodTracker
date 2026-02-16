@@ -34,6 +34,17 @@ export async function initDb() {
 
     CREATE INDEX IF NOT EXISTS idx_food_log_timestamp
       ON food_log_entries(timestamp);
+
+    CREATE TABLE IF NOT EXISTS water_entries (
+      id TEXT PRIMARY KEY NOT NULL,
+      timestamp INTEGER NOT NULL,
+      amount_ml INTEGER NOT NULL,
+      sync_status TEXT NOT NULL DEFAULT 'pending',
+      last_sync_error TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_water_timestamp
+      ON water_entries(timestamp);
   `);
 
   return db;

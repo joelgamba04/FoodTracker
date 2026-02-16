@@ -94,6 +94,13 @@ export default function TabLayout() {
           href: null, // Hides the tab
         }}
       />
+
+      <Tabs.Screen
+        name="Hydration"
+        options={{
+          href: null, // Hides the tab
+        }}
+      />
     </Tabs>
   );
 }

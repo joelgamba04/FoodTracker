@@ -30,8 +30,7 @@ export const LoggedItem: React.FC<LoggedItemProps> = ({
   onStartRemove,
   disableActions,
 }) => {
-  const timestamp =
-    item.timestamp instanceof Date ? item.timestamp : new Date(item.timestamp);
+  const timestamp = new Date(item.timestamp);
 
   const timeString = timestamp.toLocaleTimeString([], {
     hour: "numeric",

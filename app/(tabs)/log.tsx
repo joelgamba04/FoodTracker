@@ -1,5 +1,6 @@
 // app/(tabs)/log.tsx
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -31,6 +32,7 @@ import { LoggedItem } from "@/components/LoggedItem";
 import { QuickLog } from "@/components/QuickLog";
 import { GUEST_AUTH_MODE } from "@/constants/authModeConstants";
 import { useAuth } from "@/context/AuthContext";
+import { useHydration } from "@/context/hydrationContext";
 import { mapFoodDetailToFood } from "@/mappers/foodMapper";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
@@ -60,6 +62,8 @@ export default function LogScreen() {
   } = useFoodLog();
 
   const { start, end } = getTodayWindow();
+  const { entries: waterEntries, addMl: addWaterMl } = useHydration();
+
   const todayLog = log.filter((e) => {
     const ts =
       typeof e.timestamp === "number"
@@ -68,6 +72,17 @@ export default function LogScreen() {
 
     return ts >= start && ts < end;
   });
+
+  const waterTotalTodayMl = useMemo(() => {
+    const startMs = start.getTime();
+    const endMs = end.getTime();
+    let total = 0;
+
+    for (const e of waterEntries) {
+      if (e.timestamp >= startMs && e.timestamp < endMs) total += e.amount_ml;
+    }
+    return total;
+  }, [waterEntries, start, end]);
 
   const favoriteFoods = useMemo(() => {
     if (!log || log.length === 0) return [];
@@ -343,6 +358,31 @@ export default function LogScreen() {
           <QuickLog favorites={favoriteFoods} onQuickAdd={handleSelectFood} />
         )}
 
+        <View style={styles.waterCard}>
+          <TouchableOpacity
+            style={{ flex: 1 }}
+            onPress={() => router.push("/(tabs)/Hydration")}
+          >
+            <Text style={styles.waterTitle}>Water</Text>
+            <Text style={styles.waterValue}>{waterTotalTodayMl} ml today</Text>
+          </TouchableOpacity>
+
+          <View style={styles.waterQuickRow}>
+            <TouchableOpacity
+              style={styles.waterQuickBtn}
+              onPress={() => addWaterMl(250)}
+            >
+              <Text style={styles.waterQuickText}>+250</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.waterQuickBtn}
+              onPress={() => addWaterMl(500)}
+            >
+              <Text style={styles.waterQuickText}>+500</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <ScrollView
           style={styles.contentScroll}
           keyboardShouldPersistTaps="handled"
@@ -542,7 +582,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  // Action card (temporary UI – can be redesigned later)
   actionCard: {
     marginTop: 10,
     backgroundColor: COLORS.background,
@@ -639,4 +678,26 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontSize: 15,
   },
+
+  waterCard: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  waterTitle: { fontSize: 14, fontWeight: "800" },
+  waterValue: { marginTop: 6, fontSize: 13, opacity: 0.75 },
+
+  waterQuickRow: { flexDirection: "row", gap: 8 },
+  waterQuickBtn: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  waterQuickText: { fontWeight: "800" },
 });
