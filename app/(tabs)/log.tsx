@@ -140,7 +140,7 @@ export const LogDashboard = () => {
             value={`${todaysCalories}`}
             subtitle="kcal today"
             icon="flame"
-            onPress={() => router.push({ pathname: "/addFood" })}
+            onPress={() => router.push("/AddFood")}
           />
 
           <AnimatedMetricCard
@@ -148,7 +148,7 @@ export const LogDashboard = () => {
             value={`${totalMl}`}
             subtitle={`/${goalMl} ml today`}
             icon="water"
-            onPress={() => router.push("/(tabs)/hydration")}
+            onPress={() => router.push("/Hydration")}
           />
 
           <AnimatedMetricCard
@@ -183,7 +183,7 @@ export const LogDashboard = () => {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Food Log</Text>
             <Pressable
-              onPress={() => router.push({ pathname: "/addFood" })}
+              onPress={() => router.push("/AddFood")}
               style={styles.linkBtn}
             >
               <Ionicons name="add" size={16} color={COLORS.primary} />
@@ -231,10 +231,7 @@ export const LogDashboard = () => {
       </ScrollView>
 
       {/* Floating Add Food */}
-      <Pressable
-        style={styles.fab}
-        onPress={() => router.push({ pathname: "/addFood" })}
-      >
+      <Pressable style={styles.fab} onPress={() => router.push("/AddFood")}>
         <Ionicons name="add" size={26} color={COLORS.textInverse} />
       </Pressable>
     </SafeAreaView>

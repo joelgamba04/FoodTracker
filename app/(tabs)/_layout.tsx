@@ -44,7 +44,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="log"
+        name="Log"
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon name="home" focused={focused} />
@@ -53,7 +53,7 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="nutrition"
+        name="Nutrition"
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon name="stats-chart" focused={focused} />
@@ -62,7 +62,7 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="history"
+        name="History"
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon name="calendar" focused={focused} />
@@ -89,14 +89,7 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="index"
-        options={{
-          href: null, // Hides the tab
-        }}
-      />
-
-      <Tabs.Screen
-        name="hydration"
+        name="Index"
         options={{
           href: null, // Hides the tab
         }}

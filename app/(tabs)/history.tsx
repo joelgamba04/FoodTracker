@@ -44,7 +44,7 @@ function dayTotals(entries: FoodLogEntry[]) {
           entry.food?.nutrients?.find((nutrient) => nutrient.name === name)
             ?.amount ?? 0;
         return unit * (entry.quantity ?? 1);
-      })
+      }),
     );
   return {
     kcal: sumBy(entries.map(getCalories)),
@@ -60,7 +60,7 @@ function groupByDay(all: FoodLogEntry[]) {
     const date = new Date(e.timestamp as any);
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
       2,
-      "0"
+      "0",
     )}-${String(date.getDate()).padStart(2, "0")}`;
 
     const arr = map.get(key) ?? [];
@@ -74,13 +74,13 @@ function groupByDay(all: FoodLogEntry[]) {
       return {
         title: `${formatDate(new Date(entries[0].timestamp as any))}`,
         subtitle: `Protein ${Math.round(totals.protein)}g • Carbs ${Math.round(
-          totals.carbs
+          totals.carbs,
         )}g • Fat ${Math.round(totals.fat)}g`,
         kcal: Math.round(totals.kcal),
         dateKey: key,
         data: entries.sort(
           (a, b) =>
-            +new Date(b.timestamp as any) - +new Date(a.timestamp as any)
+            +new Date(b.timestamp as any) - +new Date(a.timestamp as any),
         ),
       };
     })
@@ -145,6 +145,9 @@ export default function HistoryScreen() {
         paddingBottom: insets.bottom,
       }}
     >
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>History</Text>
+      </View>
       {/* Controls */}
       <View style={styles.controls}>
         {/* Search pill (same look as log page) */}
@@ -249,6 +252,20 @@ const styles = StyleSheet.create({
   },
   dim: { opacity: 0.7, marginTop: 6, color: COLORS.textSecondary },
   h1: { fontSize: 20, fontWeight: "700", color: COLORS.textPrimary },
+
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+    textAlign: "left",
+  },
 
   controls: {
     paddingHorizontal: 18,
