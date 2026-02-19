@@ -49,19 +49,16 @@ function getFoodTitle(food: any): string {
   );
 }
 
-function mealLabel(mealType?: number) {
-  // align with your existing mealType: 1|2|3
-  switch (mealType) {
-    case 1:
-      return "Breakfast";
-    case 2:
-      return "Lunch";
-    case 3:
-      return "Dinner";
-    default:
-      return "Meal";
-  }
-}
+const getMealByTimestamp = (
+  timestamp: number,
+): "Breakfast" | "Lunch" | "Dinner" => {
+  const date = new Date(timestamp);
+  const hour = date.getHours(); // 0–23
+
+  if (hour < 11) return "Breakfast"; // 12:00am–10:59am
+  if (hour < 16) return "Lunch"; // 11:00am–3:59pm
+  return "Dinner"; // 4:00pm–11:59pm
+};
 
 // ---------- main screen ----------
 export default function LogDashboard() {
@@ -106,16 +103,22 @@ export default function LogDashboard() {
   }, [todaysFood]);
 
   const grouped = useMemo(() => {
-    const map: Record<string, typeof todaysFood> = {
+    const map: Record<"Breakfast" | "Lunch" | "Dinner", typeof todaysFood> = {
       Breakfast: [],
       Lunch: [],
       Dinner: [],
-      Meal: [],
     };
+
     for (const e of todaysFood) {
-      const label = mealLabel(e.mealType);
-      (map[label] ?? map["Meal"]).push(e);
+      const ts =
+        typeof e.timestamp === "number"
+          ? e.timestamp
+          : new Date(e.timestamp).getTime();
+
+      const meal = getMealByTimestamp(ts);
+      map[meal].push(e);
     }
+
     return map;
   }, [todaysFood]);
 
@@ -284,7 +287,7 @@ const styles = StyleSheet.create({
   emptyText: { opacity: 0.65, paddingVertical: 12 },
 
   mealBlock: { paddingTop: 10, paddingBottom: 6 },
-  mealTitle: { fontSize: 13, fontWeight: "900", marginBottom: 8 },
+  mealTitle: { fontSize: 16, fontWeight: "900", marginBottom: 8 },
   muted: { opacity: 0.5 },
 
   foodRow: {
