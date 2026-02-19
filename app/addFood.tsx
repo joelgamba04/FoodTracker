@@ -2,7 +2,7 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -17,6 +17,9 @@ import {
 } from "react-native-safe-area-context";
 
 import { useFoodLog } from "@/context/FoodLogContext";
+import { mapFoodDetailToFood } from "@/mappers/foodMapper";
+import { Food } from "@/models/models";
+import { searchFoods } from "@/services/foodSearchService";
 import { COLORS } from "@/theme/color";
 
 // If you have a food type, import it; otherwise keep `any`
@@ -26,42 +29,33 @@ function makeLocalId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-/**
- * Replace this with your real search:
- * - from your old log.tsx
- * - or from foodLogService.ts
- */
-function searchFoods(allFoods: FoodItem[], query: string) {
-  const q = query.trim().toLowerCase();
-  if (!q) return [];
-  return allFoods
-    .filter((f) => {
-      const name = (f?.name ?? f?.title ?? "").toLowerCase();
-      return name.includes(q);
-    })
-    .slice(0, 30);
-}
-
 export default function AddFoodScreen() {
   const { addEntry } = useFoodLog();
 
-  const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<FoodItem | null>(null);
   const [qty, setQty] = useState(1);
   const insets = useSafeAreaInsets();
 
-  /**
-   * Replace this with your real master food list source.
-   * Example: const allFoods = useFoods(); or import a JSON list.
-   */
-  const allFoods: FoodItem[] = []; // <-- plug your dataset here
-
-  const results = useMemo(
-    () => searchFoods(allFoods, query),
-    [allFoods, query],
-  );
+  const [results, setResults] = useState<Food[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const canLog = !!selected && qty > 0;
+
+  useEffect(() => {
+    const q = search.trim();
+    if (!q) {
+      setResults([]);
+      return;
+    }
+
+    const t = setTimeout(() => {
+      handleSearch(q);
+    }, 350);
+
+    return () => clearTimeout(t);
+  }, [search]);
 
   const onLog = async () => {
     if (!selected) return;
@@ -77,6 +71,34 @@ export default function AddFoodScreen() {
     });
 
     router.back();
+  };
+
+  const handleSearch = async (raw: string) => {
+    const query = (raw ?? search).trim();
+    if (!query) {
+      setResults([]);
+      return;
+    }
+
+    setSearchLoading(true);
+    setSearchError(null);
+
+    try {
+      const res = await searchFoods(query);
+      if (!res.success) {
+        setResults([]);
+        return;
+      }
+
+      const foods = (res.data ?? []).map(mapFoodDetailToFood);
+      setResults(foods);
+    } catch (err: any) {
+      console.error("Search failed:", err);
+      setSearchError("Search failed. Try again.");
+      setResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
   };
 
   return (
@@ -95,9 +117,9 @@ export default function AddFoodScreen() {
       <View style={styles.searchWrap}>
         <Ionicons name="search" size={18} color={COLORS.iconPrimary} />
         <TextInput
-          value={query}
+          value={search}
           onChangeText={(t) => {
-            setQuery(t);
+            setSearch(t);
             setSelected(null);
           }}
           placeholder="Search food…"
@@ -113,7 +135,7 @@ export default function AddFoodScreen() {
           <>
             <Text style={styles.sectionTitle}>Results</Text>
 
-            {query.trim().length === 0 ? (
+            {search.trim().length === 0 ? (
               <Text style={styles.muted}>Type to search.</Text>
             ) : results.length === 0 ? (
               <Text style={styles.muted}>No results.</Text>
@@ -129,11 +151,11 @@ export default function AddFoodScreen() {
                 >
                   <View style={{ flex: 1 }}>
                     <Text style={styles.rowTitle}>
-                      {item?.name ?? item?.title ?? "Food"}
+                      {item?.name ?? item?.name ?? "Food"}
                     </Text>
-                    {!!item?.description && (
+                    {!!item?.englishName && (
                       <Text style={styles.rowSub} numberOfLines={1}>
-                        {item.description}
+                        {item.englishName}
                       </Text>
                     )}
                   </View>
@@ -198,6 +220,13 @@ export default function AddFoodScreen() {
             </View>
           </>
         )}
+
+        {/* error and loading states */}
+        {searchLoading ? (
+          <Text style={styles.muted}>Searching…</Text>
+        ) : searchError ? (
+          <Text style={styles.errorText}>{searchError}</Text>
+        ) : null}
 
         <View style={{ height: 30 }} />
       </ScrollView>
@@ -284,12 +313,12 @@ const styles = StyleSheet.create({
   },
 
   primaryBtn: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.textPrimary,
     borderRadius: 14,
     paddingVertical: 12,
     alignItems: "center",
   },
-  primaryBtnText: { color: COLORS.textPrimary, fontWeight: "900" },
+  primaryBtnText: { color: COLORS.textInverse, fontWeight: "900" },
 
   secondaryBtn: {
     marginTop: 10,
@@ -299,4 +328,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   secondaryBtnText: { color: COLORS.textPrimary, fontWeight: "800" },
+
+  errorText: {
+    color: COLORS.dangerRed,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
 });

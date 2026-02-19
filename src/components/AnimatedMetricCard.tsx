@@ -75,7 +75,8 @@ export const AnimatedMetricCard = ({
 const styles = StyleSheet.create({
   card: {
     width: "50%",
-    padding: 6,
+    backgroundColor: COLORS.surfaceMuted,
+    padding: 14,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.surfaceBorder,

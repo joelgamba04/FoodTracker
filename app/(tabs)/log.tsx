@@ -11,6 +11,7 @@ import {
 import { AnimatedMetricCard } from "@/components/AnimatedMetricCard";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { useHydration } from "@/context/hydrationContext";
+import { Food } from "@/models/models";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
 
@@ -23,19 +24,23 @@ function formatDate(d: Date) {
   });
 }
 
-function getKcalFromFood(food: any): number {
+function getKcalFromFood(food: Food): number {
   if (!food) return 0;
-  // Try common keys
-  const candidates = [
-    food.kcal,
-    food.calories,
-    food.energyKcal,
-    food.energy_kcal,
-    food.energy,
-    food.kilocalories,
-  ];
-  const found = candidates.find((v) => typeof v === "number" && isFinite(v));
-  return typeof found === "number" ? found : 0;
+
+  const nutrients = Array.isArray(food.nutrients) ? food.nutrients : [];
+  const energy = nutrients.find((n: any) => {
+    const name = String(n?.name ?? "").toLowerCase();
+    const unit = String(n?.unit ?? "").toLowerCase();
+    return (
+      name.includes("energy") ||
+      name.includes("calorie") ||
+      name.includes("kcal") ||
+      unit === "kcal"
+    );
+  });
+
+  const amt = energy?.amount;
+  return typeof amt === "number" && isFinite(amt) ? amt : 0;
 }
 
 function getFoodTitle(food: any): string {
