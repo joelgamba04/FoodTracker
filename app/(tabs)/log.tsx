@@ -11,20 +11,21 @@ import {
 import { AnimatedMetricCard } from "@/components/AnimatedMetricCard";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { useHydration } from "@/context/hydrationContext";
+import { useHydrationToday } from "@/hooks/hydrationHooks";
 import { Food } from "@/models/models";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
 
 // ---------- helpers ----------
-function formatDate(d: Date) {
+const formatDate = (d: Date) => {
   return d.toLocaleDateString(undefined, {
     weekday: "long",
     month: "long",
     day: "numeric",
   });
-}
+};
 
-function getKcalFromFood(food: Food): number {
+const getKcalFromFood = (food: Food): number => {
   if (!food) return 0;
 
   const nutrients = Array.isArray(food.nutrients) ? food.nutrients : [];
@@ -41,13 +42,13 @@ function getKcalFromFood(food: Food): number {
 
   const amt = energy?.amount;
   return typeof amt === "number" && isFinite(amt) ? amt : 0;
-}
+};
 
-function getFoodTitle(food: any): string {
+const getFoodTitle = (food: any): string => {
   return (
     food?.name ?? food?.title ?? food?.food_name ?? food?.label ?? "Food item"
   );
-}
+};
 
 const getMealByTimestamp = (
   timestamp: number,
@@ -61,9 +62,10 @@ const getMealByTimestamp = (
 };
 
 // ---------- main screen ----------
-export default function LogDashboard() {
+export const LogDashboard = () => {
   const { log } = useFoodLog();
   const { entries: waterEntries, addMl } = useHydration();
+  const { totalMl, goalMl } = useHydrationToday();
 
   const { start, end } = getTodayWindow();
   const startMs = start.getTime();
@@ -143,8 +145,8 @@ export default function LogDashboard() {
 
           <AnimatedMetricCard
             title="Water"
-            value={`${todaysWaterMl}`}
-            subtitle="ml today"
+            value={`${totalMl}`}
+            subtitle={`/${goalMl} ml today`}
             icon="water"
             onPress={() => router.push("/(tabs)/hydration")}
           />
@@ -237,7 +239,7 @@ export default function LogDashboard() {
       </Pressable>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.background },
@@ -311,3 +313,5 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
 });
+
+export default LogDashboard;

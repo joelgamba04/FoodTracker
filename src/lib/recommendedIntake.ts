@@ -13,9 +13,9 @@ export interface NutrientGoal {
  * Very simple, documented heuristic based on sex, age, weight.
  * Replace with PDRI-based logic later when ready.
  */
-export function calculateRecommendedIntake(
-  profile: UserProfile | null
-): Record<NutrientKey, NutrientGoal> {
+export const calculateRecommendedIntake = (
+  profile: UserProfile | null,
+): Record<NutrientKey, NutrientGoal> => {
   // start from the static ARBITRARY_RDI as a template
   const base = ARBITRARY_RDI as Record<NutrientKey, NutrientGoal>;
   const rdi: Record<NutrientKey, NutrientGoal> = { ...base };
@@ -30,10 +30,11 @@ export function calculateRecommendedIntake(
     return rdi;
   }
 
-  let calories = 2000;
-  let carbs = 300; // g
-  let protein = 50; // g
+  let calories = 2530;
+  let carbs = 380; // g
+  let protein = 95; // g
   let fat = 70; // g
+  let water = 2530; // ml
 
   if (sex === "Male") {
     if (age < 30) {
@@ -41,11 +42,13 @@ export function calculateRecommendedIntake(
       carbs = 380;
       protein = 95;
       fat = 70;
+      water = 2530;
     } else if (age < 60) {
       calories = 2420;
       carbs = 363;
       protein = 91;
       fat = 67;
+      water = 2420;
     }
   } else {
     if (age < 30) {
@@ -53,11 +56,13 @@ export function calculateRecommendedIntake(
       carbs = 290;
       protein = 73;
       fat = 54;
+      water = 1930;
     } else if (age < 60) {
       calories = 1870;
       carbs = 281;
       protein = 70;
       fat = 52;
+      water = 1870;
     }
   }
 
@@ -89,5 +94,12 @@ export function calculateRecommendedIntake(
     };
   }
 
+  if (base.Water) {
+    rdi.Water = {
+      ...base.Water,
+      amount: water,
+    };
+  }
+
   return rdi;
-}
+};

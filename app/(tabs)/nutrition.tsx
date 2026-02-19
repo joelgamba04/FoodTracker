@@ -2,6 +2,7 @@
 import NutrientCard from "@/components/NutrientCard";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { NutrientKey, useProfile } from "@/context/ProfileContext";
+import { useHydrationToday } from "@/hooks/hydrationHooks";
 import { Nutrient } from "@/models/models";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
@@ -13,7 +14,7 @@ import {
 } from "react-native-safe-area-context";
 
 // --- Helper Functions ---
-function calculateTotals(log: any[]): Nutrient[] {
+const calculateTotals = (log: any[]): Nutrient[] => {
   const totals: { [key: string]: Nutrient } = {};
   log.forEach((entry) => {
     if (entry.food && entry.food.nutrients) {
@@ -26,14 +27,15 @@ function calculateTotals(log: any[]): Nutrient[] {
     }
   });
   return Object.values(totals);
-}
+};
 
 // --- Main Screen Component ---
-export default function NutritionScreen() {
+export const NutritionScreen = () => {
   const { log } = useFoodLog();
   const { rdi } = useProfile();
 
   const { start, end } = getTodayWindow();
+  const { totalMl, goalMl } = useHydrationToday();
   const insets = useSafeAreaInsets();
 
   const todayLog = log.filter((e) => {
@@ -88,6 +90,14 @@ export default function NutritionScreen() {
           unit={rdi.Calories.unit}
         />
 
+        <Text style={styles.sectionTitle}>Hydration</Text>
+        <NutrientCard
+          name="Water"
+          consumed={totalMl}
+          recommended={goalMl}
+          unit="ml"
+        />
+
         {/* --- MACRO NUTRIENTS SECTION --- */}
         <Text style={styles.sectionTitle}>Macronutrients</Text>
         <View style={styles.macroContainer}>
@@ -113,7 +123,7 @@ export default function NutritionScreen() {
       </ScrollView>
     </SafeAreaView>
   );
-}
+};
 
 // --- Stylesheet ---
 const styles = StyleSheet.create({
@@ -153,3 +163,5 @@ const styles = StyleSheet.create({
   },
   macroContainer: {},
 });
+
+export default NutritionScreen;

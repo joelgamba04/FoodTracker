@@ -17,7 +17,7 @@ type GoalRowProps = {
   highlight?: boolean;
 };
 
-function GoalRow({ label, value, unit, isLast, highlight }: GoalRowProps) {
+const GoalRow = ({ label, value, unit, isLast, highlight }: GoalRowProps) => {
   return (
     <View style={[styles.goalRow, isLast && styles.goalRowLast]}>
       <Text style={[styles.goalLabel, highlight && styles.goalLabelHighlight]}>
@@ -30,9 +30,9 @@ function GoalRow({ label, value, unit, isLast, highlight }: GoalRowProps) {
       </View>
     </View>
   );
-}
+};
 
-function ProfileSummary({
+const ProfileSummary = ({
   sex,
   age,
   weight,
@@ -42,7 +42,7 @@ function ProfileSummary({
   age?: string;
   weight?: string;
   height?: string;
-}) {
+}) => {
   const hasAny = Boolean(sex || age || weight || height);
 
   if (!hasAny) {
@@ -82,9 +82,9 @@ function ProfileSummary({
       </View>
     </View>
   );
-}
+};
 
-function SummaryChip({ label, value }: { label: string; value: string }) {
+const SummaryChip = ({ label, value }: { label: string; value: string }) => {
   return (
     <View style={styles.chip}>
       <Text style={styles.chipLabel}>{label}</Text>
@@ -93,15 +93,15 @@ function SummaryChip({ label, value }: { label: string; value: string }) {
       </Text>
     </View>
   );
-}
+};
 
-export default function SettingsScreen() {
+export const SettingsScreen = () => {
   const { rdi, profile } = useProfile();
   const insets = useSafeAreaInsets();
 
   const macros: NutrientKey[] = useMemo(
-    () => ["Calories", "Carbohydrate", "Protein", "Fat"],
-    []
+    () => ["Calories", "Carbohydrate", "Protein", "Fat", "Water"],
+    [],
   );
 
   // Guard: avoid crashes if rdi not ready for any reason
@@ -167,7 +167,7 @@ export default function SettingsScreen() {
       </ScrollView>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -329,3 +329,5 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
   },
 });
+
+export default SettingsScreen;
