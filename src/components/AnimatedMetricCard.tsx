@@ -52,34 +52,39 @@ export const AnimatedMetricCard = ({
   return (
     <Animated.View
       entering={FadeInDown.duration(260).springify()}
-      style={[styles.card, rStyle]}
+      style={styles.gridItem}
     >
-      <Wrapper
-        onPress={disabled ? undefined : onPress}
-        onPressIn={disabled ? undefined : handlePressIn}
-        onPressOut={disabled ? undefined : handlePressOut}
-        style={{ flex: 1 }}
-      >
-        <View style={styles.cardTopRow}>
-          <Text style={styles.cardTitle}>{title}</Text>
-          <Ionicons name={icon} size={18} color={COLORS.iconPrimary} />
-        </View>
+      <Animated.View style={[styles.card, rStyle]}>
+        <Wrapper
+          onPress={disabled ? undefined : onPress}
+          onPressIn={disabled ? undefined : handlePressIn}
+          onPressOut={disabled ? undefined : handlePressOut}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.cardTopRow}>
+            <Text style={styles.cardTitle}>{title}</Text>
+            <Ionicons name={icon} size={18} color={COLORS.iconPrimary} />
+          </View>
 
-        <Text style={styles.cardValue}>{value}</Text>
-        <Text style={styles.cardSubtitle}>{subtitle}</Text>
-      </Wrapper>
+          <Text style={styles.cardValue}>{value}</Text>
+          <Text style={styles.cardSubtitle}>{subtitle}</Text>
+        </Wrapper>
+      </Animated.View>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
+  gridItem: {
     width: "50%",
-    backgroundColor: COLORS.surfaceMuted,
+    padding: 6,
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 18,
     padding: 14,
-    borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.surfaceBorder,
+    borderColor: "rgba(0,0,0,0.08)",
   },
   cardTopRow: {
     flexDirection: "row",
