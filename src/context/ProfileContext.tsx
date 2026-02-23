@@ -10,8 +10,13 @@ import React, {
   useState,
 } from "react";
 
+import { GUEST_AUTH_MODE } from "@/constants/authModeConstants";
 import { ARBITRARY_RDI } from "@/constants/recommendedDailyIntake";
-import { AUTH_USER_KEY, USER_PROFILE_KEY } from "@/constants/storageKeys";
+import {
+  AUTH_MODE_KEY,
+  AUTH_USER_KEY,
+  USER_PROFILE_KEY,
+} from "@/constants/storageKeys";
 import { api } from "@/lib/apiClient";
 import { calculateRecommendedIntake } from "@/lib/recommendedIntake";
 import { loadJSON, saveJSON } from "@/lib/storage";
@@ -54,32 +59,31 @@ interface ProfileContextType {
   refreshProfile: () => Promise<void>;
   saveProfileToServer: (nextProfile: UserProfile) => Promise<void>;
   reloadLocalProfile: () => Promise<void>;
+  isGuest: boolean;
 }
 
-async function getCurrentUserId(): Promise<number> {
+const getCurrentUserId = async (): Promise<number> => {
   const raw = await AsyncStorage.getItem(AUTH_USER_KEY);
   if (!raw) throw new Error("Not logged in.");
   const user = JSON.parse(raw);
   if (!user?.user_id) throw new Error("Missing user_id.");
   return user.user_id;
-}
+};
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
-// ----- Helpers -----
-function genderIdToSex(genderId: number): "Male" | "Female" {
-  // If your backend uses different ids, change mapping here only.
+const genderIdToSex = (genderId: number): "Male" | "Female" => {
   return genderId === 2 ? "Female" : "Male";
-}
+};
 
-function apiToUserProfile(res: ApiUserProfileResponse["data"]): UserProfile {
+const apiToUserProfile = (res: ApiUserProfileResponse["data"]): UserProfile => {
   return {
     age: String(res.age ?? ""),
     sex: genderIdToSex(res.gender_id ?? 1),
     height: String(res.height ?? ""),
     weight: String(res.weight ?? ""),
   };
-}
+};
 
 // ----- Provider -----
 export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
@@ -93,6 +97,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
   });
 
   const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
 
   // Always derive RDI from the current profile (prevents stale RDI)
   const rdi = useMemo<Record<NutrientKey, NutrientGoal>>(() => {
@@ -102,6 +107,20 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
       return ARBITRARY_RDI;
     }
   }, [profile]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const mode = await AsyncStorage.getItem(AUTH_MODE_KEY);
+
+        // Guest-safe default: if mode is missing, treat as guest
+        setIsGuest(mode === GUEST_AUTH_MODE || mode == null);
+      } catch (e) {
+        console.warn("ProfileProvider: failed to read auth mode", e);
+        setIsGuest(true);
+      }
+    })();
+  }, []);
 
   // 1) Load cached profile fast on startup, then optionally refresh from API
   useEffect(() => {
@@ -202,6 +221,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
         refreshProfile,
         saveProfileToServer,
         reloadLocalProfile,
+        isGuest,
       }}
     >
       {children}

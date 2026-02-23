@@ -1,4 +1,5 @@
 // app/(tabs)/Settings.tsx
+import GuestModeDataNoticeCard from "@/components/GuestModeNoticeCard";
 import { NutrientKey, useProfile } from "@/context/ProfileContext";
 import { COLORS } from "@/theme/color";
 import { Ionicons } from "@expo/vector-icons";
@@ -96,7 +97,7 @@ const SummaryChip = ({ label, value }: { label: string; value: string }) => {
 };
 
 export const SettingsScreen = () => {
-  const { rdi, profile } = useProfile();
+  const { rdi, profile, isGuest } = useProfile();
   const insets = useSafeAreaInsets();
 
   const macros: NutrientKey[] = useMemo(
@@ -135,6 +136,9 @@ export const SettingsScreen = () => {
           weight={profile?.weight}
           height={profile?.height}
         />
+
+        {/* Guest mode notice */}
+        {isGuest ? <GuestModeDataNoticeCard /> : null}
 
         {/* Goals */}
         <View style={styles.sectionHeader}>
