@@ -1,3 +1,5 @@
+// app/(tabs)/ProfileScreen.tsx
+
 import { AUTHENTICATED_AUTH_MODE } from "@/constants/authModeConstants";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
@@ -44,11 +46,11 @@ type WeightStatus =
       message: string;
     };
 
-function getWeightStatus(form: {
+const getWeightStatus = (form: {
   age: string;
   sex: string;
   weight: string;
-}): WeightStatus | null {
+}): WeightStatus | null => {
   const age = parseFloat(form.age);
   const weightKg = parseFloat(form.weight);
 
@@ -105,9 +107,9 @@ function getWeightStatus(form: {
     message:
       "You’re gently above the usual range. This is not a diagnosis — it’s just a guide. Small, sustainable changes in movement and food choices can already support your health.",
   };
-}
+};
 
-export default function ProfileScreen() {
+const ProfileScreen = () => {
   const { profile, updateProfile, saveProfileToServer } = useProfile();
   const { logout, authMode } = useAuth();
 
@@ -161,19 +163,19 @@ export default function ProfileScreen() {
         paddingBottom: insets.bottom,
       }}
     >
+      {/* Header (match Settings / History hierarchy) */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Profile</Text>
+        <Text style={styles.headerSubtitle}>
+          Update your details to personalize daily goals.
+        </Text>
+      </View>
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header (match Settings / History hierarchy) */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile</Text>
-          <Text style={styles.headerSubtitle}>
-            Update your details to personalize daily goals.
-          </Text>
-        </View>
-
         {/* Basic information card */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Basic Information</Text>
@@ -318,7 +320,7 @@ export default function ProfileScreen() {
       </ScrollView>
     </SafeAreaView>
   );
-}
+};
 
 interface FormInputProps {
   label: string;
@@ -355,11 +357,16 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   content: { paddingHorizontal: 18, paddingTop: 12 },
 
-  header: { marginBottom: 14 },
+  header: {
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+  },
   headerTitle: {
     fontSize: 26,
     fontWeight: "800",
     color: COLORS.textPrimary,
+    textAlign: "left",
   },
   headerSubtitle: {
     marginTop: 6,
@@ -538,3 +545,5 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 });
+
+export default ProfileScreen;

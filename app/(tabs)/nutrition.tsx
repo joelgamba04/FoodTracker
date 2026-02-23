@@ -104,9 +104,11 @@ export const NutritionScreen = () => {
         paddingBottom: insets.bottom,
       }}
     >
-      {/* Header */}
-      <Text style={styles.mainHeading}>Today’s Logs</Text>
-      <Text style={styles.subHeading}>Food + Water (today only)</Text>
+      {/* Page header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Today’s Logs</Text>
+        <Text style={styles.headerSubtitle}>Food + Water (today only)</Text>
+      </View>
 
       <ScrollView style={styles.container}>
         {/* --- DAILY TOTALS / PROGRESS --- */}
@@ -154,23 +156,26 @@ export const NutritionScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 10,
+    paddingHorizontal: 18,
     backgroundColor: COLORS.background,
   },
-  mainHeading: {
-    fontSize: 28,
-    fontWeight: "900",
-    color: COLORS.textPrimary,
-    textAlign: "center",
+  header: {
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 18,
   },
-  subHeading: {
+  headerTitle: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+    textAlign: "left",
+  },
+  headerSubtitle: {
     marginTop: 6,
-    marginBottom: 18,
     fontSize: 13,
+    lineHeight: 18,
     color: COLORS.textSecondary,
-    textAlign: "center",
-    opacity: 0.8,
+    fontWeight: "600",
   },
 
   sectionTitle: {
