@@ -1,12 +1,13 @@
-// app/(tabs)/nutrition.tsx
+// app/(tabs)/Nutrition.tsx
+
 import NutrientCard from "@/components/NutrientCard";
 import { useFoodLog } from "@/context/FoodLogContext";
+import { useHydration } from "@/context/hydrationContext";
 import { NutrientKey, useProfile } from "@/context/ProfileContext";
-import { useHydrationToday } from "@/hooks/hydrationHooks";
 import { Nutrient } from "@/models/models";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
-import React from "react";
+import React, { useMemo } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   SafeAreaView,
@@ -22,7 +23,7 @@ const calculateTotals = (log: any[]): Nutrient[] => {
         if (!totals[nutrient.name]) {
           totals[nutrient.name] = { ...nutrient, amount: 0 };
         }
-        totals[nutrient.name].amount += nutrient.amount * entry.quantity;
+        totals[nutrient.name].amount += nutrient.amount * (entry.quantity ?? 1);
       });
     }
   });
@@ -31,32 +32,57 @@ const calculateTotals = (log: any[]): Nutrient[] => {
 
 // --- Main Screen Component ---
 export const NutritionScreen = () => {
+  const insets = useSafeAreaInsets();
   const { log } = useFoodLog();
   const { rdi } = useProfile();
+  const { entries: waterEntries, isLoading: isWaterLoading } = useHydration();
 
   const { start, end } = getTodayWindow();
-  const { totalMl, goalMl } = useHydrationToday();
-  const insets = useSafeAreaInsets();
+  const startMs = start.getTime();
+  const endMs = end.getTime();
 
-  const todayLog = log.filter((e) => {
-    const ts = new Date(e.timestamp as any);
-    return ts >= start && ts < end;
-  });
+  const todayFoodLog = useMemo(() => {
+    return (log ?? []).filter((e) => {
+      const ts =
+        typeof e.timestamp === "number"
+          ? e.timestamp
+          : new Date(e.timestamp as any).getTime();
+      return ts >= startMs && ts < endMs;
+    });
+  }, [log, startMs, endMs]);
 
-  const totals = calculateTotals(todayLog);
+  const todayWaterLog = useMemo(() => {
+    return (waterEntries ?? []).filter(
+      (e) => e.timestamp >= startMs && e.timestamp < endMs,
+    );
+  }, [waterEntries, startMs, endMs]);
 
-  if (totals.length === 0) {
+  const totalWaterMl = useMemo(() => {
+    return todayWaterLog.reduce((sum, e) => sum + (e.amount_ml ?? 0), 0);
+  }, [todayWaterLog]);
+
+  const totals = useMemo(() => calculateTotals(todayFoodLog), [todayFoodLog]);
+
+  const hasFood = todayFoodLog.length > 0;
+  const hasWater = totalWaterMl > 0;
+
+  // Better empty state: no food AND no water
+  if (!hasFood && !hasWater) {
     return (
       <SafeAreaView
         style={[
           styles.container,
-          { alignItems: "center", justifyContent: "center" },
+          {
+            alignItems: "center",
+            justifyContent: "center",
+            paddingBottom: insets.bottom,
+          },
         ]}
       >
-        <Text style={styles.emptyHeading}>Nutrition Overview</Text>
+        <Text style={styles.emptyHeading}>Today’s Logs</Text>
         <Text style={styles.emptyText}>Nothing to analyze yet!</Text>
         <Text style={styles.emptyText}>
-          Log some food to see your daily totals and progress.
+          Add water from the Water icon, or log food to see totals and progress.
         </Text>
       </SafeAreaView>
     );
@@ -78,10 +104,12 @@ export const NutritionScreen = () => {
         paddingBottom: insets.bottom,
       }}
     >
-      <ScrollView style={styles.container}>
-        <Text style={styles.mainHeading}>Daily Nutrition Summary</Text>
+      {/* Header */}
+      <Text style={styles.mainHeading}>Today’s Logs</Text>
+      <Text style={styles.subHeading}>Food + Water (today only)</Text>
 
-        {/* --- CALORIES SECTION --- */}
+      <ScrollView style={styles.container}>
+        {/* --- DAILY TOTALS / PROGRESS --- */}
         <Text style={styles.sectionTitle}>Calories Goal</Text>
         <NutrientCard
           name={calorieData.name}
@@ -90,17 +118,16 @@ export const NutritionScreen = () => {
           unit={rdi.Calories.unit}
         />
 
-        <Text style={styles.sectionTitle}>Hydration</Text>
+        <Text style={styles.sectionTitle}>Hydration Goal</Text>
         <NutrientCard
           name="Water"
-          consumed={totalMl}
-          recommended={goalMl}
+          consumed={totalWaterMl}
+          recommended={rdi.Water.amount}
           unit="ml"
         />
 
-        {/* --- MACRO NUTRIENTS SECTION --- */}
         <Text style={styles.sectionTitle}>Macronutrients</Text>
-        <View style={styles.macroContainer}>
+        <View>
           {macroNutrients.map((key) => {
             const nutrientTotal =
               totals.find((n) => n.name === key)?.amount || 0;
@@ -118,14 +145,12 @@ export const NutritionScreen = () => {
             );
           })}
         </View>
-        {/* Spacer for end of scroll */}
-        <View style={{ height: 50 }} />
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-// --- Stylesheet ---
+// --- Styles ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -134,34 +159,41 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   mainHeading: {
-    fontSize: 30,
-    fontWeight: "700",
+    fontSize: 28,
+    fontWeight: "900",
     color: COLORS.textPrimary,
-    marginBottom: 20,
     textAlign: "center",
   },
+  subHeading: {
+    marginTop: 6,
+    marginBottom: 18,
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    opacity: 0.8,
+  },
+
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "800",
     color: COLORS.textPrimary,
-    marginTop: 15,
+    marginTop: 14,
     marginBottom: 10,
   },
 
   emptyHeading: {
     fontSize: 24,
-    fontWeight: "700",
+    fontWeight: "900",
     color: COLORS.textPrimary,
-    marginBottom: 40,
+    marginBottom: 16,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 15,
     color: COLORS.textSecondary,
     textAlign: "center",
     marginHorizontal: 40,
-    lineHeight: 24,
+    lineHeight: 22,
   },
-  macroContainer: {},
 });
 
 export default NutritionScreen;
