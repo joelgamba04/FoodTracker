@@ -9,12 +9,12 @@ export function mapFoodDetailToFood(item: FoodDetail): Food {
   const servingSize =
     defaultMeasure?.measure_label && defaultMeasure?.weight_g
       ? `${defaultMeasure.measure_label} (${Number(defaultMeasure.weight_g)}g)`
-      : defaultMeasure?.measure_label ?? "1 serving";
+      : (defaultMeasure?.measure_label ?? "1 serving");
 
   return {
     id: String(item.food_id),
-    name: item.filipino_name,
-    englishName: item.english_name,
+    name: item.filipino_name || item.english_name || "Unknown food",
+    englishName: item.english_name || "",
     servingSize,
     nutrients: [
       { name: "Calories", unit: "kcal", amount: Number(item.energy_kcal ?? 0) },

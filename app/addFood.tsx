@@ -1,8 +1,8 @@
-// app/add-food.tsx
+// app/AddFood.tsx
 
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -41,6 +41,7 @@ export default function AddFoodScreen() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const searchSequence = useRef(0); // to track latest search
 
   const canLog = !!selected && qty > 0;
 
@@ -81,11 +82,19 @@ export default function AddFoodScreen() {
       return;
     }
 
+    const seq = ++searchSequence.current; // increment sequence for this search
+
     setSearchLoading(true);
     setSearchError(null);
 
     try {
       const res = await searchFoods(query);
+
+      if (seq !== searchSequence.current) {
+        // A newer search has started, ignore this result
+        return;
+      }
+
       if (!res.success) {
         setResults([]);
         return;
@@ -94,11 +103,17 @@ export default function AddFoodScreen() {
       const foods = (res.data ?? []).map(mapFoodDetailToFood);
       setResults(foods);
     } catch (err: any) {
+      if (seq !== searchSequence.current) {
+        // A newer search has started, ignore this error
+        return;
+      }
       console.error("Search failed:", err);
       setSearchError("Search failed. Try again.");
       setResults([]);
     } finally {
-      setSearchLoading(false);
+      if (seq === searchSequence.current) {
+        setSearchLoading(false);
+      }
     }
   };
 
@@ -120,6 +135,9 @@ export default function AddFoodScreen() {
           style={styles.searchInput}
           autoCorrect={false}
           autoCapitalize="none"
+          clearButtonMode="while-editing"
+          returnKeyType="search"
+          onSubmitEditing={() => handleSearch(search)}
         />
       </View>
 
@@ -131,12 +149,16 @@ export default function AddFoodScreen() {
 
             {search.trim().length === 0 ? (
               <Text style={styles.muted}>Type to search.</Text>
+            ) : searchLoading ? (
+              <Text style={styles.muted}>Searching…</Text>
+            ) : searchError ? (
+              <Text style={styles.errorText}>{searchError}</Text>
             ) : results.length === 0 ? (
               <Text style={styles.muted}>No results.</Text>
             ) : (
               results.map((item, idx) => (
                 <Pressable
-                  key={`${idx}-${item?.id ?? item?.name ?? "food"}`}
+                  key={String(item.id)}
                   style={styles.row}
                   onPress={() => {
                     setSelected(item);
@@ -144,9 +166,7 @@ export default function AddFoodScreen() {
                   }}
                 >
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.rowTitle}>
-                      {item?.name ?? item?.name ?? "Food"}
-                    </Text>
+                    <Text style={styles.rowTitle}>{item?.name ?? "Food"}</Text>
                     {!!item?.englishName && (
                       <Text style={styles.rowSub} numberOfLines={1}>
                         {item.englishName}
@@ -169,6 +189,13 @@ export default function AddFoodScreen() {
             <View style={styles.selectedCard}>
               <Text style={styles.selectedTitle}>
                 {selected?.name ?? selected?.title ?? "Food"}
+              </Text>
+              <Text style={styles.selectedMeta}>
+                {selected?.englishName ?? "—"}
+              </Text>
+              <Text style={styles.selectedMeta}>
+                {"Serving Size: "}
+                {selected?.servingSize ?? "—"}
               </Text>
 
               <View style={styles.qtyRow}>
@@ -214,13 +241,6 @@ export default function AddFoodScreen() {
             </View>
           </>
         )}
-
-        {/* error and loading states */}
-        {searchLoading ? (
-          <Text style={styles.muted}>Searching…</Text>
-        ) : searchError ? (
-          <Text style={styles.errorText}>{searchError}</Text>
-        ) : null}
 
         <View style={{ height: 30 }} />
       </ScrollView>
@@ -271,6 +291,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.surfaceBorder,
   },
   selectedTitle: { fontSize: 16, fontWeight: "900", marginBottom: 12 },
+  selectedMeta: { fontSize: 13, opacity: 0.75, marginTop: 2 },
 
   qtyRow: {
     flexDirection: "row",
@@ -283,7 +304,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: COLORS.surfaceMuted,
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.surfaceBorder,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -295,7 +318,7 @@ const styles = StyleSheet.create({
   },
 
   primaryBtn: {
-    backgroundColor: COLORS.textPrimary,
+    backgroundColor: COLORS.primary,
     borderRadius: 14,
     paddingVertical: 12,
     alignItems: "center",
