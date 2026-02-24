@@ -1,6 +1,5 @@
 // app/(tabs)/hydration.tsx
 
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -11,8 +10,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
+import AppHeader from "@/components/AppHeader";
 import { useHydration } from "@/context/hydrationContext";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
@@ -55,97 +58,88 @@ export default function HydrationScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.headerRow}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.headerBtn}
-        >
-          <Ionicons name="chevron-back" size={22} color={COLORS.iconPrimary} />
-          <Text style={styles.back}>Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Water</Text>
-        <View style={{ width: 50 }} />
-      </View>
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: COLORS.background,
+        paddingBottom: insets.bottom,
+      }}
+    >
+      {/* Header */}
+      <AppHeader title="Water" showBack onBackPress={() => router.back()} />
 
-      <View style={styles.totalCard}>
-        <Text style={styles.totalLabel}>Today</Text>
-        <Text style={styles.totalValue}>{totalMl} ml</Text>
-      </View>
-
-      <View style={styles.quickRow}>
-        <TouchableOpacity style={styles.quickBtn} onPress={() => addMl(250)}>
-          <Text style={styles.quickText}>+250 ml</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.quickBtn} onPress={() => addMl(350)}>
-          <Text style={styles.quickText}>+350 ml</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.quickBtn} onPress={() => addMl(500)}>
-          <Text style={styles.quickText}>+500 ml</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Custom input */}
-      <View style={styles.customRow}>
-        <View style={styles.customInputWrap}>
-          <Text style={styles.customLabel}>Custom</Text>
-          <TextInput
-            value={customMl}
-            onChangeText={setCustomMl}
-            placeholder="e.g. 180"
-            keyboardType="numeric"
-            inputMode="numeric"
-            returnKeyType="done"
-            onSubmitEditing={handleAddCustom}
-            style={styles.customInput}
-          />
-          <Text style={styles.customUnit}>ml</Text>
+      <View style={[styles.container]}>
+        <View style={styles.totalCard}>
+          <Text style={styles.totalLabel}>Today</Text>
+          <Text style={styles.totalValue}>{totalMl} ml</Text>
         </View>
 
-        <TouchableOpacity
-          style={[styles.customAddBtn, !canAddCustom && { opacity: 0.4 }]}
-          disabled={!canAddCustom}
-          onPress={handleAddCustom}
-        >
-          <Text style={styles.customAddText}>Add</Text>
-        </TouchableOpacity>
+        <View style={styles.quickRow}>
+          <TouchableOpacity style={styles.quickBtn} onPress={() => addMl(250)}>
+            <Text style={styles.quickText}>+250 ml</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickBtn} onPress={() => addMl(350)}>
+            <Text style={styles.quickText}>+350 ml</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickBtn} onPress={() => addMl(500)}>
+            <Text style={styles.quickText}>+500 ml</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Custom input */}
+        <View style={styles.customRow}>
+          <View style={styles.customInputWrap}>
+            <Text style={styles.customLabel}>Custom</Text>
+            <TextInput
+              value={customMl}
+              onChangeText={setCustomMl}
+              placeholder="e.g. 180"
+              keyboardType="numeric"
+              inputMode="numeric"
+              returnKeyType="done"
+              onSubmitEditing={handleAddCustom}
+              style={styles.customInput}
+            />
+            <Text style={styles.customUnit}>ml</Text>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.customAddBtn, !canAddCustom && { opacity: 0.4 }]}
+            disabled={!canAddCustom}
+            onPress={handleAddCustom}
+          >
+            <Text style={styles.customAddText}>Add</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+          <Text style={styles.sectionTitle}>Entries</Text>
+
+          {isLoading ? (
+            <Text style={styles.muted}>Loading...</Text>
+          ) : todayEntries.length === 0 ? (
+            <Text style={styles.muted}>No water entries yet today.</Text>
+          ) : (
+            todayEntries.map((e) => (
+              <View key={e.id} style={styles.entryRow}>
+                <Text style={styles.entryText}>
+                  {e.amount_ml} ml •{" "}
+                  {new Date(e.timestamp).toLocaleTimeString()}
+                </Text>
+                <TouchableOpacity onPress={() => removeEntry(e.id)}>
+                  <Text style={styles.delete}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+        </ScrollView>
       </View>
-
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
-        <Text style={styles.sectionTitle}>Entries</Text>
-
-        {isLoading ? (
-          <Text style={styles.muted}>Loading...</Text>
-        ) : todayEntries.length === 0 ? (
-          <Text style={styles.muted}>No water entries yet today.</Text>
-        ) : (
-          todayEntries.map((e) => (
-            <View key={e.id} style={styles.entryRow}>
-              <Text style={styles.entryText}>
-                {e.amount_ml} ml • {new Date(e.timestamp).toLocaleTimeString()}
-              </Text>
-              <TouchableOpacity onPress={() => removeEntry(e.id)}>
-                <Text style={styles.delete}>Remove</Text>
-              </TouchableOpacity>
-            </View>
-          ))
-        )}
-      </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 16 },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-  },
-  headerBtn: { flexDirection: "row", alignItems: "center", gap: 6, padding: 6 },
-  back: { fontSize: 16 },
-  title: { fontSize: 18, fontWeight: "700" },
 
   totalCard: {
     borderRadius: 14,

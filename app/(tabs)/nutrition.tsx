@@ -1,5 +1,6 @@
 // app/(tabs)/Nutrition.tsx
 
+import AppHeader from "@/components/AppHeader";
 import NutrientCard from "@/components/NutrientCard";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { useHydration } from "@/context/hydrationContext";
@@ -105,10 +106,7 @@ export const NutritionScreen = () => {
       }}
     >
       {/* Page header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Today’s Logs</Text>
-        <Text style={styles.headerSubtitle}>Food + Water (today only)</Text>
-      </View>
+      <AppHeader title="Today’s Logs" subtitle="Food + Water (today only)" />
 
       <ScrollView style={styles.container}>
         {/* --- DAILY TOTALS / PROGRESS --- */}
@@ -158,24 +156,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 18,
     backgroundColor: COLORS.background,
-  },
-  header: {
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-  },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: COLORS.textPrimary,
-    textAlign: "left",
-  },
-  headerSubtitle: {
-    marginTop: 6,
-    fontSize: 13,
-    lineHeight: 18,
-    color: COLORS.textSecondary,
-    fontWeight: "600",
   },
 
   sectionTitle: {

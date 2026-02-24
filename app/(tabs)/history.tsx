@@ -1,4 +1,5 @@
 // src/app/(tabs)/history.tsx
+import AppHeader from "@/components/AppHeader";
 import { LoggedItem } from "@/components/LoggedItem";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { FoodLogEntry } from "@/models/models";
@@ -145,9 +146,9 @@ export default function HistoryScreen() {
         paddingBottom: insets.bottom,
       }}
     >
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>History</Text>
-      </View>
+      {/* Header */}
+      <AppHeader title="History" />
+
       {/* Controls */}
       <View style={styles.controls}>
         {/* Search pill (same look as log page) */}
@@ -253,23 +254,8 @@ const styles = StyleSheet.create({
   dim: { opacity: 0.7, marginTop: 6, color: COLORS.textSecondary },
   h1: { fontSize: 20, fontWeight: "700", color: COLORS.textPrimary },
 
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: COLORS.textPrimary,
-    textAlign: "left",
-  },
-
   controls: {
     paddingHorizontal: 18,
-    paddingTop: 12,
     paddingBottom: 10,
     backgroundColor: COLORS.background,
     gap: 10,

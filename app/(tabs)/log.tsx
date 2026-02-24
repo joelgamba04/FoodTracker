@@ -9,6 +9,7 @@ import {
 } from "react-native-safe-area-context";
 
 import { AnimatedMetricCard } from "@/components/AnimatedMetricCard";
+import AppHeader from "@/components/AppHeader";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { useHydration } from "@/context/hydrationContext";
 import { useHydrationToday } from "@/hooks/hydrationHooks";
@@ -126,13 +127,10 @@ export const LogDashboard = () => {
 
   return (
     <SafeAreaView style={[styles.screen, { paddingBottom: insets.bottom }]}>
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Today</Text>
-          <Text style={styles.headerDate}>{formatDate(new Date())}</Text>
-        </View>
+      {/* Header */}
+      <AppHeader title="Today" subtitle={formatDate(new Date())} />
 
+      <ScrollView contentContainerStyle={styles.content}>
         {/* Metrics grid */}
         <View style={styles.grid}>
           <AnimatedMetricCard
@@ -241,10 +239,6 @@ export const LogDashboard = () => {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.background },
   content: { padding: 16 },
-
-  header: { marginBottom: 12 },
-  headerTitle: { fontSize: 28, fontWeight: "800", color: COLORS.textPrimary },
-  headerDate: { marginTop: 4, fontSize: 13, opacity: 0.65 },
 
   grid: {
     flexDirection: "row",

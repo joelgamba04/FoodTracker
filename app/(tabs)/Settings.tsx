@@ -1,4 +1,5 @@
 // app/(tabs)/Settings.tsx
+import AppHeader from "@/components/AppHeader";
 import GuestModeDataNoticeCard from "@/components/GuestModeNoticeCard";
 import { NutrientKey, useProfile } from "@/context/ProfileContext";
 import { COLORS } from "@/theme/color";
@@ -116,19 +117,17 @@ export const SettingsScreen = () => {
         paddingBottom: insets.bottom,
       }}
     >
+      {/* Page header */}
+      <AppHeader
+        title="Settings"
+        subtitle="Your daily goals are based on your profile."
+      />
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Page header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Settings</Text>
-          <Text style={styles.headerSubtitle}>
-            Your daily goals are based on your profile.
-          </Text>
-        </View>
-
         {/* Profile summary */}
         <ProfileSummary
           sex={profile?.sex}
@@ -181,23 +180,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 18,
     paddingTop: 12,
-  },
-
-  header: {
-    marginBottom: 14,
-  },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: COLORS.textPrimary,
-    textAlign: "left",
-  },
-  headerSubtitle: {
-    marginTop: 6,
-    fontSize: 13,
-    lineHeight: 18,
-    color: COLORS.textSecondary,
-    fontWeight: "600",
   },
 
   infoCard: {

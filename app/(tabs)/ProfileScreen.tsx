@@ -1,5 +1,6 @@
 // app/(tabs)/ProfileScreen.tsx
 
+import AppHeader from "@/components/AppHeader";
 import { AUTHENTICATED_AUTH_MODE } from "@/constants/authModeConstants";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
@@ -164,12 +165,10 @@ const ProfileScreen = () => {
       }}
     >
       {/* Header (match Settings / History hierarchy) */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile</Text>
-        <Text style={styles.headerSubtitle}>
-          Update your details to personalize daily goals.
-        </Text>
-      </View>
+      <AppHeader
+        title="Profile"
+        subtitle="Update your details to personalize daily goals."
+      />
 
       <ScrollView
         style={styles.container}
@@ -356,26 +355,6 @@ const FormInput: React.FC<FormInputProps> = ({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   content: { paddingHorizontal: 18, paddingTop: 12 },
-
-  header: {
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-  },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: COLORS.textPrimary,
-    textAlign: "left",
-  },
-  headerSubtitle: {
-    marginTop: 6,
-    fontSize: 13,
-    lineHeight: 18,
-    color: COLORS.textSecondary,
-    fontWeight: "600",
-  },
-
   card: {
     backgroundColor: COLORS.surface,
     borderRadius: 14,

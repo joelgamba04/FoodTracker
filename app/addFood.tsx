@@ -16,6 +16,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
+import AppHeader from "@/components/AppHeader";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { mapFoodDetailToFood } from "@/mappers/foodMapper";
 import { Food } from "@/models/models";
@@ -104,14 +105,7 @@ export default function AddFoodScreen() {
   return (
     <SafeAreaView style={[styles.screen, { paddingBottom: insets.bottom }]}>
       {/* header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.headerBtn}>
-          <Ionicons name="chevron-back" size={22} color={COLORS.iconPrimary} />
-          <Text style={styles.headerBtnText}>Back</Text>
-        </Pressable>
-        <Text style={styles.headerTitle}>Add Food</Text>
-        <View style={{ width: 60 }} />
-      </View>
+      <AppHeader title="Add Food" showBack onBackPress={() => router.back()} />
 
       {/* search */}
       <View style={styles.searchWrap}>
@@ -236,18 +230,6 @@ export default function AddFoodScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.background },
-
-  header: {
-    paddingTop: 12,
-    paddingHorizontal: 12,
-    paddingBottom: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  headerBtn: { flexDirection: "row", alignItems: "center", gap: 6, padding: 6 },
-  headerBtnText: { fontWeight: "700", color: COLORS.textPrimary },
-  headerTitle: { fontSize: 20, fontWeight: "900", color: COLORS.textPrimary },
 
   searchWrap: {
     marginHorizontal: 16,
