@@ -1,4 +1,4 @@
-// app/(tabs)/log.tsx
+// app/(tabs)/DashboardPage.tsx
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useMemo } from "react";
@@ -63,7 +63,7 @@ const getMealByTimestamp = (
 };
 
 // ---------- main screen ----------
-export const LogDashboard = () => {
+export const DashboardPage = () => {
   const { log } = useFoodLog();
   const { entries: waterEntries, addMl } = useHydration();
   const { totalMl, goalMl } = useHydrationToday();
@@ -138,7 +138,7 @@ export const LogDashboard = () => {
             value={`${todaysCalories}`}
             subtitle="kcal today"
             icon="flame"
-            onPress={() => router.push("/AddFood")}
+            onPress={() => router.push("/AddFoodPage")}
           />
 
           <AnimatedMetricCard
@@ -146,7 +146,7 @@ export const LogDashboard = () => {
             value={`${totalMl}`}
             subtitle={`/${goalMl} ml today`}
             icon="water"
-            onPress={() => router.push("/Hydration")}
+            onPress={() => router.push("/HydrationPage")}
           />
 
           <AnimatedMetricCard
@@ -181,7 +181,7 @@ export const LogDashboard = () => {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Food Log</Text>
             <Pressable
-              onPress={() => router.push("/AddFood")}
+              onPress={() => router.push("/AddFoodPage")}
               style={styles.linkBtn}
             >
               <Ionicons name="add" size={16} color={COLORS.primary} />
@@ -229,7 +229,7 @@ export const LogDashboard = () => {
       </ScrollView>
 
       {/* Floating Add Food */}
-      <Pressable style={styles.fab} onPress={() => router.push("/AddFood")}>
+      <Pressable style={styles.fab} onPress={() => router.push("/AddFoodPage")}>
         <Ionicons name="add" size={26} color={COLORS.textInverse} />
       </Pressable>
     </SafeAreaView>
@@ -305,4 +305,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LogDashboard;
+export default DashboardPage;

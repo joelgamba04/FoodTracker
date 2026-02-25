@@ -1,4 +1,4 @@
-// app/AddFood.tsx
+// app/AddFoodPage.tsx
 
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -26,11 +26,11 @@ import { COLORS } from "@/theme/color";
 // If you have a food type, import it; otherwise keep `any`
 type FoodItem = any;
 
-function makeLocalId() {
+const makeLocalId = () => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
+};
 
-export default function AddFoodScreen() {
+export const AddFoodPage = () => {
   const { addEntry } = useFoodLog();
 
   const [selected, setSelected] = useState<FoodItem | null>(null);
@@ -89,6 +89,7 @@ export default function AddFoodScreen() {
 
     try {
       const res = await searchFoods(query);
+      console.log("Search response:", res);
 
       if (seq !== searchSequence.current) {
         // A newer search has started, ignore this result
@@ -246,7 +247,7 @@ export default function AddFoodScreen() {
       </ScrollView>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.background },
@@ -340,3 +341,5 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 });
+
+export default AddFoodPage;

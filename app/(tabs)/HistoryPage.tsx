@@ -1,4 +1,4 @@
-// src/app/(tabs)/history.tsx
+// app/(tabs)/HistoryPage.tsx
 import AppHeader from "@/components/AppHeader";
 import { LoggedItem } from "@/components/LoggedItem";
 import { useFoodLog } from "@/context/FoodLogContext";
@@ -37,7 +37,7 @@ const getCalories = (entry: FoodLogEntry) => {
   return cal * (entry.quantity ?? 1);
 };
 
-function dayTotals(entries: FoodLogEntry[]) {
+const dayTotals = (entries: FoodLogEntry[]) => {
   const pick = (name: string) =>
     sumBy(
       entries.map((entry) => {
@@ -53,9 +53,9 @@ function dayTotals(entries: FoodLogEntry[]) {
     carbs: pick("Carbohydrate"),
     fat: pick("Fat"),
   };
-}
+};
 
-function groupByDay(all: FoodLogEntry[]) {
+const groupByDay = (all: FoodLogEntry[]) => {
   const map = new Map<string, FoodLogEntry[]>();
   for (const e of all) {
     const date = new Date(e.timestamp as any);
@@ -88,7 +88,7 @@ function groupByDay(all: FoodLogEntry[]) {
     .sort((a, b) => (a.dateKey < b.dateKey ? 1 : -1));
 
   return sections;
-}
+};
 
 const daysAgo = (daysAgo: number) => {
   const date = new Date();
@@ -97,7 +97,7 @@ const daysAgo = (daysAgo: number) => {
   return date;
 };
 
-export default function HistoryScreen() {
+export const HistoryPage = () => {
   const { log, isLoading } = useFoodLog();
   const [query, setQuery] = useState("");
   const [range, setRange] = useState<"all" | "7" | "30">("all");
@@ -219,7 +219,7 @@ export default function HistoryScreen() {
       />
     </SafeAreaView>
   );
-}
+};
 
 function RangeButton({
   label,
@@ -347,3 +347,5 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surfaceBorder,
   },
 });
+
+export default HistoryPage;

@@ -1,4 +1,4 @@
-// app/(tabs)/ProfileScreen.tsx
+// app/(tabs)/ProfileScreenPage.tsx
 
 import AppHeader from "@/components/AppHeader";
 import { AUTHENTICATED_AUTH_MODE } from "@/constants/authModeConstants";
@@ -110,7 +110,7 @@ const getWeightStatus = (form: {
   };
 };
 
-const ProfileScreen = () => {
+const ProfileScreenPage = () => {
   const { profile, updateProfile, saveProfileToServer } = useProfile();
   const { logout, authMode } = useAuth();
 
@@ -525,4 +525,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProfileScreen;
+export default ProfileScreenPage;

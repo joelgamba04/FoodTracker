@@ -1,4 +1,4 @@
-// app/(tabs)/hydration.tsx
+// app/HydrationPage.tsx
 
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -20,7 +20,7 @@ import { useHydration } from "@/context/hydrationContext";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
 
-export default function HydrationScreen() {
+export const HydrationPage = () => {
   const insets = useSafeAreaInsets();
   const { entries, addMl, removeEntry, isLoading } = useHydration();
 
@@ -136,7 +136,7 @@ export default function HydrationScreen() {
       </View>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 16 },
@@ -202,3 +202,5 @@ const styles = StyleSheet.create({
   entryText: { fontSize: 14 },
   delete: { fontSize: 14, fontWeight: "700" },
 });
+
+export default HydrationPage;

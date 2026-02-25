@@ -1,4 +1,4 @@
-// app/(tabs)/Settings.tsx
+// app/(tabs)/SettingsPage.tsx
 import AppHeader from "@/components/AppHeader";
 import GuestModeDataNoticeCard from "@/components/GuestModeNoticeCard";
 import { NutrientKey, useProfile } from "@/context/ProfileContext";
@@ -97,7 +97,7 @@ const SummaryChip = ({ label, value }: { label: string; value: string }) => {
   );
 };
 
-export const SettingsScreen = () => {
+export const SettingsPage = () => {
   const { rdi, profile, isGuest } = useProfile();
   const insets = useSafeAreaInsets();
 
@@ -316,4 +316,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SettingsScreen;
+export default SettingsPage;

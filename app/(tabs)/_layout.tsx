@@ -6,13 +6,13 @@ import React from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-function TabIcon({
+const TabIcon = ({
   name,
   focused,
 }: {
   name: keyof typeof Ionicons.glyphMap;
   focused: boolean;
-}) {
+}) => {
   return (
     <View
       style={{
@@ -27,9 +27,9 @@ function TabIcon({
       <Ionicons name={name} size={22} color={focused ? "#000000" : "#FFFFFF"} />
     </View>
   );
-}
+};
 
-export default function TabLayout() {
+export const TabLayout = () => {
   const insets = useSafeAreaInsets();
 
   // key sizing
@@ -44,7 +44,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="Log"
+        name="DashboardPage"
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon name="home" focused={focused} />
@@ -53,7 +53,7 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="Nutrition"
+        name="NutritionPage"
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon name="stats-chart" focused={focused} />
@@ -62,7 +62,7 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="History"
+        name="HistoryPage"
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon name="calendar" focused={focused} />
@@ -71,7 +71,7 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="Settings"
+        name="SettingsPage"
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon name="settings" focused={focused} />
@@ -80,7 +80,7 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="ProfileScreen"
+        name="ProfileScreenPage"
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon name="person" focused={focused} />
@@ -89,11 +89,13 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="Index"
+        name="IndexPlaceHolder"
         options={{
           href: null, // Hides the tab
         }}
       />
     </Tabs>
   );
-}
+};
+
+export default TabLayout;

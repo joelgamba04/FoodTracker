@@ -1,4 +1,4 @@
-// app/(tabs)/Nutrition.tsx
+// app/(tabs)/NutritionPage.tsx
 
 import AppHeader from "@/components/AppHeader";
 import NutrientCard from "@/components/NutrientCard";
@@ -32,7 +32,7 @@ const calculateTotals = (log: any[]): Nutrient[] => {
 };
 
 // --- Main Screen Component ---
-export const NutritionScreen = () => {
+export const NutritionPage = () => {
   const insets = useSafeAreaInsets();
   const { log } = useFoodLog();
   const { rdi } = useProfile();
@@ -181,4 +181,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default NutritionScreen;
+export default NutritionPage;
