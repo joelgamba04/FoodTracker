@@ -252,7 +252,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   dim: { opacity: 0.7, marginTop: 6, color: COLORS.textSecondary },
-  h1: { fontSize: 20, fontWeight: "700", color: COLORS.textPrimary },
+  h1: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+    textAlign: "left",
+  },
 
   controls: {
     paddingHorizontal: 18,
