@@ -41,7 +41,7 @@ export const LoginScreen = () => {
 
     try {
       await login(email.trim(), password);
-      router.replace("/(tabs)"); // adjust if needed
+      router.replace("/(tabs)/DashboardPage"); // adjust if needed
     } catch (e: any) {
       setErr(e?.message || "Login failed. Please try again.");
       console.error("Login error:", e);

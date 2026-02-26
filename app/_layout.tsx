@@ -93,7 +93,7 @@ function AuthGate() {
       (authMode === AUTHENTICATED_AUTH_MODE || authMode === GUEST_AUTH_MODE) &&
       inAuthGroup
     )
-      router.replace("/(tabs)");
+      router.replace("/(tabs)/DashboardPage");
   }, [authMode, isAuthLoading, segments, router]);
 
   if (isAuthLoading) {

@@ -26,7 +26,7 @@ export default function StickyTabBar({
   const visibleRoutes = useMemo(() => {
     return state.routes.filter((r) => {
       const options = descriptors[r.key]?.options;
-      if (r.name === "IndexPlaceHolder") return false;
+      if (r.name === "index") return false;
       if ((options as any)?.href === null) return false;
       return true;
     });

@@ -89,7 +89,7 @@ export const TabLayout = () => {
       />
 
       <Tabs.Screen
-        name="IndexPlaceHolder"
+        name="index"
         options={{
           href: null, // Hides the tab
         }}

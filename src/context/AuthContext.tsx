@@ -127,7 +127,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       user: null,
     });
 
-    router.replace("/(tabs)/log");
+    router.replace("/(tabs)/DashboardPage");
   };
 
   const value = useMemo(
