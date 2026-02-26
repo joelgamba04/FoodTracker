@@ -9,21 +9,25 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 const CARD_MAX_WIDTH = Math.min(420, width - 36);
 
 export const LoginScreen = () => {
   const { login, loginAsGuest } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
@@ -40,14 +44,17 @@ export const LoginScreen = () => {
   }, [email, password, loading]);
 
   const onSubmit = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit) {
+      setErr("Please enter a valid email and password.");
+      return;
+    }
 
     setLoading(true);
     setErr(null);
 
     try {
       await login(email.trim(), password);
-      router.replace("/(tabs)/DashboardPage"); // adjust if needed
+      router.replace("/(tabs)/DashboardPage");
     } catch (e: any) {
       setErr(e?.message || "Login failed. Please try again.");
     } finally {
@@ -56,6 +63,7 @@ export const LoginScreen = () => {
   };
 
   const onGuest = async () => {
+    setErr(null);
     try {
       await loginAsGuest();
       router.replace("/(tabs)/DashboardPage");
@@ -68,15 +76,21 @@ export const LoginScreen = () => {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 8 : 0}
       >
-        {/* Tap outside to dismiss keyboard */}
-        <Pressable style={styles.flex} onPress={Keyboard.dismiss}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           <ScrollView
             style={styles.flex}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: insets.bottom + 24 },
+            ]}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={
+              Platform.OS === "ios" ? "interactive" : "on-drag"
+            }
+            automaticallyAdjustKeyboardInsets
             bounces={false}
           >
             {/* BRAND BLOCK */}
@@ -123,6 +137,7 @@ export const LoginScreen = () => {
                   autoCorrect={false}
                   keyboardType="email-address"
                   textContentType="emailAddress"
+                  multiline={false}
                   returnKeyType="next"
                   submitBehavior="submit"
                   onSubmitEditing={() => passwordRef.current?.focus()}
@@ -141,12 +156,12 @@ export const LoginScreen = () => {
                     style={[styles.input, styles.passwordInput]}
                     secureTextEntry={!showPassword}
                     textContentType="password"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    multiline={false}
                     returnKeyType="done"
                     submitBehavior="submit"
-                    onSubmitEditing={() => {
-                      // Only submit if the form is valid to prevent unnecessary login attempts
-                      if (canSubmit) onSubmit();
-                    }}
+                    onSubmitEditing={onSubmit}
                     value={password}
                     onChangeText={setPassword}
                   />
@@ -193,7 +208,7 @@ export const LoginScreen = () => {
             {/* FOOTER */}
             <Text style={styles.footer}>© 2026 City Government of Taguig</Text>
           </ScrollView>
-        </Pressable>
+        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -206,7 +221,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 18,
-    paddingBottom: 16,
     justifyContent: "space-between",
   },
 
