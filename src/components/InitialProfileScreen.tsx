@@ -1,7 +1,7 @@
 // src/components/InitialProfileScreen.tsx
 import { loadJSON, saveJSON } from "@/lib/storage";
 import { UserProfile, defaultProfile } from "@/models/models";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -51,6 +52,12 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
   const [useImperial, setUseImperial] = useState(false);
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
+
+  const ageRef = useRef<TextInput>(null);
+  const heightRef = useRef<TextInput>(null);
+  const heightFtRef = useRef<TextInput>(null);
+  const heightInRef = useRef<TextInput>(null);
+  const weightRef = useRef<TextInput>(null);
 
   const { reloadLocalProfile } = useProfile();
 
@@ -170,7 +177,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
           style={{ flex: 1 }}
           contentContainerStyle={[
             styles.content,
-            { paddingBottom: insets.bottom + 40 },
+            { flexGrow: 1, paddingBottom: insets.bottom + 40 },
           ]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={
@@ -249,11 +256,17 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
           {/* Age */}
           <Text style={styles.label}>Age</Text>
           <InputWithUnit
+            ref={ageRef}
             value={String(form.age ?? "")}
             placeholder="Yrs"
-            onChangeText={(v) => handleChange("age", v.replace(/[^0-9]/g, ""))}
             unit="yrs"
+            keyboardType="number-pad"
             returnKeyType="next"
+            onSubmitEditing={() => {
+              if (useImperial) heightFtRef.current?.focus();
+              else heightRef.current?.focus();
+            }}
+            onChangeText={(v) => handleChange("age", v.replace(/[^0-9]/g, ""))}
           />
 
           <View style={styles.verticalSpacer} />
@@ -292,8 +305,13 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
             <View style={styles.row2}>
               <View style={styles.col}>
                 <InputWithUnit
+                  ref={heightFtRef}
                   value={heightFt}
                   placeholder="0"
+                  unit="ft"
+                  keyboardType="number-pad"
+                  returnKeyType="next"
+                  onSubmitEditing={() => heightInRef.current?.focus()}
                   onChangeText={(v) => {
                     const clean = v.replace(/[^0-9]/g, "");
                     setHeightFt(clean);
@@ -303,15 +321,17 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
                     const cm = ftInToCm(ft, inches);
                     handleChange("height", cm ? cm.toFixed(1) : "");
                   }}
-                  unit="ft"
-                  returnKeyType="next"
                 />
               </View>
               <View style={styles.col}>
                 <InputWithUnit
+                  ref={heightInRef}
                   value={heightIn}
                   placeholder="0"
                   unit="in"
+                  keyboardType="number-pad"
+                  returnKeyType="next"
+                  onSubmitEditing={() => weightRef.current?.focus()}
                   onChangeText={(v) => {
                     const clean = v.replace(/[^0-9]/g, "");
                     setHeightIn(clean);
@@ -321,28 +341,33 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
                     const cm = ftInToCm(ft, inches);
                     handleChange("height", cm ? cm.toFixed(1) : "");
                   }}
-                  returnKeyType="next"
                 />
               </View>
             </View>
           ) : (
             <InputWithUnit
+              ref={heightRef}
               value={String(form.height ?? "")}
               placeholder="0"
               unit="cm"
+              keyboardType="decimal-pad"
+              returnKeyType="next"
+              onSubmitEditing={() => weightRef.current?.focus()}
               onChangeText={(v) =>
                 handleChange("height", v.replace(/[^0-9.]/g, ""))
               }
-              returnKeyType="next"
             />
           )}
 
           {/* Weight */}
           <Text style={styles.label}>Weight</Text>
           <InputWithUnit
+            ref={weightRef}
             unit={useImperial ? "lb" : "kg"}
             placeholder={useImperial ? "lb" : "Kg"}
-            keyboardType="numeric"
+            keyboardType={useImperial ? "number-pad" : "decimal-pad"}
+            returnKeyType="done"
+            onSubmitEditing={handleSubmit}
             value={
               useImperial
                 ? (() => {
@@ -367,7 +392,6 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
               const kg = lbToKg(lb);
               handleChange("weight", kg.toFixed(1));
             }}
-            returnKeyType="done"
           />
           {/* Error */}
           {error ? <Text style={styles.error}>{error}</Text> : null}

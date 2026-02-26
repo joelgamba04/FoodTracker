@@ -1,6 +1,6 @@
 // src/components/ui/inputWithUnit.tsx
 import { COLORS } from "@/theme/color";
-import React from "react";
+import React, { forwardRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -9,46 +9,27 @@ import {
   View,
 } from "react-native";
 
-type InputWithUnitProps = {
+type InputWithUnitProps = TextInputProps & {
   unit: string;
-} & Pick<
-  TextInputProps,
-  | "value"
-  | "onChangeText"
-  | "placeholder"
-  | "keyboardType"
-  | "returnKeyType"
-  | "onSubmitEditing"
-  | "blurOnSubmit"
->;
-
-export const InputWithUnit: React.FC<InputWithUnitProps> = ({
-  value,
-  onChangeText,
-  placeholder,
-  unit,
-  keyboardType = "numeric",
-  returnKeyType,
-  onSubmitEditing,
-  blurOnSubmit,
-}) => {
-  return (
-    <View style={styles.inputUnitWrap}>
-      <TextInput
-        style={styles.inputUnitInput}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={COLORS.textMuted}
-        keyboardType={keyboardType}
-        returnKeyType={returnKeyType}
-        onSubmitEditing={onSubmitEditing}
-        blurOnSubmit={blurOnSubmit}
-      />
-      <Text style={styles.inputUnitSuffix}>{unit}</Text>
-    </View>
-  );
 };
+
+export const InputWithUnit = forwardRef<TextInput, InputWithUnitProps>(
+  ({ unit, style, ...inputProps }, ref) => {
+    return (
+      <View style={styles.inputUnitWrap}>
+        <TextInput
+          ref={ref}
+          style={[styles.inputUnitInput, style]}
+          placeholderTextColor={COLORS.textMuted}
+          {...inputProps}
+        />
+        <Text style={styles.inputUnitSuffix}>{unit}</Text>
+      </View>
+    );
+  },
+);
+
+InputWithUnit.displayName = "InputWithUnit";
 
 const styles = StyleSheet.create({
   inputUnitWrap: {

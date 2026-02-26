@@ -25,6 +25,7 @@ const CARD_MAX_WIDTH = Math.min(420, width - 36);
 export const LoginScreen = () => {
   const { login, loginAsGuest } = useAuth();
 
+  const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
 
   const [email, setEmail] = useState("");
@@ -114,6 +115,7 @@ export const LoginScreen = () => {
               <View style={styles.field}>
                 <Text style={styles.label}>Email</Text>
                 <TextInput
+                  ref={emailRef}
                   placeholder="name@email.com"
                   placeholderTextColor={COLORS.disabledText}
                   style={styles.input}
@@ -122,6 +124,7 @@ export const LoginScreen = () => {
                   keyboardType="email-address"
                   textContentType="emailAddress"
                   returnKeyType="next"
+                  submitBehavior="submit"
                   onSubmitEditing={() => passwordRef.current?.focus()}
                   value={email}
                   onChangeText={setEmail}
@@ -139,6 +142,7 @@ export const LoginScreen = () => {
                     secureTextEntry={!showPassword}
                     textContentType="password"
                     returnKeyType="done"
+                    submitBehavior="submit"
                     onSubmitEditing={() => {
                       // Only submit if the form is valid to prevent unnecessary login attempts
                       if (canSubmit) onSubmit();
