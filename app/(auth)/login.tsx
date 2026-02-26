@@ -15,6 +15,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { ScrollView } from "react-native-reanimated/lib/typescript/Animated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
@@ -52,109 +53,111 @@ export const LoginScreen = () => {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={styles.container}
-        >
-          {/* BRAND BLOCK */}
-          <View style={styles.brandWrap}>
-            <View style={styles.brandCard}>
-              <Image
-                source={require("../../assets/images/withbgthinkbig-01.png")}
-                style={styles.thinkBig}
-                resizeMode="contain"
-              />
-            </View>
-          </View>
-
-          {/* FORM CARD */}
-          <View style={[styles.card, { width: CARD_MAX_WIDTH }]}>
-            <View style={styles.logoRow}>
-              <View style={styles.logoHalo}>
+      <ScrollView>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={styles.container}
+          >
+            {/* BRAND BLOCK */}
+            <View style={styles.brandWrap}>
+              <View style={styles.brandCard}>
                 <Image
-                  source={require("../../assets/images/FixedSquareNoBg.png")}
-                  style={styles.logo}
+                  source={require("../../assets/images/withbgthinkbig-01.png")}
+                  style={styles.thinkBig}
                   resizeMode="contain"
                 />
               </View>
+            </View>
 
-              <View style={styles.brandText}>
-                <Text style={styles.appName}>Taguig NutriApp</Text>
-                <Text style={styles.appSub}>City Government of Taguig</Text>
+            {/* FORM CARD */}
+            <View style={[styles.card, { width: CARD_MAX_WIDTH }]}>
+              <View style={styles.logoRow}>
+                <View style={styles.logoHalo}>
+                  <Image
+                    source={require("../../assets/images/FixedSquareNoBg.png")}
+                    style={styles.logo}
+                    resizeMode="contain"
+                  />
+                </View>
+
+                <View style={styles.brandText}>
+                  <Text style={styles.appName}>Taguig NutriApp</Text>
+                  <Text style={styles.appSub}>City Government of Taguig</Text>
+                </View>
               </View>
-            </View>
-            <Text style={styles.title}>Log in</Text>
-            <Text style={styles.subtitle}>Use your account to continue.</Text>
+              <Text style={styles.title}>Log in</Text>
+              <Text style={styles.subtitle}>Use your account to continue.</Text>
 
-            <View style={styles.field}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                placeholder="name@email.com"
-                placeholderTextColor={COLORS.disabledText}
-                style={styles.input}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                value={email}
-                onChangeText={setEmail}
-              />
-            </View>
-
-            <View style={styles.field}>
-              <Text style={styles.label}>Password</Text>
-              <View style={styles.passwordRow}>
+              <View style={styles.field}>
+                <Text style={styles.label}>Email</Text>
                 <TextInput
-                  placeholder="Password"
+                  placeholder="name@email.com"
                   placeholderTextColor={COLORS.disabledText}
-                  style={[styles.input, styles.passwordInput]}
-                  secureTextEntry={!showPassword}
-                  value={password}
-                  onChangeText={setPassword}
+                  style={styles.input}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  value={email}
+                  onChangeText={setEmail}
                 />
-
-                <TouchableOpacity
-                  onPress={() => setShowPassword((v) => !v)}
-                  style={styles.showBtn}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.showBtnText}>
-                    {showPassword ? "Hide" : "Show"}
-                  </Text>
-                </TouchableOpacity>
               </View>
+
+              <View style={styles.field}>
+                <Text style={styles.label}>Password</Text>
+                <View style={styles.passwordRow}>
+                  <TextInput
+                    placeholder="Password"
+                    placeholderTextColor={COLORS.disabledText}
+                    style={[styles.input, styles.passwordInput]}
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    onChangeText={setPassword}
+                  />
+
+                  <TouchableOpacity
+                    onPress={() => setShowPassword((v) => !v)}
+                    style={styles.showBtn}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.showBtnText}>
+                      {showPassword ? "Hide" : "Show"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.primaryBtn,
+                  !canSubmit && styles.primaryBtnDisabled,
+                ]}
+                disabled={!canSubmit}
+                onPress={onSubmit}
+              >
+                <Text
+                  style={[
+                    styles.primaryBtnText,
+                    !canSubmit && styles.primaryBtnTextDisabled,
+                  ]}
+                >
+                  {loading ? "Signing in..." : "Login"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={loginAsGuest} style={styles.guestBtn}>
+                <Text style={styles.guestText}>Continue as Guest</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.legal}>
+                By continuing, you agree to the app’s terms and disclaimers.
+              </Text>
             </View>
 
-            <TouchableOpacity
-              style={[
-                styles.primaryBtn,
-                !canSubmit && styles.primaryBtnDisabled,
-              ]}
-              disabled={!canSubmit}
-              onPress={onSubmit}
-            >
-              <Text
-                style={[
-                  styles.primaryBtnText,
-                  !canSubmit && styles.primaryBtnTextDisabled,
-                ]}
-              >
-                {loading ? "Signing in..." : "Login"}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={loginAsGuest} style={styles.guestBtn}>
-              <Text style={styles.guestText}>Continue as Guest</Text>
-            </TouchableOpacity>
-
-            <Text style={styles.legal}>
-              By continuing, you agree to the app’s terms and disclaimers.
-            </Text>
-          </View>
-
-          {/* FOOTER */}
-          <Text style={styles.footer}>© 2026 City Government of Taguig</Text>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
+            {/* FOOTER */}
+            <Text style={styles.footer}>© 2026 City Government of Taguig</Text>
+          </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
+      </ScrollView>
     </SafeAreaView>
   );
 };
