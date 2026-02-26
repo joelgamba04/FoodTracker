@@ -1,13 +1,26 @@
+// src/components/ui/inputWithUnit.tsx
+import { COLORS } from "@/theme/color";
 import React from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TextInputProps,
+  View,
+} from "react-native";
 
 type InputWithUnitProps = {
-  value: string;
-  onChangeText: (t: string) => void;
-  placeholder?: string;
   unit: string;
-  keyboardType?: "default" | "numeric";
-};
+} & Pick<
+  TextInputProps,
+  | "value"
+  | "onChangeText"
+  | "placeholder"
+  | "keyboardType"
+  | "returnKeyType"
+  | "onSubmitEditing"
+  | "blurOnSubmit"
+>;
 
 export const InputWithUnit: React.FC<InputWithUnitProps> = ({
   value,
@@ -15,6 +28,9 @@ export const InputWithUnit: React.FC<InputWithUnitProps> = ({
   placeholder,
   unit,
   keyboardType = "numeric",
+  returnKeyType,
+  onSubmitEditing,
+  blurOnSubmit,
 }) => {
   return (
     <View style={styles.inputUnitWrap}>
@@ -23,8 +39,11 @@ export const InputWithUnit: React.FC<InputWithUnitProps> = ({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#8A8F98"
+        placeholderTextColor={COLORS.textMuted}
         keyboardType={keyboardType}
+        returnKeyType={returnKeyType}
+        onSubmitEditing={onSubmitEditing}
+        blurOnSubmit={blurOnSubmit}
       />
       <Text style={styles.inputUnitSuffix}>{unit}</Text>
     </View>
@@ -32,25 +51,25 @@ export const InputWithUnit: React.FC<InputWithUnitProps> = ({
 };
 
 const styles = StyleSheet.create({
-    inputUnitWrap: {
-        height: 48,
-        borderRadius: 10,
-        paddingHorizontal: 14,
-        backgroundColor: "#F3F5F8",
-        flexDirection: "row",
-        alignItems: "center",
-    },
-    inputUnitInput: {
-        flex: 1,
-        color: "#0B0F14",
-        fontSize: 14,
-        paddingVertical: 0,
-        paddingHorizontal: 0,
-    },
-    inputUnitSuffix: {
-        marginLeft: 10,
-        color: "#8A8F98",
-        fontSize: 13,
-        fontWeight: "700",
-    },
+  inputUnitWrap: {
+    height: 48,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    backgroundColor: COLORS.surface,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  inputUnitInput: {
+    flex: 1,
+    color: COLORS.textPrimary,
+    fontSize: 14,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+  },
+  inputUnitSuffix: {
+    marginLeft: 10,
+    color: COLORS.textMuted,
+    fontSize: 13,
+    fontWeight: "700",
+  },
 });

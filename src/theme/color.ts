@@ -59,4 +59,6 @@ export const COLORS = {
   errorBorder: "#FECACA",
   disabledBg: "#D1D5DB",
   disabledText: "#4B5563",
+
+  avatarCircle: "#D1D3D8",
 };

@@ -1,7 +1,7 @@
 // src/components/InitialProfileScreen.tsx
 import { loadJSON, saveJSON } from "@/lib/storage";
 import { UserProfile, defaultProfile } from "@/models/models";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -13,10 +13,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import { USER_PROFILE_KEY } from "@/constants/storageKeys";
 import { useProfile } from "@/context/ProfileContext";
+import { COLORS } from "@/theme/color";
 import {
   cmToFtIn,
   ftInToCm,
@@ -24,8 +28,6 @@ import {
   lbToKg,
 } from "@/utils/imperialMetricHelper";
 import { InputWithUnit } from "./ui/inputWithUnit";
-
-type ProfileField = "age" | "sex" | "height" | "weight";
 
 // UI-only fields shown in the screenshot
 type InitialProfileForm = UserProfile & {
@@ -37,15 +39,11 @@ interface InitialProfileScreenProps {
   onComplete: (profile: UserProfile) => void;
 }
 
-const PRIMARY_BLUE = "#0A66FF"; // closer to screenshot button blue
-const BG = "#FFFFFF";
-const MUTED = "#8A8F98";
-const TEXT = "#0B0F14";
-const FIELD_BG = "#F3F5F8";
-
 const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
   onComplete,
 }) => {
+  const insets = useSafeAreaInsets();
+
   const [form, setForm] = useState<InitialProfileForm>(defaultProfile as any);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -102,11 +100,6 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
     [],
   );
 
-  const genderLabel = useMemo(() => {
-    // “Gender” field placeholder style like screenshot
-    return form.sex ? String(form.sex) : "Placeholder";
-  }, [form.sex]);
-
   const validate = (profile: InitialProfileForm): string | null => {
     if (!profile.age || !profile.height || !profile.weight) {
       return "Please enter your age, height, and weight.";
@@ -161,7 +154,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
   if (loading) {
     return (
       <SafeAreaView style={[styles.screen, styles.center]}>
-        <ActivityIndicator size="large" color={PRIMARY_BLUE} />
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </SafeAreaView>
     );
   }
@@ -170,11 +163,20 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
     <SafeAreaView style={styles.screen}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
       >
         <ScrollView
-          contentContainerStyle={styles.content}
+          style={{ flex: 1 }}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: insets.bottom + 40 },
+          ]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === "ios" ? "interactive" : "on-drag"
+          }
+          automaticallyAdjustKeyboardInsets
         >
           {/* Top helper text */}
           <Text style={styles.helper}>
@@ -251,6 +253,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
             placeholder="Yrs"
             onChangeText={(v) => handleChange("age", v.replace(/[^0-9]/g, ""))}
             unit="yrs"
+            returnKeyType="next"
           />
 
           <View style={styles.verticalSpacer} />
@@ -301,6 +304,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
                     handleChange("height", cm ? cm.toFixed(1) : "");
                   }}
                   unit="ft"
+                  returnKeyType="next"
                 />
               </View>
               <View style={styles.col}>
@@ -317,6 +321,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
                     const cm = ftInToCm(ft, inches);
                     handleChange("height", cm ? cm.toFixed(1) : "");
                   }}
+                  returnKeyType="next"
                 />
               </View>
             </View>
@@ -328,6 +333,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
               onChangeText={(v) =>
                 handleChange("height", v.replace(/[^0-9.]/g, ""))
               }
+              returnKeyType="next"
             />
           )}
 
@@ -361,6 +367,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
               const kg = lbToKg(lb);
               handleChange("weight", kg.toFixed(1));
             }}
+            returnKeyType="done"
           />
           {/* Error */}
           {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -387,7 +394,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: COLORS.background,
   },
   content: {
     paddingHorizontal: 18,
@@ -400,7 +407,7 @@ const styles = StyleSheet.create({
 
   helper: {
     textAlign: "center",
-    color: MUTED,
+    color: COLORS.textMuted,
     fontSize: 13,
     lineHeight: 18,
     marginBottom: 16,
@@ -415,7 +422,7 @@ const styles = StyleSheet.create({
     width: 78,
     height: 78,
     borderRadius: 39,
-    backgroundColor: "#D1D3D8",
+    backgroundColor: COLORS.avatarCircle,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -423,7 +430,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: COLORS.background,
     opacity: 0.9,
     marginBottom: 6,
   },
@@ -441,14 +448,14 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: PRIMARY_BLUE,
+    backgroundColor: COLORS.primary,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: BG,
+    borderColor: COLORS.background,
   },
   avatarPlusText: {
-    color: "#fff",
+    color: COLORS.textInverse,
     fontWeight: "800",
     fontSize: 14,
     lineHeight: 14,
@@ -458,7 +465,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "800",
-    color: TEXT,
+    color: COLORS.textPrimary,
     marginBottom: 18,
   },
 
@@ -471,7 +478,7 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    color: TEXT,
+    color: COLORS.textPrimary,
     fontSize: 13,
     fontWeight: "600",
     marginBottom: 8,
@@ -482,8 +489,8 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 10,
     paddingHorizontal: 14,
-    backgroundColor: FIELD_BG,
-    color: TEXT,
+    backgroundColor: COLORS.surfaceMuted,
+    color: COLORS.textPrimary,
     fontSize: 14,
   },
 
@@ -491,17 +498,17 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 10,
     paddingHorizontal: 14,
-    backgroundColor: FIELD_BG,
+    backgroundColor: COLORS.surfaceMuted,
     justifyContent: "center",
   },
   inputPressableText: {
-    color: MUTED, // matches placeholder look in screenshot
+    color: COLORS.textMuted, // matches placeholder look in screenshot
     fontSize: 14,
   },
 
   error: {
     marginTop: 12,
-    color: "#D92D20",
+    color: COLORS.dangerRed,
     textAlign: "center",
     fontSize: 13,
   },
@@ -510,12 +517,12 @@ const styles = StyleSheet.create({
     marginTop: 18,
     height: 52,
     borderRadius: 10,
-    backgroundColor: PRIMARY_BLUE,
+    backgroundColor: COLORS.primary,
     justifyContent: "center",
     alignItems: "center",
   },
   buttonText: {
-    color: "#fff",
+    color: COLORS.textInverse,
     fontSize: 15,
     fontWeight: "700",
   },
@@ -525,17 +532,17 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   genderValue: {
-    color: TEXT,
+    color: COLORS.textPrimary,
     fontSize: 14,
     fontWeight: "600",
   },
   genderHint: {
-    color: MUTED,
+    color: COLORS.textMuted,
     fontSize: 12,
     marginTop: 4,
   },
   chevron: {
-    color: MUTED,
+    color: COLORS.textMuted,
     fontSize: 16,
     fontWeight: "800",
   },
@@ -544,7 +551,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   unitTitle: {
-    color: TEXT,
+    color: COLORS.textPrimary,
     fontSize: 13,
     fontWeight: "700",
     marginBottom: 10,
@@ -555,14 +562,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   unitLabel: {
-    color: MUTED,
+    color: COLORS.textMuted,
     fontSize: 13,
     fontWeight: "600",
     width: 64,
     textAlign: "center",
   },
   unitLabelActive: {
-    color: TEXT,
+    color: COLORS.textPrimary,
   },
   verticalSpacer: { height: 12 },
 });
