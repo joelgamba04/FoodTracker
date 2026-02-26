@@ -1,3 +1,4 @@
+// app/(auth)/login.tsx
 import { useAuth } from "@/context/AuthContext";
 import { COLORS } from "@/theme/color";
 import { router } from "expo-router";
@@ -8,12 +9,12 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -23,12 +24,14 @@ const CARD_MAX_WIDTH = Math.min(420, width - 36);
 
 export const LoginScreen = () => {
   const { login, loginAsGuest } = useAuth();
+
+  const passwordRef = useRef<TextInput>(null);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const passwordRef = useRef<TextInput>(null);
 
   const canSubmit = useMemo(() => {
     const e = email.trim();
@@ -46,22 +49,34 @@ export const LoginScreen = () => {
       router.replace("/(tabs)/DashboardPage"); // adjust if needed
     } catch (e: any) {
       setErr(e?.message || "Login failed. Please try again.");
-      console.error("Login error:", e);
     } finally {
       setLoading(false);
     }
   };
 
+  const onGuest = async () => {
+    try {
+      await loginAsGuest();
+      router.replace("/(tabs)/DashboardPage");
+    } catch (e: any) {
+      setErr(e?.message || "Guest login failed. Please try again.");
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-            style={styles.container}
+        {/* Tap outside to dismiss keyboard */}
+        <Pressable style={styles.flex} onPress={Keyboard.dismiss}>
+          <ScrollView
+            style={styles.flex}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
           >
             {/* BRAND BLOCK */}
             <View style={styles.brandWrap}>
@@ -90,18 +105,22 @@ export const LoginScreen = () => {
                   <Text style={styles.appSub}>City Government of Taguig</Text>
                 </View>
               </View>
+
               <Text style={styles.title}>Log in</Text>
               <Text style={styles.subtitle}>Use your account to continue.</Text>
+
+              {!!err && <Text style={styles.errorText}>{err}</Text>}
 
               <View style={styles.field}>
                 <Text style={styles.label}>Email</Text>
                 <TextInput
-                  ref={null}
                   placeholder="name@email.com"
                   placeholderTextColor={COLORS.disabledText}
                   style={styles.input}
                   autoCapitalize="none"
+                  autoCorrect={false}
                   keyboardType="email-address"
+                  textContentType="emailAddress"
                   returnKeyType="next"
                   onSubmitEditing={() => passwordRef.current?.focus()}
                   value={email}
@@ -118,6 +137,7 @@ export const LoginScreen = () => {
                     placeholderTextColor={COLORS.disabledText}
                     style={[styles.input, styles.passwordInput]}
                     secureTextEntry={!showPassword}
+                    textContentType="password"
                     returnKeyType="done"
                     onSubmitEditing={() => {
                       // Only submit if the form is valid to prevent unnecessary login attempts
@@ -157,7 +177,7 @@ export const LoginScreen = () => {
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={loginAsGuest} style={styles.guestBtn}>
+              <TouchableOpacity onPress={onGuest} style={styles.guestBtn}>
                 <Text style={styles.guestText}>Continue as Guest</Text>
               </TouchableOpacity>
 
@@ -168,26 +188,25 @@ export const LoginScreen = () => {
 
             {/* FOOTER */}
             <Text style={styles.footer}>© 2026 City Government of Taguig</Text>
-          </KeyboardAvoidingView>
-        </TouchableWithoutFeedback>
-      </ScrollView>
+          </ScrollView>
+        </Pressable>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   safe: { flex: 1, backgroundColor: COLORS.background },
-  container: {
-    flex: 1,
+
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 18,
+    paddingBottom: 16,
     justifyContent: "space-between",
-    paddingBottom: 10,
   },
 
-  brandWrap: {
-    paddingTop: 6,
-    alignItems: "center",
-  },
+  brandWrap: { paddingTop: 6, alignItems: "center" },
   brandCard: {
     width: CARD_MAX_WIDTH,
     borderRadius: 18,
@@ -204,9 +223,24 @@ const styles = StyleSheet.create({
   },
   thinkBig: {
     width: "100%",
-    height: width * 0.8,
-    marginBottom: 10,
+    height: Math.min(width * 0.7, 280),
   },
+
+  card: {
+    alignSelf: "center",
+    backgroundColor: COLORS.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 16,
+    shadowColor: COLORS.shadow,
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 4,
+    marginTop: 14,
+  },
+
   logoRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -223,13 +257,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  logo: {
-    width: 42,
-    height: 42,
-  },
-  brandText: {
-    alignItems: "flex-start",
-  },
+  logo: { width: 42, height: 42 },
+  brandText: { alignItems: "flex-start" },
   appName: {
     fontSize: 18,
     fontWeight: "900",
@@ -243,20 +272,8 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
   },
 
-  card: {
-    alignSelf: "center",
-    backgroundColor: COLORS.surface,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: 16,
-    shadowColor: COLORS.shadow,
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 4,
-  },
   title: {
+    marginTop: 12,
     fontSize: 18,
     fontWeight: "900",
     color: COLORS.textPrimary,
@@ -266,6 +283,12 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     fontSize: 13,
     color: COLORS.textMuted,
+  },
+
+  errorText: {
+    color: COLORS.dangerRed,
+    fontWeight: "700",
+    marginBottom: 10,
   },
 
   field: { marginBottom: 12 },
@@ -286,12 +309,9 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
 
-  passwordRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
+  passwordRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   passwordInput: { flex: 1 },
+
   showBtn: {
     height: 44,
     paddingHorizontal: 14,
@@ -302,11 +322,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  showBtnText: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: COLORS.textPrimary,
-  },
+  showBtnText: { fontSize: 12, fontWeight: "900", color: COLORS.textPrimary },
 
   primaryBtn: {
     marginTop: 6,
@@ -316,18 +332,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  primaryBtnDisabled: {
-    backgroundColor: COLORS.disabledBg,
-  },
+  primaryBtnDisabled: { backgroundColor: COLORS.disabledBg },
   primaryBtnText: {
     color: COLORS.textInverse,
     fontWeight: "900",
     fontSize: 14,
     letterSpacing: 0.3,
   },
-  primaryBtnTextDisabled: {
-    color: COLORS.disabledText,
-  },
+  primaryBtnTextDisabled: { color: COLORS.disabledText },
 
   guestBtn: {
     marginTop: 14,

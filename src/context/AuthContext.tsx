@@ -126,8 +126,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       mode: GUEST_AUTH_MODE,
       user: null,
     });
-
-    router.replace("/(tabs)/DashboardPage");
   };
 
   const value = useMemo(
