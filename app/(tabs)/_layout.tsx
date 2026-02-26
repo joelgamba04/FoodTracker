@@ -4,7 +4,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
 import { View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const TabIcon = ({
   name,
@@ -30,12 +29,6 @@ const TabIcon = ({
 };
 
 export const TabLayout = () => {
-  const insets = useSafeAreaInsets();
-
-  // key sizing
-  const BAR_HEIGHT = 66; // height of the black pill
-  const H_PADDING = 44; // horizontal inset from screen edges
-
   return (
     <Tabs
       tabBar={(props) => <StickyTabBar {...props} />}

@@ -10,6 +10,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type ItemLayout = { x: number; width: number };
 
@@ -22,6 +23,7 @@ export default function StickyTabBar({
   descriptors,
   navigation,
 }: BottomTabBarProps) {
+  const insets = useSafeAreaInsets();
   // Build visible routes first (same rule as render)
   const visibleRoutes = useMemo(() => {
     return state.routes.filter((r) => {
@@ -115,7 +117,7 @@ export default function StickyTabBar({
   }));
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, { paddingBottom: insets.bottom + 12 }]}>
       <View style={styles.bar}>
         <Animated.View style={[styles.pill, pillStyle]} />
 
