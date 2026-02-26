@@ -1,13 +1,14 @@
 import { useAuth } from "@/context/AuthContext";
 import { COLORS } from "@/theme/color";
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   Dimensions,
   Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -15,7 +16,6 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { ScrollView } from "react-native-reanimated/lib/typescript/Animated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
@@ -28,6 +28,7 @@ export const LoginScreen = () => {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const passwordRef = useRef<TextInput>(null);
 
   const canSubmit = useMemo(() => {
     const e = email.trim();
@@ -53,7 +54,10 @@ export const LoginScreen = () => {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+      >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -92,11 +96,14 @@ export const LoginScreen = () => {
               <View style={styles.field}>
                 <Text style={styles.label}>Email</Text>
                 <TextInput
+                  ref={null}
                   placeholder="name@email.com"
                   placeholderTextColor={COLORS.disabledText}
                   style={styles.input}
                   autoCapitalize="none"
                   keyboardType="email-address"
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordRef.current?.focus()}
                   value={email}
                   onChangeText={setEmail}
                 />
@@ -106,10 +113,16 @@ export const LoginScreen = () => {
                 <Text style={styles.label}>Password</Text>
                 <View style={styles.passwordRow}>
                   <TextInput
+                    ref={passwordRef}
                     placeholder="Password"
                     placeholderTextColor={COLORS.disabledText}
                     style={[styles.input, styles.passwordInput]}
                     secureTextEntry={!showPassword}
+                    returnKeyType="done"
+                    onSubmitEditing={() => {
+                      // Only submit if the form is valid to prevent unnecessary login attempts
+                      if (canSubmit) onSubmit();
+                    }}
                     value={password}
                     onChangeText={setPassword}
                   />
