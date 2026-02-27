@@ -2,14 +2,14 @@
   "expo": {
     "name": "Taguig NutriApp",
     "slug": "taguig-nutriApp",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/withbgthinkbig-01.png",
     "scheme": "taguig-nutriapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "buildNumber": "3"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,9 +19,9 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "softwareKeyboardLayoutMode": "resize",
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.joelgamba.TaguigNutriApp"
+      "package": "com.joelgamba.TaguigNutriApp",
+      "versionCode": 3
     },
     "web": {
       "output": "static",
