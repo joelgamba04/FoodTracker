@@ -130,7 +130,7 @@ const ProfileScreenPage = () => {
     [],
   );
 
-  const handleSave = async () => {
+  const doSave = async () => {
     setSaving(true);
     setError(null);
     try {
@@ -145,6 +145,33 @@ const ProfileScreenPage = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSave = () => {
+    console.log("Save button pressed with form data:", form);
+    // Prevent double prompts while already saving
+    if (saving) return;
+
+    Alert.alert(
+      "Save changes?",
+      "This will update your profile details.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Save",
+          style: "default",
+          onPress: async () => {
+            try {
+              await doSave();
+              Alert.alert("Saved", "Your profile has been updated.");
+            } catch {
+              // error already handled in doSave()
+            }
+          },
+        },
+      ],
+      { cancelable: true },
+    );
   };
 
   const weightStatus = useMemo(() => getWeightStatus(form), [form]);
