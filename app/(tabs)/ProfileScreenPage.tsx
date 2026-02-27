@@ -9,13 +9,13 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -170,10 +170,18 @@ const ProfileScreenPage = () => {
         subtitle="Update your details to personalize daily goals."
       />
 
-      <ScrollView
+      <KeyboardAwareScrollView
         style={styles.container}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.content,
+          { flexGrow: 1, paddingBottom: insets.bottom + 40 },
+        ]}
+        automaticallyAdjustKeyboardInsets
+        enableOnAndroid
+        extraScrollHeight={Platform.OS === "android" ? 18 : 10}
+        showsVerticalScrollIndicator={true}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
       >
         {/* Basic information card */}
         <View style={styles.card}>
@@ -316,7 +324,7 @@ const ProfileScreenPage = () => {
         </TouchableOpacity>
 
         <View style={{ height: 24 }} />
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 };

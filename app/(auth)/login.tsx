@@ -9,7 +9,6 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -17,6 +16,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -80,7 +80,7 @@ export const LoginScreen = () => {
         keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 8 : 0}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <ScrollView
+          <KeyboardAwareScrollView
             style={styles.flex}
             contentContainerStyle={[
               styles.scrollContent,
@@ -90,8 +90,8 @@ export const LoginScreen = () => {
             keyboardDismissMode={
               Platform.OS === "ios" ? "interactive" : "on-drag"
             }
-            automaticallyAdjustKeyboardInsets
-            bounces={false}
+            enableOnAndroid
+            extraScrollHeight={Platform.OS === "android" ? 18 : 10}
           >
             {/* BRAND BLOCK */}
             <View style={styles.brandWrap}>
@@ -137,9 +137,7 @@ export const LoginScreen = () => {
                   autoCorrect={false}
                   keyboardType="email-address"
                   textContentType="emailAddress"
-                  multiline={false}
                   returnKeyType="next"
-                  submitBehavior="submit"
                   onSubmitEditing={() => passwordRef.current?.focus()}
                   value={email}
                   onChangeText={setEmail}
@@ -160,7 +158,7 @@ export const LoginScreen = () => {
                     autoCorrect={false}
                     multiline={false}
                     returnKeyType="done"
-                    submitBehavior="submit"
+                    enablesReturnKeyAutomatically
                     onSubmitEditing={onSubmit}
                     value={password}
                     onChangeText={setPassword}
@@ -207,7 +205,7 @@ export const LoginScreen = () => {
 
             {/* FOOTER */}
             <Text style={styles.footer}>© 2026 City Government of Taguig</Text>
-          </ScrollView>
+          </KeyboardAwareScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </SafeAreaView>
