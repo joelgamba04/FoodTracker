@@ -201,7 +201,7 @@ const ProfileScreenPage = () => {
         style={styles.container}
         contentContainerStyle={[
           styles.content,
-          { flexGrow: 1, paddingBottom: insets.bottom + 40 },
+          { flexGrow: 1, paddingBottom: insets.bottom },
         ]}
         automaticallyAdjustKeyboardInsets
         enableOnAndroid
