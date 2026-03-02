@@ -41,6 +41,8 @@ class ApiError extends Error {
 export const isServerUnavailableError = (err: unknown) => {
   const msg = String((err as any)?.message ?? "").toLowerCase();
 
+  console.warn("Checking if error is server unavailable...", msg);
+
   // your apiClient message (HTML 503 / non-JSON)
   if (msg.includes("server unavailable")) return true;
 
@@ -48,6 +50,10 @@ export const isServerUnavailableError = (err: unknown) => {
   if (msg.includes("network request failed")) return true;
   if (msg.includes("failed to fetch")) return true;
   if (msg.includes("load failed")) return true;
+  if (msg.includes("network error")) return true;
+  if (msg.includes("connection refused")) return true;
+  if (msg.includes("unreachable")) return true;
+  if (msg.includes("check your internet")) return true;
 
   // optional: timeouts if you add them later
   if (msg.includes("timeout")) return true;
@@ -135,6 +141,8 @@ export const api = async <T>(
   } catch (e: any) {
     cancel();
 
+    console.warn(`API Request Failed: ${url}`, e.message ?? e);
+
     // Timeout (AbortController)
     if (e?.name === "AbortError") {
       throw new ApiError("TIMEOUT", "Request timed out. Please try again.");
@@ -158,6 +166,11 @@ export const api = async <T>(
     looksLikeHtml(body) ||
     (!contentType.includes("application/json") && res.status >= 500)
   ) {
+    console.warn(`API Response looks like HTML, treating as outage: ${url}`, {
+      status: res.status,
+      contentType,
+      body,
+    });
     throw new ApiError(
       "SERVER_UNAVAILABLE",
       "Server is temporarily unavailable. Please try again later.",

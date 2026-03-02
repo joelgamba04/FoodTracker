@@ -115,7 +115,9 @@ export const AddFoodPage = () => {
       console.error("Search failed:", err);
 
       if (isServerUnavailableError(err)) {
-        setSearchError("Server is unavailable right now. Please try again.");
+        setSearchError(
+          "Server is unavailable right now. Please contact support or try again later.",
+        );
         setPauseAutoSearch(true);
       } else {
         setSearchError(err?.message || "Search failed. Try again.");
