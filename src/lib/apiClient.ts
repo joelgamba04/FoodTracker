@@ -1,5 +1,4 @@
 // src/lib/apiClient.ts
-
 import { API_ROUTE_BASE_URL } from "@/constants/apiRouteBaseURL";
 import { authFatal } from "@/services/authFatalService";
 import { getAccessToken, refreshAccessToken } from "@/services/tokenService";
@@ -10,7 +9,50 @@ let refreshPromise: Promise<string> | null = null;
 type ApiOptions = Omit<RequestInit, "headers"> & {
   headers?: HeadersInit;
   auth?: boolean; // default true
-  _retried?: boolean; // internal only (do not pass to fetch)
+  timeoutMs?: number; // add timeout
+  _retried?: boolean; // internal only
+};
+
+class ApiError extends Error {
+  kind:
+    | "NETWORK"
+    | "TIMEOUT"
+    | "SERVER_UNAVAILABLE"
+    | "SERVER_ERROR"
+    | "UNAUTHORIZED"
+    | "BAD_REQUEST"
+    | "UNKNOWN";
+  status?: number;
+  body?: any;
+
+  constructor(
+    kind: ApiError["kind"],
+    message: string,
+    extra?: { status?: number; body?: any },
+  ) {
+    super(message);
+    this.name = "ApiError";
+    this.kind = kind;
+    this.status = extra?.status;
+    this.body = extra?.body;
+  }
+}
+
+export const isServerUnavailableError = (err: unknown) => {
+  const msg = String((err as any)?.message ?? "").toLowerCase();
+
+  // your apiClient message (HTML 503 / non-JSON)
+  if (msg.includes("server unavailable")) return true;
+
+  // common fetch/network errors (android/ios)
+  if (msg.includes("network request failed")) return true;
+  if (msg.includes("failed to fetch")) return true;
+  if (msg.includes("load failed")) return true;
+
+  // optional: timeouts if you add them later
+  if (msg.includes("timeout")) return true;
+
+  return false;
 };
 
 const normalizeUrl = (path: string) => {
@@ -31,19 +73,31 @@ const parseJsonOrText = async (res: Response) => {
   }
 };
 
+const looksLikeHtml = (v: unknown) => {
+  if (typeof v !== "string") return false;
+  const s = v.trim().toLowerCase();
+  return (
+    s.startsWith("<!doctype") || s.startsWith("<html") || s.includes("<body")
+  );
+};
+
 const isTokenError = (status: number, body: any): boolean => {
   if (status === 401) return true;
-
   if (status === 403) {
-    const msg = String(body?.message || "").toLowerCase();
+    const msg = String(body?.message || body || "").toLowerCase();
     return (
       msg.includes("token") ||
       msg.includes("expired") ||
       msg.includes("invalid")
     );
   }
-
   return false;
+};
+
+const makeTimeoutSignal = (timeoutMs: number) => {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  return { signal: controller.signal, cancel: () => clearTimeout(id) };
 };
 
 export const api = async <T>(
@@ -53,10 +107,7 @@ export const api = async <T>(
   const url = normalizeUrl(path);
   const authEnabled = options.auth !== false;
 
-  console.log(`API Request: ${url} options:`, options);
-
-  // IMPORTANT: do not forward internal flags to fetch
-  const { _retried, auth, ...fetchOptions } = options;
+  const { _retried, auth, timeoutMs = 20000, ...fetchOptions } = options;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -71,27 +122,57 @@ export const api = async <T>(
     }
   }
 
-  const res = await fetch(url, {
-    ...fetchOptions,
-    headers: mergeHeaders(headers, fetchOptions.headers),
-  });
+  // Timeout support
+  const { signal, cancel } = makeTimeoutSignal(timeoutMs);
 
-  console.log(`API Response: ${url} status=${res.status}`);
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...fetchOptions,
+      headers: mergeHeaders(headers, fetchOptions.headers),
+      signal,
+    });
+  } catch (e: any) {
+    cancel();
 
-  // Read body ONCE and reuse
+    // Timeout (AbortController)
+    if (e?.name === "AbortError") {
+      throw new ApiError("TIMEOUT", "Request timed out. Please try again.");
+    }
+
+    // Network / server unreachable
+    // In RN this is often: TypeError: Network request failed
+    throw new ApiError(
+      "NETWORK",
+      "Can’t connect to the server right now. Check your internet or contact administrators.",
+    );
+  } finally {
+    cancel();
+  }
+
   const body = await parseJsonOrText(res);
+  const contentType = res.headers.get("content-type") || "";
 
-  console.log(`API Response Body: ${url} body=`, body);
+  // If backend sends HTML (maintenance page, nginx, apache), treat as outage
+  if (
+    looksLikeHtml(body) ||
+    (!contentType.includes("application/json") && res.status >= 500)
+  ) {
+    throw new ApiError(
+      "SERVER_UNAVAILABLE",
+      "Server is temporarily unavailable. Please try again later.",
+      { status: res.status, body },
+    );
+  }
 
-  // If token invalid/expired and we haven't retried, refresh then retry once
+  // Token refresh flow (only if auth enabled)
   if (authEnabled && !_retried && isTokenError(res.status, body)) {
     try {
       if (!refreshPromise) {
-        refreshPromise = refreshAccessToken().finally(() => {
-          refreshPromise = null;
-        });
+        refreshPromise = refreshAccessToken().finally(
+          () => (refreshPromise = null),
+        );
       }
-
       const newAccess = await refreshPromise;
 
       const retryHeaders: Record<string, string> = {
@@ -111,34 +192,77 @@ export const api = async <T>(
       );
 
       if (isTokenError(retryRes.status, retryBody)) {
-        // ✅ This is a hard auth failure -> logout
         authFatal("unauthorized_after_refresh");
-        throw new Error("Unauthorized after refresh"); // to satisfy TS return type
+        throw new ApiError("UNAUTHORIZED", "Unauthorized after refresh", {
+          status: retryRes.status,
+          body: retryBody,
+        });
       }
 
       if (!retryRes.ok) {
-        throw new Error(
+        if (
+          [502, 503, 504].includes(retryRes.status) ||
+          looksLikeHtml(retryBody)
+        ) {
+          throw new ApiError(
+            "SERVER_UNAVAILABLE",
+            "Server is temporarily unavailable. Please try again later.",
+            { status: retryRes.status, body: retryBody },
+          );
+        }
+
+        throw new ApiError(
+          "SERVER_ERROR",
           typeof retryBody === "string"
             ? retryBody
             : retryBody?.message || `Request failed with ${retryRes.status}`,
+          { status: retryRes.status, body: retryBody },
         );
       }
 
       return retryBody as T;
-    } catch (e) {
+    } catch {
       authFatal("refresh_failed");
+      throw new ApiError(
+        "UNAUTHORIZED",
+        "Session expired. Please log in again.",
+      );
     }
   }
 
-  // Normal error handling (non-token errors, or already retried)
+  // Non-auth errors
   if (!res.ok) {
-    throw new Error(
+    // 503 / gateway maintenance
+    if ([502, 503, 504].includes(res.status)) {
+      throw new ApiError(
+        "SERVER_UNAVAILABLE",
+        "Server is temporarily unavailable. Please contact adminstrators.",
+        { status: res.status, body },
+      );
+    }
+
+    // 400 validation, etc.
+    if (res.status >= 400 && res.status < 500) {
+      throw new ApiError(
+        "BAD_REQUEST",
+        typeof body === "string" ? body : body?.message || "Request failed.",
+        { status: res.status, body },
+      );
+    }
+
+    // 500+
+    throw new ApiError(
+      "SERVER_ERROR",
       typeof body === "string"
         ? body
         : body?.message || `Request failed with ${res.status}`,
+      { status: res.status, body },
     );
   }
 
-  // Success: return parsed body (already read)
   return body as T;
 };
+
+//  Optional export to let UI distinguish cases
+export const isApiError = (error: unknown): error is ApiError =>
+  error instanceof ApiError;

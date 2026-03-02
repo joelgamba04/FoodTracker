@@ -18,6 +18,7 @@ import {
 
 import AppHeader from "@/components/AppHeader";
 import { useFoodLog } from "@/context/FoodLogContext";
+import { isServerUnavailableError } from "@/lib/apiClient";
 import { mapFoodDetailToFood } from "@/mappers/foodMapper";
 import { Food } from "@/models/models";
 import { searchFoods } from "@/services/foodSearchService";
@@ -42,10 +43,13 @@ export const AddFoodPage = () => {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const searchSequence = useRef(0); // to track latest search
+  const [pauseAutoSearch, setPauseAutoSearch] = useState(false); // to pause auto-search when error is encountered
 
   const canLog = !!selected && qty > 0;
 
   useEffect(() => {
+    if (pauseAutoSearch) return;
+
     const q = search.trim();
     if (!q) {
       setResults([]);
@@ -57,7 +61,7 @@ export const AddFoodPage = () => {
     }, 350);
 
     return () => clearTimeout(t);
-  }, [search]);
+  }, [search, pauseAutoSearch]);
 
   const onLog = async () => {
     if (!selected) return;
@@ -109,7 +113,14 @@ export const AddFoodPage = () => {
         return;
       }
       console.error("Search failed:", err);
-      setSearchError("Search failed. Try again.");
+
+      if (isServerUnavailableError(err)) {
+        setSearchError("Server is unavailable right now. Please try again.");
+        setPauseAutoSearch(true);
+      } else {
+        setSearchError(err?.message || "Search failed. Try again.");
+      }
+
       setResults([]);
     } finally {
       if (seq === searchSequence.current) {
@@ -153,7 +164,22 @@ export const AddFoodPage = () => {
             ) : searchLoading ? (
               <Text style={styles.muted}>Searching…</Text>
             ) : searchError ? (
-              <Text style={styles.errorText}>{searchError}</Text>
+              <View style={{ gap: 10 }}>
+                <Text style={styles.errorText}>{searchError}</Text>
+
+                <Pressable
+                  style={[
+                    styles.secondaryBtn,
+                    { backgroundColor: COLORS.surface },
+                  ]}
+                  onPress={() => {
+                    setPauseAutoSearch(false);
+                    handleSearch(search);
+                  }}
+                >
+                  <Text style={styles.secondaryBtnText}>Retry</Text>
+                </Pressable>
+              </View>
             ) : results.length === 0 ? (
               <Text style={styles.muted}>No results.</Text>
             ) : (
