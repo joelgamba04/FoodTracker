@@ -188,7 +188,6 @@ const ProfileScreenPage = () => {
       style={{
         flex: 1,
         backgroundColor: COLORS.background,
-        paddingBottom: insets.bottom,
       }}
     >
       {/* Header (match Settings / History hierarchy) */}
