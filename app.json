@@ -31,8 +31,8 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/withbgthinkbig-01.png",
-          "imageWidth": 200,
+          "image": "./assets/images/without_bg_think_big_2k_px.png",
+          "imageWidth": 220,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
