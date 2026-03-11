@@ -1,7 +1,6 @@
 // app/(auth)/login.tsx
 import { useAuth } from "@/context/AuthContext";
 import { COLORS } from "@/theme/color";
-import { router } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import {
   Dimensions,
@@ -54,7 +53,6 @@ export const LoginScreen = () => {
 
     try {
       await login(email.trim(), password);
-      router.replace("/(tabs)/DashboardPage");
     } catch (e: any) {
       setErr(e?.message || "Login failed. Please try again.");
     } finally {
@@ -66,7 +64,6 @@ export const LoginScreen = () => {
     setErr(null);
     try {
       await loginAsGuest();
-      router.replace("/(tabs)/DashboardPage");
     } catch (e: any) {
       setErr(e?.message || "Guest login failed. Please try again.");
     }

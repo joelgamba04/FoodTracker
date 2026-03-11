@@ -15,7 +15,6 @@ import {
 } from "@/services/authService";
 import { clearTokens } from "@/services/tokenService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { router } from "expo-router";
 import React, {
   createContext,
   useContext,
@@ -73,8 +72,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    let handling = false;
+
     setAuthFatalHandler(async (reason) => {
-      let handling = false;
       if (handling) return;
       handling = true;
 
@@ -88,10 +88,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         mode: SIGNED_OUT_AUTH_MODE,
         user: null,
       });
-
-      // to login
-      router.replace("/login");
     });
+
+    return () => {
+      setAuthFatalHandler(async () => {});
+    };
   }, []);
 
   const login = async (email: string, password: string) => {

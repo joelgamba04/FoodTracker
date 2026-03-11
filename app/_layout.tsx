@@ -72,12 +72,12 @@ const DISCLAIMERS = [
   },
 ];
 
-function isProfileComplete(profile: UserProfile | null): boolean {
+const isProfileComplete = (profile: UserProfile | null): boolean => {
   if (!profile) return false;
   return !!(profile.age && profile.sex && profile.height && profile.weight);
-}
+};
 
-function AuthGate() {
+const AuthGate = () => {
   const { authMode, isAuthLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
@@ -86,14 +86,20 @@ function AuthGate() {
     if (isAuthLoading) return;
 
     const inAuthGroup = segments?.[0] === "(auth)";
+    const inTabsGroup = segments?.[0] === "(tabs)";
 
-    if (authMode === SIGNED_OUT_AUTH_MODE && !inAuthGroup)
-      router.replace("/(auth)/login");
-    if (
-      (authMode === AUTHENTICATED_AUTH_MODE || authMode === GUEST_AUTH_MODE) &&
-      inAuthGroup
-    )
-      router.replace("/(tabs)/DashboardPage");
+    if (authMode === SIGNED_OUT_AUTH_MODE) {
+      if (!inAuthGroup) {
+        router.replace("/(auth)/login");
+      }
+      return;
+    }
+
+    if (authMode === AUTHENTICATED_AUTH_MODE || authMode === GUEST_AUTH_MODE) {
+      if (!inTabsGroup) {
+        router.replace("/(tabs)/DashboardPage");
+      }
+    }
   }, [authMode, isAuthLoading, segments, router]);
 
   if (isAuthLoading) {
@@ -105,7 +111,7 @@ function AuthGate() {
   }
 
   return <Stack screenOptions={{ headerShown: false }} />;
-}
+};
 
 /**
  * Bootstraps the app flow INSIDE providers:
@@ -113,7 +119,7 @@ function AuthGate() {
  * 2) Initial Profile (only if local cache is incomplete)
  * 3) Main app (AuthGate + tabs)
  */
-function AppBootstrap() {
+const AppBootstrap = () => {
   const [disclaimerStep, setDisclaimerStep] = useState(0);
   const [profileStatus, setProfileStatus] = useState<
     "checking" | "incomplete" | "complete"
@@ -174,9 +180,9 @@ function AppBootstrap() {
       ) : null}
     </>
   );
-}
+};
 
-export default function RootLayout() {
+const RootLayout = () => {
   const colorScheme = useColorScheme();
 
   return (
@@ -198,7 +204,7 @@ export default function RootLayout() {
       </AppErrorBoundary>
     </SafeAreaProvider>
   );
-}
+};
 
 const styles = StyleSheet.create({
   bodyText: {
@@ -217,3 +223,5 @@ const styles = StyleSheet.create({
     color: "#333",
   },
 });
+
+export default RootLayout;
