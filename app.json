@@ -8,8 +8,7 @@
     "scheme": "taguig-nutriapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true,
-      "buildNumber": "3"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
