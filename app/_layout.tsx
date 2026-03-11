@@ -72,6 +72,12 @@ const DISCLAIMERS = [
   },
 ];
 
+const AUTHED_TOP_LEVEL_ROUTES = new Set([
+  "(tabs)",
+  "AddFoodPage",
+  "HydrationPage",
+]);
+
 const isProfileComplete = (profile: UserProfile | null): boolean => {
   if (!profile) return false;
   return !!(profile.age && profile.sex && profile.height && profile.weight);
@@ -85,8 +91,10 @@ const AuthGate = () => {
   useEffect(() => {
     if (isAuthLoading) return;
 
-    const inAuthGroup = segments?.[0] === "(auth)";
-    const inTabsGroup = segments?.[0] === "(tabs)";
+    const currentRoot = segments?.[0];
+    const inAuthGroup = currentRoot === "(auth)";
+    const isAllowedAuthedRoute =
+      !!currentRoot && AUTHED_TOP_LEVEL_ROUTES.has(currentRoot);
 
     if (authMode === SIGNED_OUT_AUTH_MODE) {
       if (!inAuthGroup) {
@@ -96,7 +104,7 @@ const AuthGate = () => {
     }
 
     if (authMode === AUTHENTICATED_AUTH_MODE || authMode === GUEST_AUTH_MODE) {
-      if (!inTabsGroup) {
+      if (!isAllowedAuthedRoute) {
         router.replace("/(tabs)/DashboardPage");
       }
     }

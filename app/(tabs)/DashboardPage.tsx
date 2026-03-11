@@ -125,6 +125,10 @@ export const DashboardPage = () => {
     return map;
   }, [todaysFood]);
 
+  const goToAddFood = () => {
+    router.push("/AddFoodPage");
+  };
+
   return (
     <SafeAreaView style={[styles.screen, { paddingBottom: insets.bottom }]}>
       {/* Header */}
@@ -138,7 +142,7 @@ export const DashboardPage = () => {
             value={`${todaysCalories}`}
             subtitle="kcal today"
             icon="flame"
-            onPress={() => router.push("/AddFoodPage")}
+            onPress={goToAddFood}
           />
 
           <AnimatedMetricCard
@@ -180,10 +184,7 @@ export const DashboardPage = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Food Log</Text>
-            <Pressable
-              onPress={() => router.push("/AddFoodPage")}
-              style={styles.linkBtn}
-            >
+            <Pressable onPress={goToAddFood} style={styles.linkBtn}>
               <Ionicons name="add" size={16} color={COLORS.primary} />
               <Text style={styles.linkBtnText}>Add Food</Text>
             </Pressable>
@@ -229,7 +230,7 @@ export const DashboardPage = () => {
       </ScrollView>
 
       {/* Floating Add Food */}
-      <Pressable style={styles.fab} onPress={() => router.push("/AddFoodPage")}>
+      <Pressable style={styles.fab} onPress={goToAddFood}>
         <Ionicons name="add" size={26} color={COLORS.textInverse} />
       </Pressable>
     </SafeAreaView>

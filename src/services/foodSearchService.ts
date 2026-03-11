@@ -6,13 +6,10 @@ import type {
 } from "@/models/foodModels"; // adjust if your path differs
 
 /**
- * NOTE:
- * These route paths are assumptions based on your function names:
+ * These route paths are assumptions based on names:
  *  - GET /food/view/:foodId
  *  - GET /food/search?query=...
  *  - GET /food/search-by-category?categoryId=...
- *
- * If your backend uses different paths, update ROUTES below only.
  */
 const ROUTES = {
   viewFood: (foodId: number) => `/food/view/${foodId}`,
@@ -25,9 +22,9 @@ const ROUTES = {
 /**
  * View full details for a single food item.
  */
-export async function ViewFoodDetail(
+export const ViewFoodDetail = async (
   foodId: number,
-): Promise<ViewFoodDetailResponse> {
+): Promise<ViewFoodDetailResponse> => {
   if (!Number.isFinite(foodId) || foodId <= 0) {
     throw new Error("Invalid foodId");
   }
@@ -36,12 +33,12 @@ export async function ViewFoodDetail(
     method: "GET",
     auth: false,
   });
-}
+};
 
 /**
- * Search foods by NAME (Filipino/English, depends on backend implementation).
+ * Search foods by NAME (Filipino/English).
  */
-export async function searchFoods(query: string): Promise<FoodSearchResult> {
+export const searchFoods = async (query: string): Promise<FoodSearchResult> => {
   const q = (query ?? "").trim();
   if (!q) {
     // Return an empty result shape that matches your API response type
@@ -52,15 +49,14 @@ export async function searchFoods(query: string): Promise<FoodSearchResult> {
     method: "GET",
     auth: false,
   });
-}
+};
 
 /**
  * Search foods by CATEGORY.
- * (New function to match your requirement “search by category”.)
  */
-export async function SearchFoodsByCategory(
+export const SearchFoodsByCategory = async (
   categoryId: number,
-): Promise<FoodSearchResult> {
+): Promise<FoodSearchResult> => {
   if (!Number.isFinite(categoryId) || categoryId <= 0) {
     throw new Error("Invalid categoryId");
   }
@@ -69,4 +65,4 @@ export async function SearchFoodsByCategory(
     method: "GET",
     auth: false,
   });
-}
+};

@@ -18,13 +18,12 @@ import {
 
 import AppHeader from "@/components/AppHeader";
 import { useFoodLog } from "@/context/FoodLogContext";
-import { isServerUnavailableError } from "@/lib/apiClient";
+import { isApiError } from "@/lib/apiClient";
 import { mapFoodDetailToFood } from "@/mappers/foodMapper";
 import { Food } from "@/models/models";
 import { searchFoods } from "@/services/foodSearchService";
 import { COLORS } from "@/theme/color";
 
-// If you have a food type, import it; otherwise keep `any`
 type FoodItem = any;
 
 const makeLocalId = () => {
@@ -53,6 +52,7 @@ export const AddFoodPage = () => {
     const q = search.trim();
     if (!q) {
       setResults([]);
+      setSearchError(null);
       return;
     }
 
@@ -83,6 +83,7 @@ export const AddFoodPage = () => {
     const query = (raw ?? search).trim();
     if (!query) {
       setResults([]);
+      setSearchError(null);
       return;
     }
 
@@ -102,25 +103,48 @@ export const AddFoodPage = () => {
 
       if (!res.success) {
         setResults([]);
+        setSearchError(res.message || "No results found.");
         return;
       }
 
       const foods = (res.data ?? []).map(mapFoodDetailToFood);
       setResults(foods);
-    } catch (err: any) {
-      if (seq !== searchSequence.current) {
-        // A newer search has started, ignore this error
-        return;
-      }
+      setPauseAutoSearch(false); // reset pause on successful search
+    } catch (err: unknown) {
+      if (seq !== searchSequence.current) return;
+
       console.error("Search failed:", err);
 
-      if (isServerUnavailableError(err)) {
-        setSearchError(
-          "Server is unavailable right now. Please contact support or try again later.",
-        );
-        setPauseAutoSearch(true);
+      if (isApiError(err)) {
+        switch (err.kind) {
+          case "NETWORK":
+            setSearchError(
+              "No internet connection or server unreachable. Please connect to the internet and try again later.",
+            );
+            setPauseAutoSearch(true);
+            break;
+
+          case "TIMEOUT":
+            setSearchError("Search timed out. Please try again.");
+            break;
+
+          case "SERVER_UNAVAILABLE":
+            setSearchError(
+              "Server is temporarily unavailable. Please contact support or try again later.",
+            );
+            setPauseAutoSearch(true);
+            break;
+
+          case "BAD_REQUEST":
+            setSearchError(err.message || "Invalid search request.");
+            break;
+
+          default:
+            setSearchError(err.message || "Search failed. Please try again.");
+            break;
+        }
       } else {
-        setSearchError(err?.message || "Search failed. Try again.");
+        setSearchError("Search failed. Please try again.");
       }
 
       setResults([]);
@@ -144,6 +168,8 @@ export const AddFoodPage = () => {
           onChangeText={(t) => {
             setSearch(t);
             setSelected(null);
+            setPauseAutoSearch(false); // reset pause when user types
+            setSearchError(null); // clear error on new input
           }}
           placeholder="Search food…"
           style={styles.searchInput}
@@ -151,7 +177,10 @@ export const AddFoodPage = () => {
           autoCapitalize="none"
           clearButtonMode="while-editing"
           returnKeyType="search"
-          onSubmitEditing={() => handleSearch(search)}
+          onSubmitEditing={() => {
+            setPauseAutoSearch(false);
+            handleSearch(search);
+          }}
         />
       </View>
 
@@ -166,26 +195,23 @@ export const AddFoodPage = () => {
             ) : searchLoading ? (
               <Text style={styles.muted}>Searching…</Text>
             ) : searchError ? (
-              <View style={{ gap: 10 }}>
+              <View style={styles.errorWrap}>
                 <Text style={styles.errorText}>{searchError}</Text>
 
                 <Pressable
-                  style={[
-                    styles.secondaryBtn,
-                    { backgroundColor: COLORS.surface },
-                  ]}
+                  style={styles.retryBtn}
                   onPress={() => {
                     setPauseAutoSearch(false);
                     handleSearch(search);
                   }}
                 >
-                  <Text style={styles.secondaryBtnText}>Retry</Text>
+                  <Text style={styles.retryBtnText}>Retry</Text>
                 </Pressable>
               </View>
             ) : results.length === 0 ? (
               <Text style={styles.muted}>No results.</Text>
             ) : (
-              results.map((item, idx) => (
+              results.map((item) => (
                 <Pressable
                   key={String(item.id)}
                   style={styles.row}
@@ -367,6 +393,23 @@ const styles = StyleSheet.create({
     color: COLORS.dangerRed,
     fontWeight: "700",
     marginBottom: 10,
+  },
+  errorWrap: {
+    gap: 10,
+  },
+  retryBtn: {
+    alignItems: "center",
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.surfaceBorder,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+
+  retryBtnText: {
+    color: COLORS.textPrimary,
+    fontWeight: "800",
   },
 });
 

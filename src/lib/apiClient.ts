@@ -149,7 +149,6 @@ export const api = async <T>(
     }
 
     // Network / server unreachable
-    // In RN this is often: TypeError: Network request failed
     throw new ApiError(
       "NETWORK",
       "Can’t connect to the server right now. Check your internet or contact administrators.",

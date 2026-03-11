@@ -4,6 +4,7 @@ import AppHeader from "@/components/AppHeader";
 import { AUTHENTICATED_AUTH_MODE } from "@/constants/authModeConstants";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
+import { isApiError } from "@/lib/apiClient";
 import { COLORS } from "@/theme/color";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -23,7 +24,7 @@ import {
 
 type ProfileField = "age" | "sex" | "height" | "weight";
 
-// helper to derive a gentle weight status
+// helper to derive a weight status
 type WeightStatus =
   | {
       category: "under";
@@ -125,6 +126,7 @@ const ProfileScreenPage = () => {
 
   const handleProfileChange = useCallback(
     (field: ProfileField, value: string) => {
+      setError(null);
       setForm((prev) => ({ ...prev, [field]: value }));
     },
     [],
@@ -133,15 +135,81 @@ const ProfileScreenPage = () => {
   const doSave = async () => {
     setSaving(true);
     setError(null);
-    try {
-      await updateProfile(form);
 
+    let localSaved = false;
+
+    try {
+      // 1) Always save locally first
+      await updateProfile(form);
+      localSaved = true;
+
+      // 2) If authenticated, try syncing to backend
       if (authMode === AUTHENTICATED_AUTH_MODE) {
         await saveProfileToServer(form);
       }
-    } catch (e: any) {
+
+      return {
+        ok: true as const,
+        localSaved: true,
+        serverSynced: authMode !== AUTHENTICATED_AUTH_MODE ? null : true,
+      };
+    } catch (e: unknown) {
       console.error("Error updating profile:", e);
-      setError("Failed to save your profile. Please try again.");
+
+      // Local save failed
+      if (!localSaved) {
+        setError(
+          "Failed to save your profile on this device. Please try again.",
+        );
+        return {
+          ok: false as const,
+          localSaved: false,
+          serverSynced: null,
+        };
+      }
+
+      // Local save succeeded, but backend sync failed
+      if (isApiError(e)) {
+        switch (e.kind) {
+          case "NETWORK":
+            setError(
+              "Saved on this device, but can’t connect to the server right now.",
+            );
+            break;
+
+          case "TIMEOUT":
+            setError(
+              "Saved on this device, but server sync timed out. Please try again later.",
+            );
+            break;
+
+          case "SERVER_UNAVAILABLE":
+            setError(
+              "Saved on this device, but the server is temporarily unavailable.",
+            );
+            break;
+
+          case "UNAUTHORIZED":
+            setError(
+              "Saved on this device, but your session expired. Please log in again.",
+            );
+            break;
+
+          default:
+            setError(
+              e.message || "Saved on this device, but server sync failed.",
+            );
+            break;
+        }
+      } else {
+        setError("Saved on this device, but server sync failed.");
+      }
+
+      return {
+        ok: false as const,
+        localSaved: true,
+        serverSynced: false,
+      };
     } finally {
       setSaving(false);
     }
@@ -152,6 +220,12 @@ const ProfileScreenPage = () => {
     // Prevent double prompts while already saving
     if (saving) return;
 
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     Alert.alert(
       "Save changes?",
       "This will update your profile details.",
@@ -161,11 +235,18 @@ const ProfileScreenPage = () => {
           text: "Save",
           style: "default",
           onPress: async () => {
-            try {
-              await doSave();
+            const result = await doSave();
+
+            if (result.ok) {
               Alert.alert("Saved", "Your profile has been updated.");
-            } catch {
-              // error already handled in doSave()
+              return;
+            }
+
+            if (result.localSaved && result.serverSynced === false) {
+              Alert.alert(
+                "Saved locally",
+                "Your profile was saved on this device, but server sync failed.",
+              );
             }
           },
         },
@@ -181,6 +262,40 @@ const ProfileScreenPage = () => {
       { text: "Cancel", style: "cancel" },
       { text: "Log out", style: "destructive", onPress: logout },
     ]);
+  };
+
+  // Check if there are any changes compared to the original profile
+  const hasChanges = useMemo(() => {
+    return (
+      form.age !== profile.age ||
+      form.sex !== profile.sex ||
+      form.height !== profile.height ||
+      form.weight !== profile.weight
+    );
+  }, [form, profile]);
+
+  // Validation helper to check form inputs before enabling save
+  const validateForm = () => {
+    if (!form.age || !form.height || !form.weight) {
+      return "Please enter your age, height, and weight.";
+    }
+
+    const ageNum = Number(form.age);
+    if (!Number.isFinite(ageNum) || ageNum < 10 || ageNum > 120) {
+      return "Please enter a valid age.";
+    }
+
+    const heightNum = Number(form.height);
+    if (!Number.isFinite(heightNum) || heightNum <= 0) {
+      return "Please enter a valid height.";
+    }
+
+    const weightNum = Number(form.weight);
+    if (!Number.isFinite(weightNum) || weightNum <= 0) {
+      return "Please enter a valid weight.";
+    }
+
+    return null;
   };
 
   return (
@@ -330,13 +445,16 @@ const ProfileScreenPage = () => {
 
         {/* Primary CTA */}
         <TouchableOpacity
-          style={[styles.primaryBtn, saving && styles.primaryBtnDisabled]}
+          style={[
+            styles.primaryBtn,
+            (saving || !hasChanges) && styles.primaryBtnDisabled,
+          ]}
           onPress={handleSave}
-          disabled={saving}
+          disabled={saving || !hasChanges}
           activeOpacity={0.9}
         >
           <Text style={styles.primaryBtnText}>
-            {saving ? "Saving…" : "Save changes"}
+            {saving ? "Saving…" : hasChanges ? "Save changes" : "No changes"}
           </Text>
         </TouchableOpacity>
 

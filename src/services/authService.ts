@@ -3,8 +3,8 @@ import { AUTHENTICATED_AUTH_MODE } from "@/constants/authModeConstants";
 import {
   ACCESS_TOKEN_KEY,
   AUTH_MODE_KEY,
+  AUTH_USER_KEY,
   REFRESH_TOKEN_KEY,
-  USER_PROFILE_KEY,
 } from "@/constants/storageKeys";
 import { api } from "@/lib/apiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -37,26 +37,28 @@ export async function login(email: string, password: string) {
     throw new Error("Login succeeded but access token is missing.");
   }
 
-  // 3) Save access token (always overwrite)
-  await AsyncStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-
-  // 4) Refresh token is now always available :
-  const newRefresh = result.data?.refreshToken;
-  await AsyncStorage.setItem(REFRESH_TOKEN_KEY, newRefresh);
-
-  // 5) Save user (optional but recommended)
-  const user = result.data?.user;
-  if (user) {
-    await AsyncStorage.setItem(USER_PROFILE_KEY, JSON.stringify(user));
+  const refreshToken = result.data?.refreshToken;
+  if (!refreshToken) {
+    throw new Error("Login succeeded but refresh token is missing.");
   }
 
-  await AsyncStorage.setItem(AUTH_MODE_KEY, AUTHENTICATED_AUTH_MODE);
+  const user = result.data?.user;
+  if (!user) {
+    throw new Error("Login succeeded but user data is missing.");
+  }
 
-  return user ?? null;
+  await AsyncStorage.multiSet([
+    [ACCESS_TOKEN_KEY, accessToken],
+    [REFRESH_TOKEN_KEY, refreshToken],
+    [AUTH_USER_KEY, JSON.stringify(user)],
+    [AUTH_MODE_KEY, AUTHENTICATED_AUTH_MODE],
+  ]);
+
+  return user;
 }
 
 export async function getStoredUser() {
-  const raw = await AsyncStorage.getItem(USER_PROFILE_KEY);
+  const raw = await AsyncStorage.getItem(AUTH_USER_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 
@@ -65,13 +67,14 @@ export async function logout() {
     await api("/auth/logout", {
       method: "POST",
     });
-  } catch (e) {
+  } catch {
     // ignore errors — logout should still proceed locally
   } finally {
     await AsyncStorage.multiRemove([
       ACCESS_TOKEN_KEY,
       REFRESH_TOKEN_KEY,
-      USER_PROFILE_KEY,
+      AUTH_USER_KEY,
+      AUTH_MODE_KEY,
     ]);
   }
 }

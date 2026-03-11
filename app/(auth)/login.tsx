@@ -1,5 +1,6 @@
 // app/(auth)/login.tsx
 import { useAuth } from "@/context/AuthContext";
+import { isApiError } from "@/lib/apiClient";
 import { COLORS } from "@/theme/color";
 import React, { useMemo, useRef, useState } from "react";
 import {
@@ -53,18 +54,55 @@ export const LoginScreen = () => {
 
     try {
       await login(email.trim(), password);
-    } catch (e: any) {
-      setErr(e?.message || "Login failed. Please try again.");
+    } catch (e: unknown) {
+      console.error("Login failed:", e);
+
+      if (isApiError(e)) {
+        switch (e.kind) {
+          case "NETWORK":
+            setErr(
+              "No internet connection or server unreachable. Please try again later.",
+            );
+            break;
+
+          case "TIMEOUT":
+            setErr("Login timed out. Please try again.");
+            break;
+
+          case "SERVER_UNAVAILABLE":
+            setErr(
+              "Server is temporarily unavailable. Please try again later.",
+            );
+            break;
+
+          case "BAD_REQUEST":
+            setErr(e.message || "Invalid email or password.");
+            break;
+
+          case "UNAUTHORIZED":
+            setErr("Invalid email or password.");
+            break;
+
+          default:
+            setErr(e.message || "Login failed. Please try again.");
+            break;
+        }
+      } else {
+        setErr("Login failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const onGuest = async () => {
+    if (loading) return;
+
     setErr(null);
     try {
       await loginAsGuest();
     } catch (e: any) {
+      console.error("Guest login failed:", e);
       setErr(e?.message || "Guest login failed. Please try again.");
     }
   };
@@ -191,7 +229,11 @@ export const LoginScreen = () => {
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={onGuest} style={styles.guestBtn}>
+              <TouchableOpacity
+                onPress={onGuest}
+                style={[styles.guestBtn, loading && styles.primaryBtnDisabled]}
+                disabled={loading}
+              >
                 <Text style={styles.guestText}>Continue as Guest</Text>
               </TouchableOpacity>
 
