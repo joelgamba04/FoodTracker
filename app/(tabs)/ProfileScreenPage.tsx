@@ -1,6 +1,7 @@
 // app/(tabs)/ProfileScreenPage.tsx
 
 import AppHeader from "@/components/AppHeader";
+import PrivacyPolicyModal from "@/components/PrivacyPolicyModal";
 import { AUTHENTICATED_AUTH_MODE } from "@/constants/authModeConstants";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
@@ -119,6 +120,7 @@ const ProfileScreenPage = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
+  const [privacyVisible, setPrivacyVisible] = useState(false);
 
   useEffect(() => {
     setForm(profile);
@@ -441,6 +443,17 @@ const ProfileScreenPage = () => {
           )}
         </View>
 
+        <TouchableOpacity
+          style={styles.settingRow}
+          onPress={() => {
+            console.log("Opening privacy modal");
+            setPrivacyVisible(true);
+          }}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.settingLabel}>Privacy Policy</Text>
+        </TouchableOpacity>
+
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         {/* Primary CTA */}
@@ -469,6 +482,11 @@ const ProfileScreenPage = () => {
 
         <View style={{ height: 24 }} />
       </KeyboardAwareScrollView>
+
+      <PrivacyPolicyModal
+        visible={privacyVisible}
+        onClose={() => setPrivacyVisible(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -674,6 +692,21 @@ const styles = StyleSheet.create({
     color: COLORS.danger,
     fontSize: 15,
     fontWeight: "900",
+  },
+  settingRow: {
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    justifyContent: "center",
+    paddingHorizontal: 14,
+    marginBottom: 10,
+  },
+  settingLabel: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
   },
 });
 

@@ -5,3 +5,4 @@ export const REFRESH_TOKEN_KEY = "@refresh_token";
 export const AUTH_USER_KEY = "@auth_user";
 export const USER_PROFILE_KEY = "@UserProfile";
 export const AUTH_MODE_KEY = "@auth_mode";
+export const PRIVACY_POLICY_ACCEPTED_KEY = "privacy_policy_accepted";

@@ -1,7 +1,10 @@
 // app/(auth)/login.tsx
+import PrivacyPolicyModal from "@/components/PrivacyPolicyModal";
+import { PRIVACY_POLICY_ACCEPTED_KEY } from "@/constants/storageKeys";
 import { useAuth } from "@/context/AuthContext";
 import { isApiError } from "@/lib/apiClient";
 import { COLORS } from "@/theme/color";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useMemo, useRef, useState } from "react";
 import {
   Dimensions,
@@ -38,10 +41,19 @@ export const LoginScreen = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [privacyVisible, setPrivacyVisible] = useState(false);
+
   const canSubmit = useMemo(() => {
     const e = email.trim();
-    return e.length > 3 && e.includes("@") && password.length >= 1 && !loading;
-  }, [email, password, loading]);
+    return (
+      e.length > 3 &&
+      e.includes("@") &&
+      password.length >= 1 &&
+      privacyAccepted &&
+      !loading
+    );
+  }, [email, password, privacyAccepted, loading]);
 
   const onSubmit = async () => {
     if (!canSubmit) {
@@ -98,13 +110,31 @@ export const LoginScreen = () => {
   const onGuest = async () => {
     if (loading) return;
 
+    if (!privacyAccepted) {
+      setErr("Please accept the Privacy Policy before continuing.");
+      return;
+    }
+
     setErr(null);
     try {
       await loginAsGuest();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Guest login failed:", e);
-      setErr(e?.message || "Guest login failed. Please try again.");
+      setErr("Unable to continue as guest right now. Please try again.");
     }
+  };
+
+  React.useEffect(() => {
+    (async () => {
+      const saved = await AsyncStorage.getItem(PRIVACY_POLICY_ACCEPTED_KEY);
+      setPrivacyAccepted(saved === "true");
+    })();
+  }, []);
+
+  const togglePrivacyAccepted = async () => {
+    const next = !privacyAccepted;
+    setPrivacyAccepted(next);
+    await AsyncStorage.setItem(PRIVACY_POLICY_ACCEPTED_KEY, String(next));
   };
 
   return (
@@ -156,12 +186,12 @@ export const LoginScreen = () => {
                 </View>
               </View>
 
-              <Text style={styles.title}>Log in</Text>
-              <Text style={styles.subtitle}>Use your account to continue.</Text>
+              {/* <Text style={styles.title}>Log in</Text>
+              <Text style={styles.subtitle}>Use your account to continue.</Text> */}
 
               {!!err && <Text style={styles.errorText}>{err}</Text>}
 
-              <View style={styles.field}>
+              {/* <View style={styles.field}>
                 <Text style={styles.label}>Email</Text>
                 <TextInput
                   ref={emailRef}
@@ -177,9 +207,9 @@ export const LoginScreen = () => {
                   value={email}
                   onChangeText={setEmail}
                 />
-              </View>
+              </View> */}
 
-              <View style={styles.field}>
+              {/* <View style={styles.field}>
                 <Text style={styles.label}>Password</Text>
                 <View style={styles.passwordRow}>
                   <TextInput
@@ -209,9 +239,36 @@ export const LoginScreen = () => {
                     </Text>
                   </TouchableOpacity>
                 </View>
+              </View> */}
+
+              {/* PRIVACY POLICY & SUBMIT */}
+              <View style={styles.privacyRow}>
+                <TouchableOpacity
+                  onPress={togglePrivacyAccepted}
+                  style={styles.checkbox}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: privacyAccepted }}
+                >
+                  <Text style={styles.checkboxMark}>
+                    {privacyAccepted ? "✓" : ""}
+                  </Text>
+                </TouchableOpacity>
+
+                <Text style={styles.privacyText}>
+                  I agree to the{" "}
+                  <Text
+                    style={styles.privacyLink}
+                    onPress={() => {
+                      console.log("Opening privacy modal");
+                      setPrivacyVisible(true);
+                    }}
+                  >
+                    Privacy Policy
+                  </Text>
+                </Text>
               </View>
 
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 style={[
                   styles.primaryBtn,
                   !canSubmit && styles.primaryBtnDisabled,
@@ -227,7 +284,7 @@ export const LoginScreen = () => {
                 >
                   {loading ? "Signing in..." : "Login"}
                 </Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
 
               <TouchableOpacity
                 onPress={onGuest}
@@ -247,6 +304,10 @@ export const LoginScreen = () => {
           </KeyboardAwareScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+      <PrivacyPolicyModal
+        visible={privacyVisible}
+        onClose={() => setPrivacyVisible(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -415,6 +476,39 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16,
     color: COLORS.textMuted,
+  },
+  privacyRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginTop: 4,
+    marginBottom: 12,
+    gap: 10,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 1,
+  },
+  checkboxMark: {
+    color: COLORS.primary,
+    fontWeight: "900",
+    fontSize: 14,
+  },
+  privacyText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 18,
+    color: COLORS.textMuted,
+  },
+  privacyLink: {
+    color: COLORS.primary,
+    fontWeight: "800",
   },
   footer: {
     textAlign: "center",
