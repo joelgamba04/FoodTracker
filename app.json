@@ -4,7 +4,7 @@
     "slug": "Taguig-NutriApp",
     "version": "1.0.5",
     "orientation": "portrait",
-    "icon": "./assets/images/withbgthinkbig-01.png",
+    "icon": "./assets/images/Rectangle_49.png",
     "scheme": "taguig-nutriapp",
     "userInterfaceStyle": "automatic",
     "ios": {
