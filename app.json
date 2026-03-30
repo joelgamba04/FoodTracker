@@ -55,7 +55,7 @@
           }
         }
       ],
-      "react-native-health-connect",
+      "expo-health-connect",
       [
         "react-native-health",
         {
