@@ -8,7 +8,11 @@
     "scheme": "taguig-nutriapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "Allow this app to read your health data.",
+        "NSHealthUpdateUsageDescription": "Allow this app to write health data."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -40,7 +44,26 @@
         }
       ],
       "expo-web-browser",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "minSdkVersion": 26
+          }
+        }
+      ],
+      "react-native-health-connect",
+      [
+        "react-native-health",
+        {
+          "healthSharePermission": "Allow this app to read your health data.",
+          "healthUpdatePermission": "Allow this app to write health data.",
+          "isClinicalDataEnabled": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
