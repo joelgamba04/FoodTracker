@@ -55,7 +55,17 @@
           }
         }
       ],
-      "expo-health-connect",
+      [
+        "expo-health-connect",
+        {
+          "permissions": [
+            "readSteps",
+            "readHeartRate",
+            "readSleep",
+            "readWeight"
+          ]
+        }
+      ],
       [
         "react-native-health",
         {
