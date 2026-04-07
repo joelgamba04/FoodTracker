@@ -23,7 +23,13 @@
       },
       "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": false,
-      "package": "com.joelgamba.TaguigNutriApp"
+      "package": "com.joelgamba.TaguigNutriApp",
+      "permissions": [
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_SLEEP",
+        "android.permission.health.READ_WEIGHT"
+      ]
     },
     "web": {
       "output": "static",
@@ -55,17 +61,7 @@
           }
         }
       ],
-      [
-        "expo-health-connect",
-        {
-          "permissions": [
-            "readSteps",
-            "readHeartRate",
-            "readSleep",
-            "readWeight"
-          ]
-        }
-      ],
+      "expo-health-connect",
       [
         "react-native-health",
         {
