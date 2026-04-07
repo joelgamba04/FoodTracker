@@ -76,6 +76,7 @@ const AUTHED_TOP_LEVEL_ROUTES = new Set([
   "(tabs)",
   "AddFoodPage",
   "HydrationPage",
+  "StepsTrackerPage",
 ]);
 
 const isProfileComplete = (profile: UserProfile | null): boolean => {
