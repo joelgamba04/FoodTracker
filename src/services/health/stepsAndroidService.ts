@@ -68,6 +68,8 @@ export const readAndroidStepsSummary = async (): Promise<StepsSummary> => {
     const start = startOfDay(day).toISOString();
     const end = endOfDay(day).toISOString();
 
+    console.log(`Reading steps for ${toYmd(day)} from ${start} to ${end}...`);
+
     const { records } = await readRecords("Steps", {
       timeRangeFilter: {
         operator: "between",
@@ -75,6 +77,8 @@ export const readAndroidStepsSummary = async (): Promise<StepsSummary> => {
         endTime: end,
       },
     });
+
+    console.log(`Records for ${toYmd(day)}:`, records);
 
     const total = (records ?? []).reduce((sum, record: any) => {
       return sum + Number(record?.count ?? 0);

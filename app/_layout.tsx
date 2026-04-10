@@ -90,6 +90,11 @@ const AuthGate = () => {
   const router = useRouter();
 
   useEffect(() => {
+    console.log("AuthGate", {
+      authMode,
+      isAuthLoading,
+      segments,
+    });
     if (isAuthLoading) return;
 
     const currentRoot = segments?.[0];
@@ -141,6 +146,12 @@ const AppBootstrap = () => {
 
   const showDisclaimer = disclaimerStep < DISCLAIMERS.length;
 
+  console.log("AppBootstrap", {
+    disclaimerStep,
+    showDisclaimer,
+    profileStatus,
+  });
+
   // load local cached profile once
   useEffect(() => {
     let active = true;
@@ -172,7 +183,11 @@ const AppBootstrap = () => {
       {!showDisclaimer ? (
         profileStatus === "checking" ? (
           <View style={styles.loadingScreen}>
-            <Text style={styles.loadingText}>Loading your profile…</Text>
+            <ActivityIndicator size="large" />
+            <Text style={styles.loadingText}>Profile status: checking</Text>
+            <Text style={styles.loadingText}>
+              Disclaimer step: {disclaimerStep}
+            </Text>
           </View>
         ) : profileStatus === "incomplete" ? (
           <InitialProfileScreen
@@ -194,6 +209,9 @@ const AppBootstrap = () => {
 const RootLayout = () => {
   const colorScheme = useColorScheme();
 
+  console.log("RootLayout render", {
+    colorScheme,
+  });
   return (
     <SafeAreaProvider>
       <AppErrorBoundary>
