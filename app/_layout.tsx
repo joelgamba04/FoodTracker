@@ -84,7 +84,7 @@ const isProfileComplete = (profile: UserProfile | null): boolean => {
   return !!(profile.age && profile.sex && profile.height && profile.weight);
 };
 
-const AuthGate = () => {
+const AuthGate = ({ canNavigate }: { canNavigate: boolean }) => {
   const { authMode, isAuthLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
@@ -95,6 +95,7 @@ const AuthGate = () => {
       isAuthLoading,
       segments,
     });
+    if (!canNavigate) return;
     if (isAuthLoading) return;
 
     const currentRoot = segments?.[0];
@@ -114,12 +115,12 @@ const AuthGate = () => {
         router.replace("/(tabs)/DashboardPage");
       }
     }
-  }, [authMode, isAuthLoading, segments, router]);
+  }, [canNavigate, authMode, isAuthLoading, segments, router]);
 
   return (
     <>
       <Stack screenOptions={{ headerShown: false }} />
-      {isAuthLoading ? (
+      {canNavigate && isAuthLoading ? (
         <View style={styles.loadingScreen}>
           <ActivityIndicator size="large" />
           <Text style={styles.loadingText}>Auth is loading...</Text>
@@ -147,6 +148,7 @@ const AppBootstrap = () => {
   );
 
   const showDisclaimer = disclaimerStep < DISCLAIMERS.length;
+  const canNavigate = !showDisclaimer && profileStatus === "complete";
 
   console.log("AppBootstrap", {
     disclaimerStep,
@@ -174,8 +176,8 @@ const AppBootstrap = () => {
 
   return (
     <>
-      <PostLoginSync />
-      <AuthGate />
+      {canNavigate ? <PostLoginSync /> : null}
+      <AuthGate canNavigate={canNavigate} />
       <StatusBar style="auto" />
 
       <DisclaimerModal
@@ -194,10 +196,12 @@ const AppBootstrap = () => {
       ) : null}
 
       {!showDisclaimer && profileStatus === "incomplete" ? (
-        <InitialProfileScreen
-          key="initial-profile"
-          onComplete={() => setProfileStatus("complete")}
-        />
+        <View style={styles.fullScreenOverlay}>
+          <InitialProfileScreen
+            key="initial-profile"
+            onComplete={() => setProfileStatus("complete")}
+          />
+        </View>
       ) : null}
     </>
   );
@@ -245,6 +249,11 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: "#333",
+  },
+  fullScreenOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#fff",
+    zIndex: 1000,
   },
 });
 
