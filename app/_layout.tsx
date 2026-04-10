@@ -116,15 +116,17 @@ const AuthGate = () => {
     }
   }, [authMode, isAuthLoading, segments, router]);
 
-  if (isAuthLoading) {
-    return (
-      <View style={styles.loadingScreen}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <>
+      <Stack screenOptions={{ headerShown: false }} />
+      {isAuthLoading ? (
+        <View style={styles.loadingScreen}>
+          <ActivityIndicator size="large" />
+          <Text style={styles.loadingText}>Auth is loading...</Text>
+        </View>
+      ) : null}
+    </>
+  );
 };
 
 /**
@@ -172,6 +174,10 @@ const AppBootstrap = () => {
 
   return (
     <>
+      <PostLoginSync />
+      <AuthGate />
+      <StatusBar style="auto" />
+
       <DisclaimerModal
         visible={showDisclaimer}
         title={currentDisclaimer?.title ?? ""}
@@ -180,27 +186,18 @@ const AppBootstrap = () => {
         {currentDisclaimer?.body}
       </DisclaimerModal>
 
-      {!showDisclaimer ? (
-        profileStatus === "checking" ? (
-          <View style={styles.loadingScreen}>
-            <ActivityIndicator size="large" />
-            <Text style={styles.loadingText}>Profile status: checking</Text>
-            <Text style={styles.loadingText}>
-              Disclaimer step: {disclaimerStep}
-            </Text>
-          </View>
-        ) : profileStatus === "incomplete" ? (
-          <InitialProfileScreen
-            key="initial-profile"
-            onComplete={() => setProfileStatus("complete")}
-          />
-        ) : (
-          <>
-            <PostLoginSync />
-            <AuthGate />
-            <StatusBar style="auto" />
-          </>
-        )
+      {!showDisclaimer && profileStatus === "checking" ? (
+        <View style={styles.loadingScreen}>
+          <ActivityIndicator size="large" />
+          <Text style={styles.loadingText}>Loading your profile…</Text>
+        </View>
+      ) : null}
+
+      {!showDisclaimer && profileStatus === "incomplete" ? (
+        <InitialProfileScreen
+          key="initial-profile"
+          onComplete={() => setProfileStatus("complete")}
+        />
       ) : null}
     </>
   );
