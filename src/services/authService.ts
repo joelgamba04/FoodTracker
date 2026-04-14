@@ -19,7 +19,7 @@ type LoginResponse = {
   };
 };
 
-export async function login(email: string, password: string) {
+export const login = async (email: string, password: string) => {
   const result = await api<LoginResponse>("/auth/login", {
     method: "POST",
     auth: false,
@@ -55,14 +55,14 @@ export async function login(email: string, password: string) {
   ]);
 
   return user;
-}
+};
 
-export async function getStoredUser() {
+export const getStoredUser = async () => {
   const raw = await AsyncStorage.getItem(AUTH_USER_KEY);
   return raw ? JSON.parse(raw) : null;
-}
+};
 
-export async function logout() {
+export const logout = async () => {
   try {
     await api("/auth/logout", {
       method: "POST",
@@ -77,4 +77,4 @@ export async function logout() {
       AUTH_MODE_KEY,
     ]);
   }
-}
+};

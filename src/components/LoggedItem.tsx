@@ -18,11 +18,11 @@ type LoggedItemProps = {
   disableActions?: boolean;
 };
 
-function getCalories(entry: FoodLogEntry) {
+const getCalories = (entry: FoodLogEntry) => {
   const cals =
     entry.food.nutrients?.find((n) => n.name === "Calories")?.amount ?? 0;
   return cals * (entry.quantity ?? 1);
-}
+};
 
 export const LoggedItem: React.FC<LoggedItemProps> = ({
   item,

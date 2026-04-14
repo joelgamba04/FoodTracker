@@ -15,7 +15,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
-// --- Helper Functions ---
+// --- Helper Methods ---
 const calculateTotals = (log: any[]): Nutrient[] => {
   const totals: { [key: string]: Nutrient } = {};
   log.forEach((entry) => {

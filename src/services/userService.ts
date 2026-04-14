@@ -49,7 +49,7 @@ export const userService = {
       {
         method: "PUT",
         body: JSON.stringify(payload),
-      }
+      },
     );
 
     if (!res.success)
@@ -58,10 +58,10 @@ export const userService = {
   },
 };
 
-export async function updateUserProfile(
+export const updateUserProfile = async (
   userId: number,
-  payload: UpdateUserPayload
-) {
+  payload: UpdateUserPayload,
+) => {
   const res = await api<ApiResponse>(`/user/update/${userId}`, {
     method: "PUT",
     body: JSON.stringify(payload),
@@ -71,4 +71,4 @@ export async function updateUserProfile(
     throw new Error(res.message || "Failed to update user profile");
   }
   return res;
-}
+};

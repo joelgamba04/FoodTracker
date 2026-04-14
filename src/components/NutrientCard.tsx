@@ -1,20 +1,13 @@
 // src/components/NutrientCard.tsx
 import { COLORS } from "@/theme/color";
 import React from "react";
-import {
-    DimensionValue,
-    Platform,
-    StyleSheet,
-    Text,
-    View,
-} from "react-native";
+import { DimensionValue, Platform, StyleSheet, Text, View } from "react-native";
 
-
-function getBarColor(percent: number) {
+const getBarColor = (percent: number) => {
   if (percent > 1.2) return COLORS.dangerRed;
   if (percent < 0.6) return COLORS.warningYellow;
   return COLORS.accentGreen;
-}
+};
 
 // --- Reusable Nutrient Card Component ---
 interface NutrientCardProps {

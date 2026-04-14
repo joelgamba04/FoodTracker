@@ -4,10 +4,10 @@ export type ApiUserProfile = {
   middle_name?: string | null;
   last_name: string;
   email: string;
-  gender_id: number; 
+  gender_id: number;
   age: number;
-  height: string; 
-  weight: string; 
+  height: string;
+  weight: string;
 };
 
 export type ApiUserProfileResponse = {
@@ -27,7 +27,7 @@ export type AppProfile = {
   activityLevel?: "sedentary" | "light" | "moderate" | "active";
 };
 
-export function apiToAppProfile(api: ApiUserProfile): AppProfile {
+export const apiToAppProfile = (api: ApiUserProfile): AppProfile => {
   return {
     firstName: api.first_name ?? "",
     middleName: api.middle_name ?? "",
@@ -38,9 +38,9 @@ export function apiToAppProfile(api: ApiUserProfile): AppProfile {
     heightCm: String(api.height ?? ""),
     weightKg: String(api.weight ?? ""),
   };
-}
+};
 
-export function appToUpdatePayload(profile: AppProfile) {
+export const appToUpdatePayload = (profile: AppProfile) => {
   return {
     gender_id: profile.genderId,
     age: profile.age,
@@ -48,4 +48,4 @@ export function appToUpdatePayload(profile: AppProfile) {
     weight_kg: profile.weightKg,
     activity_level: profile.activityLevel ?? "active",
   };
-}
+};

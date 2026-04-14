@@ -221,7 +221,7 @@ export const HistoryPage = () => {
   );
 };
 
-function RangeButton({
+const RangeButton = ({
   label,
   active,
   onPress,
@@ -229,7 +229,7 @@ function RangeButton({
   label: string;
   active: boolean;
   onPress: () => void;
-}) {
+}) => {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -241,7 +241,7 @@ function RangeButton({
       </Text>
     </TouchableOpacity>
   );
-}
+};
 
 const styles = StyleSheet.create({
   center: {

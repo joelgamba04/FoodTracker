@@ -18,11 +18,11 @@ const BAR_H = 64;
 const INNER_H = 50;
 const PAD = 10;
 
-export default function StickyTabBar({
+export const StickyTabBar = ({
   state,
   descriptors,
   navigation,
-}: BottomTabBarProps) {
+}: BottomTabBarProps) => {
   const insets = useSafeAreaInsets();
   // Build visible routes first (same rule as render)
   const visibleRoutes = useMemo(() => {
@@ -158,7 +158,7 @@ export default function StickyTabBar({
       </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   wrap: {
@@ -198,3 +198,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+
+export default StickyTabBar;

@@ -6,13 +6,13 @@ const DB_NAME = "foodtracker.db";
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
-export function getDb() {
+export const getDb = () => {
   if (!dbPromise) dbPromise = SQLite.openDatabaseAsync(DB_NAME);
   return dbPromise;
-}
+};
 
 // Initializes the database schema if it doesn't exist. Safe to call multiple times.
-export async function initDb() {
+export const initDb = async () => {
   const db = await getDb();
 
   // WAL is optional but helpful for concurrent reads/writes.
@@ -48,4 +48,4 @@ export async function initDb() {
   `);
 
   return db;
-}
+};

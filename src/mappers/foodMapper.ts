@@ -2,7 +2,7 @@
 import { FoodDetail } from "@/models/foodModels";
 import { Food } from "@/models/models";
 
-export function mapFoodDetailToFood(item: FoodDetail): Food {
+export const mapFoodDetailToFood = (item: FoodDetail): Food => {
   const defaultMeasure =
     item.measures?.find((m) => m.is_default === 1) ?? item.measures?.[0];
 
@@ -27,4 +27,4 @@ export function mapFoodDetailToFood(item: FoodDetail): Food {
       { name: "Fat", unit: "g", amount: Number(item.fat_g ?? 0) },
     ],
   };
-}
+};

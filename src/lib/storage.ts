@@ -33,7 +33,7 @@ const nativeStore: Store = {
 
 export const storage: Store = isWeb ? webStore : nativeStore;
 
-export async function loadJSON<T>(key: string, revive?: (v: T) => T) {
+export const loadJSON = async <T>(key: string, revive?: (v: T) => T) => {
   try {
     const s = await storage.getItem(key);
     if (!s) return null;
@@ -43,11 +43,11 @@ export async function loadJSON<T>(key: string, revive?: (v: T) => T) {
     console.error("loadJSON error", e);
     return null;
   }
-}
-export async function saveJSON(key: string, value: unknown) {
+};
+export const saveJSON = async (key: string, value: unknown) => {
   try {
     await storage.setItem(key, JSON.stringify(value));
   } catch (e) {
     console.error("saveJSON error", e);
   }
-}
+};

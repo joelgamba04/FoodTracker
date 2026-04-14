@@ -14,13 +14,13 @@ interface AppHeaderProps {
   rightComponent?: React.ReactNode; // Optional component to render on the right side of the header (e.g., a settings icon) for future extensibility
 }
 
-export default function AppHeader({
+export const AppHeader = ({
   title,
   subtitle,
   showBack = false,
   onBackPress,
   rightComponent,
-}: AppHeaderProps) {
+}: AppHeaderProps) => {
   const handleBack = () => {
     if (onBackPress) {
       onBackPress();
@@ -50,7 +50,7 @@ export default function AppHeader({
       </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   header: {
@@ -91,3 +91,5 @@ const styles = StyleSheet.create({
     width: 60,
   },
 });
+
+export default AppHeader;

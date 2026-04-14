@@ -4,7 +4,7 @@ import { FoodLogEntry } from "@/models/models";
 import { getDb } from "@/shared/storage/db";
 
 // DB entry to food log entry mapping
-function rowToEntry(row: any): FoodLogEntry {
+const rowToEntry = (row: any): FoodLogEntry => {
   return {
     localId: row.local_id,
     timestamp: row.timestamp,
@@ -16,20 +16,20 @@ function rowToEntry(row: any): FoodLogEntry {
     serverMealId: row.server_meal_id ?? null,
     serverFoodEntryId: row.server_food_entry_id ?? null,
   };
-}
+};
 
-export async function listAllFoodLogs(): Promise<FoodLogEntry[]> {
+export const listAllFoodLogs = async (): Promise<FoodLogEntry[]> => {
   const db = await getDb();
   const res = await db.getAllAsync<any>(
     `SELECT * FROM food_log_entries ORDER BY timestamp DESC`,
   );
   return res.map(rowToEntry);
-}
+};
 
-export async function listFoodLogsBetween(
+export const listFoodLogsBetween = async (
   startMs: number,
   endMs: number,
-): Promise<FoodLogEntry[]> {
+): Promise<FoodLogEntry[]> => {
   const db = await getDb();
   const res = await db.getAllAsync<any>(
     `SELECT * FROM food_log_entries
@@ -38,9 +38,9 @@ export async function listFoodLogsBetween(
     [startMs, endMs],
   );
   return res.map(rowToEntry);
-}
+};
 
-export async function insertFoodLog(entry: FoodLogEntry) {
+export const insertFoodLog = async (entry: FoodLogEntry) => {
   const db = await getDb();
   await db.runAsync(
     `INSERT INTO food_log_entries
@@ -58,28 +58,31 @@ export async function insertFoodLog(entry: FoodLogEntry) {
       entry.serverFoodEntryId ?? null,
     ],
   );
-}
+};
 
-export async function deleteFoodLog(localId: string) {
+export const deleteFoodLog = async (localId: string) => {
   const db = await getDb();
   await db.runAsync(`DELETE FROM food_log_entries WHERE local_id = ?`, [
     localId,
   ]);
-}
+};
 
-export async function updateFoodLogQuantity(localId: string, quantity: number) {
+export const updateFoodLogQuantity = async (
+  localId: string,
+  quantity: number,
+) => {
   const db = await getDb();
   await db.runAsync(
     `UPDATE food_log_entries SET quantity = ? WHERE local_id = ?`,
     [quantity, localId],
   );
-}
+};
 
-// Partial update function for any subset of fields
-export async function patchFoodLog(
+// Partial update method for any subset of fields
+export const patchFoodLog = async (
   localId: string,
   partial: Partial<FoodLogEntry>,
-) {
+) => {
   const db = await getDb();
 
   const sets: string[] = [];
@@ -126,9 +129,9 @@ export async function patchFoodLog(
     `UPDATE food_log_entries SET ${sets.join(", ")} WHERE local_id = ?`,
     values,
   );
-}
+};
 
-export async function clearAllFoodLogs() {
+export const clearAllFoodLogs = async () => {
   const db = await getDb();
   await db.runAsync(`DELETE FROM food_log_entries`);
-}
+};
