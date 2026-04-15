@@ -1,43 +1,29 @@
+// src/hooks/useSteps.ts
+
 import type { StepsSummary } from "@/models/stepsModel";
-import {
-  ensureStepsAccess,
-  readStepsSummary,
-} from "@/services/health/stepsService";
-import { useCallback, useEffect, useState } from "react";
+import { readStepsSummary } from "@/services/health/stepsService";
+import { useCallback, useState } from "react";
 
 type StepsState = {
   loading: boolean;
   error: string | null;
-  connected: boolean;
   data: StepsSummary | null;
-  refresh: () => Promise<void>;
+  loadSteps: () => Promise<void>;
+  reset: () => void;
 };
 
 export const useSteps = (): StepsState => {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [connected, setConnected] = useState(false);
   const [data, setData] = useState<StepsSummary | null>(null);
 
-  const refresh = useCallback(async () => {
-    console.log("Refreshing steps data...");
+  const loadSteps = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const access = await ensureStepsAccess();
-      if (!access.ok) {
-        setConnected(false);
-        setError(access.reason ?? "Unable to access step data");
-        return;
-      }
-      console.log("Steps access granted");
-
-      setConnected(true);
-
       const summary = await readStepsSummary();
       setData(summary);
-      console.log("Steps summary loaded:", summary);
     } catch (err: any) {
       setError(err?.message ?? "Failed to load steps");
     } finally {
@@ -45,15 +31,17 @@ export const useSteps = (): StepsState => {
     }
   }, []);
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  const reset = useCallback(() => {
+    setData(null);
+    setError(null);
+    setLoading(false);
+  }, []);
 
   return {
     loading,
     error,
-    connected,
     data,
-    refresh,
+    loadSteps,
+    reset,
   };
 };

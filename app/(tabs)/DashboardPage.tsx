@@ -13,7 +13,6 @@ import AppHeader from "@/components/AppHeader";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { useHydration } from "@/context/hydrationContext";
 import { useHydrationToday } from "@/hooks/hydrationHooks";
-import { useSteps } from "@/hooks/useSteps";
 import { Food } from "@/models/models";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
@@ -68,12 +67,15 @@ export const DashboardPage = () => {
   const { log } = useFoodLog();
   const { entries: waterEntries, addMl } = useHydration();
   const { totalMl, goalMl } = useHydrationToday();
-  const { loading: stepsLoading, data: stepsData } = useSteps();
 
   const { start, end } = getTodayWindow();
   const startMs = start.getTime();
   const endMs = end.getTime();
   const insets = useSafeAreaInsets();
+
+  // temporary until we implement steps in this screen
+  const stepsLoading = false;
+  const stepsData = null;
 
   const todaysFood = useMemo(() => {
     return (log ?? []).filter((e) => {
@@ -158,9 +160,7 @@ export const DashboardPage = () => {
           <AnimatedMetricCard
             title="Steps"
             value={
-              stepsLoading
-                ? "..."
-                : `${stepsData?.todaySteps?.toLocaleString?.() ?? 0}`
+              "--" // stepsLoading ? "…" : stepsData ? `${stepsData.todaySteps}` : "—"
             }
             subtitle="steps today"
             icon="walk"
