@@ -19,10 +19,10 @@ import {
 import AppHeader from "@/components/AppHeader";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { isApiError } from "@/lib/apiClient";
-import { mapFoodDetailToFood } from "@/mappers/foodMapper";
 import { Food } from "@/models/models";
-import { searchFoods } from "@/services/foodSearchService";
+
 import { COLORS } from "@/theme/color";
+import { searchFoods } from "@/utils/mockFoodApi";
 
 type FoodItem = any;
 
@@ -101,14 +101,21 @@ export const AddFoodPage = () => {
         return;
       }
 
-      if (!res.success) {
+      // if (!res.success) {
+      //   setResults([]);
+      //   setSearchError(res.message || "No results found.");
+      //   return;
+      // }
+
+      // const foods = (res.data ?? []).map(mapFoodDetailToFood);
+
+      if (res.length === 0) {
         setResults([]);
-        setSearchError(res.message || "No results found.");
+        setSearchError("No results found.");
         return;
       }
 
-      const foods = (res.data ?? []).map(mapFoodDetailToFood);
-      setResults(foods);
+      setResults(res);
       setPauseAutoSearch(false); // reset pause on successful search
     } catch (err: unknown) {
       if (seq !== searchSequence.current) return;
