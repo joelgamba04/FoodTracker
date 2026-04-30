@@ -160,7 +160,7 @@ export const DashboardPage = () => {
           <AnimatedMetricCard
             title="Steps"
             value={
-              "--" // stepsLoading ? "…" : stepsData ? `${stepsData.todaySteps}` : "—"
+              stepsLoading ? "…" : stepsData ? `${stepsData.todaySteps}` : "—"
             }
             subtitle="steps today"
             icon="walk"
@@ -169,8 +169,8 @@ export const DashboardPage = () => {
 
           <AnimatedMetricCard
             title="Sleep"
-            value="—"
-            subtitle="Coming soon"
+            value={sleepData?.lastNightHours ?? "—"}
+            subtitle="hrs last night"
             icon="moon"
             disabled
           />
