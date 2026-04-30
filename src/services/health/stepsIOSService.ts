@@ -1,25 +1,9 @@
 import type { StepDay, StepsSummary } from "@/models/stepsModel";
+import { lastNDaysStart, toYmd } from "@/utils/date";
 import AppleHealthKit, {
   HealthInputOptions,
   HealthKitPermissions,
 } from "react-native-health";
-
-const toYmd = (date: Date) => {
-  return date.toISOString().slice(0, 10);
-};
-
-const startOfDay = (date: Date) => {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-};
-
-const lastNDaysStart = (n: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() - (n - 1));
-  d.setHours(0, 0, 0, 0);
-  return d;
-};
 
 const permissions: HealthKitPermissions = {
   permissions: {

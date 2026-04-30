@@ -1,4 +1,5 @@
 import type { StepDay, StepsSummary } from "@/models/stepsModel";
+import { endOfDay, lastNDays, startOfDay, toYmd } from "@/utils/date";
 import {
   getSdkStatus,
   initialize,
@@ -6,33 +7,6 @@ import {
   requestPermission,
   SdkAvailabilityStatus,
 } from "react-native-health-connect";
-
-const toYmd = (date: Date) => {
-  return date.toISOString().slice(0, 10);
-};
-
-const startOfDay = (date: Date) => {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-};
-
-const endOfDay = (date: Date) => {
-  const d = new Date(date);
-  d.setHours(23, 59, 59, 999);
-  return d;
-};
-
-const lastNDays = (n: number): Date[] => {
-  const out: Date[] = [];
-  const today = new Date();
-  for (let i = n - 1; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    out.push(d);
-  }
-  return out;
-};
 
 export const ensureAndroidStepsAccess = async () => {
   const status = await getSdkStatus();
