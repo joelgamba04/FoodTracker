@@ -99,6 +99,7 @@ const SleepPage = () => {
     setState(hasData ? "ready" : "no_data");
   }, [loading, hookError, data]);
 
+  console.log("SleepPage: data loaded", { data, state, error });
   return (
     <SafeAreaView style={styles.screen}>
       <AppHeader title="Sleep" subtitle="Daily sleep history" />
@@ -149,6 +150,19 @@ const SleepPage = () => {
             <Pressable style={styles.primaryBtn} onPress={init}>
               <Text style={styles.primaryBtnText}>Try again</Text>
             </Pressable>
+          </View>
+        ) : null}
+
+        {state === "no_data" ? (
+          <View style={styles.centerCard}>
+            <Text style={styles.title}>No sleep data found</Text>
+            <Text style={styles.infoText}>
+              We couldn't find any sleep data for the past 7 days. Make sure
+              your device is tracking sleep and that you've granted permission
+              to smart watch or health app to write sleep data to Health
+              Connect. Sleep data should start appearing here within 24 hours
+              after you get it set up.
+            </Text>
           </View>
         ) : null}
 
