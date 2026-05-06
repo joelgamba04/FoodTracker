@@ -21,6 +21,7 @@ import {
 import { ensureSleepAccess } from "@/services/health/sleepService";
 
 import { COLORS } from "@/theme/color";
+import { router } from "expo-router";
 
 type PageState =
   | "no_data"
@@ -102,7 +103,8 @@ const SleepPage = () => {
   console.log("SleepPage: data loaded", { data, state, error });
   return (
     <SafeAreaView style={styles.screen}>
-      <AppHeader title="Sleep" subtitle="Daily sleep history" />
+      {/* header */}
+      <AppHeader title="Sleep" showBack onBackPress={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.content}>
         {state === "checking_availability" ||

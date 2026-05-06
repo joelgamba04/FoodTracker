@@ -24,6 +24,7 @@ import {
   readStepsSummary,
 } from "@/services/health/stepsService";
 import { COLORS } from "@/theme/color";
+import { router } from "expo-router";
 
 type PageState =
   | "checking_availability"
@@ -111,7 +112,7 @@ const StepsTrackerPage = () => {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <AppHeader title="Steps" subtitle="Daily step history" />
+      <AppHeader title="Steps" showBack onBackPress={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.content}>
         {state === "checking_availability" ||
