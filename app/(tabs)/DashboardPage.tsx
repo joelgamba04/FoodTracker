@@ -14,6 +14,8 @@ import { useFoodLog } from "@/context/FoodLogContext";
 import { useHydration } from "@/context/hydrationContext";
 import { useHydrationToday } from "@/hooks/hydrationHooks";
 import { Food } from "@/models/models";
+import { SleepSummary } from "@/models/sleepModel";
+import { StepsSummary } from "@/models/stepsModel";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
 
@@ -75,7 +77,17 @@ export const DashboardPage = () => {
 
   // temporary until we implement steps in this screen
   const stepsLoading = false;
-  const stepsData = null;
+  const stepsData: StepsSummary = {
+    todaySteps: 0,
+    last7Days: [],
+  };
+
+  const sleepData: SleepSummary = {
+    lastNightHours: 0,
+    lastNightStart: "",
+    lastNightEnd: "",
+    last7Days: [],
+  };
 
   const todaysFood = useMemo(() => {
     return (log ?? []).filter((e) => {
@@ -169,10 +181,10 @@ export const DashboardPage = () => {
 
           <AnimatedMetricCard
             title="Sleep"
-            value={sleepData?.lastNightHours ?? "—"}
+            value={`${sleepData?.lastNightHours ?? "—"}`}
             subtitle="hrs last night"
             icon="moon"
-            disabled
+            onPress={() => router.push("/SleepPage")}
           />
         </View>
 
