@@ -1,5 +1,6 @@
 // src/services/health/sleepServiceAndroid.ts
-
+import type { SleepDay, SleepSummary } from "@/models/sleepModel";
+import { endOfDay, lastNDays, startOfDay, toYmd } from "@/utils/date";
 import {
   getSdkStatus,
   initialize,
@@ -27,47 +28,48 @@ export const ensureAndroidSleepAccess = async () => {
   const permissionResult = await requestPermission([
     {
       accessType: "read",
-      recordType: "Steps",
+      recordType: "SleepSession",
     },
   ]);
 
   console.log("Permission result:", permissionResult);
 
-  const now = new Date();
-  const start = new Date();
-  start.setDate(now.getDate() - 7);
+  return { ok: true as const };
+};
 
-  return readRecords("SleepSession", {
-    timeRangeFilter: {
-      operator: "between",
-      startTime: start.toISOString(),
-      endTime: now.toISOString(),
-    },
-  }).then((result) => {
-    const sessions = result.records ?? [];
+export const readAndroidSleep = async (): Promise<SleepSummary> => {
+  const days = lastNDays(7);
 
-    const days: Record<string, number> = {};
+  const last7Days: SleepDay[] = [];
 
-    sessions.forEach((s: any) => {
-      const start = new Date(s.startTime);
-      const end = new Date(s.endTime);
+  for (const day of days) {
+    const start = startOfDay(day).toISOString();
+    const end = endOfDay(day).toISOString();
 
-      const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    console.log(`Reading sleep for ${toYmd(day)} from ${start} to ${end}...`);
 
-      const key = start.toISOString().slice(0, 10);
-      days[key] = (days[key] || 0) + hours;
+    const { records } = await readRecords("SleepSession", {
+      timeRangeFilter: {
+        operator: "between",
+        startTime: start,
+        endTime: end,
+      },
     });
 
-    const last7Days = Object.entries(days).map(([date, hours]) => ({
-      date,
-      hours,
-    }));
+    console.log(`Records for ${toYmd(day)}:`, records);
 
-    const lastNight = last7Days[last7Days.length - 1];
+    const total = (records ?? []).reduce((sum, record: any) => {
+      return sum + Number(record?.duration ?? 0);
+    }, 0);
 
-    return {
-      lastNightHours: lastNight?.hours ?? 0,
-      last7Days,
-    };
-  });
+    last7Days.push({
+      date: toYmd(day),
+      hours: total,
+    });
+  }
+
+  return {
+    lastNightHours: 0,
+    last7Days,
+  };
 };
