@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch } from "react-redux";
 
 import AppHeader from "@/components/AppHeader";
 import { useSteps } from "@/hooks/useSteps";
@@ -48,6 +49,8 @@ const StepsTrackerPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<StepsSummary | null>(null);
   const { loading, data: stepsData, error: stepsError, loadSteps } = useSteps();
+
+  const dispatch = useDispatch();
 
   const load = useCallback(async () => {
     try {
