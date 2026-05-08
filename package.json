@@ -14,9 +14,9 @@
     "@expo/metro-runtime": "~5.0.5",
     "@expo/vector-icons": "^14.1.0",
     "@react-native-async-storage/async-storage": "2.1.2",
-    "@react-navigation/bottom-tabs": "^7.4.0",
+    "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.6.3",
-    "@react-navigation/native": "^7.1.8",
+    "@react-navigation/native": "^7.1.6",
     "@reduxjs/toolkit": "^2.11.2",
     "expo": "~53.0.0",
     "expo-build-properties": "~0.14.8",
@@ -48,10 +48,10 @@
     "react-redux": "^9.2.0"
   },
   "devDependencies": {
-    "@types/react": "~19.2.10",
+    "@types/react": "~19.0.10",
     "eslint": "^9.25.0",
-    "eslint-config-expo": "~55.0.0",
-    "typescript": "~5.9.2"
+    "eslint-config-expo": "~9.2.0",
+    "typescript": "~5.8.3"
   },
   "private": true
 }
