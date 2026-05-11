@@ -12,6 +12,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -19,7 +20,6 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -145,7 +145,7 @@ export const LoginScreen = () => {
         keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 8 : 0}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <KeyboardAwareScrollView
+          <ScrollView
             style={styles.flex}
             contentContainerStyle={[
               styles.scrollContent,
@@ -155,8 +155,6 @@ export const LoginScreen = () => {
             keyboardDismissMode={
               Platform.OS === "ios" ? "interactive" : "on-drag"
             }
-            enableOnAndroid
-            extraScrollHeight={Platform.OS === "android" ? 18 : 10}
           >
             {/* BRAND BLOCK */}
             <View style={styles.brandWrap}>
@@ -301,7 +299,7 @@ export const LoginScreen = () => {
 
             {/* FOOTER */}
             <Text style={styles.footer}>© 2026 City Government of Taguig</Text>
-          </KeyboardAwareScrollView>
+          </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
       <PrivacyPolicyModal

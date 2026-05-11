@@ -10,14 +10,15 @@ import { COLORS } from "@/theme/color";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -313,175 +314,192 @@ const ProfileScreenPage = () => {
         subtitle="Update your details to personalize daily goals."
       />
 
-      <KeyboardAwareScrollView
-        style={styles.container}
-        contentContainerStyle={[
-          styles.content,
-          { flexGrow: 1, paddingBottom: insets.bottom },
-        ]}
-        automaticallyAdjustKeyboardInsets
-        enableOnAndroid
-        extraScrollHeight={Platform.OS === "android" ? 18 : 10}
-        showsVerticalScrollIndicator={true}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
       >
-        {/* Basic information card */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Basic Information</Text>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={[
+            styles.content,
+            { flexGrow: 1, paddingBottom: insets.bottom },
+          ]}
+          automaticallyAdjustKeyboardInsets
+          showsVerticalScrollIndicator={true}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === "ios" ? "interactive" : "on-drag"
+          }
+        >
+          {/* Basic information card */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Basic Information</Text>
 
-          <Text style={styles.label}>Gender</Text>
-          <View style={styles.pillsRow}>
-            {(["Male", "Female"] as const).map((s) => {
-              const active = form.sex === s;
-              return (
-                <TouchableOpacity
-                  key={s}
+            <Text style={styles.label}>Gender</Text>
+            <View style={styles.pillsRow}>
+              {(["Male", "Female"] as const).map((s) => {
+                const active = form.sex === s;
+                return (
+                  <TouchableOpacity
+                    key={s}
+                    style={[
+                      styles.pill,
+                      active ? styles.pillActive : styles.pillInactive,
+                    ]}
+                    onPress={() => handleProfileChange("sex", s)}
+                    activeOpacity={0.85}
+                  >
+                    <Text
+                      style={[
+                        styles.pillText,
+                        active
+                          ? styles.pillTextActive
+                          : styles.pillTextInactive,
+                      ]}
+                    >
+                      {s}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <FormInput
+              label="Age"
+              unit="yrs"
+              keyboardType="numeric"
+              value={form.age}
+              onChangeText={(val) =>
+                handleProfileChange("age", val.replace(/[^0-9]/g, ""))
+              }
+            />
+
+            <FormInput
+              label="Height"
+              unit="cm"
+              keyboardType="numeric"
+              value={form.height}
+              onChangeText={(val) =>
+                handleProfileChange("height", val.replace(/[^0-9.]/g, ""))
+              }
+            />
+
+            <FormInput
+              label="Weight"
+              unit="kg"
+              keyboardType="numeric"
+              value={form.weight}
+              onChangeText={(val) =>
+                handleProfileChange("weight", val.replace(/[^0-9.]/g, ""))
+              }
+            />
+          </View>
+
+          {/* Wellness band (monochrome-friendly) */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Wellness Band</Text>
+
+            {!weightStatus ? (
+              <Text style={styles.bodyText}>
+                Add your age, sex, and weight to see a gentle overview. This is
+                a guide only — not a diagnosis.
+              </Text>
+            ) : (
+              <>
+                <View
                   style={[
-                    styles.pill,
-                    active ? styles.pillActive : styles.pillInactive,
+                    styles.statusTag,
+                    { borderColor: weightStatus.color },
                   ]}
-                  onPress={() => handleProfileChange("sex", s)}
-                  activeOpacity={0.85}
                 >
                   <Text
                     style={[
-                      styles.pillText,
-                      active ? styles.pillTextActive : styles.pillTextInactive,
+                      styles.statusTagText,
+                      { color: weightStatus.color },
                     ]}
                   >
-                    {s}
+                    {weightStatus.label}
                   </Text>
-                </TouchableOpacity>
-              );
-            })}
+                </View>
+
+                <View style={styles.band}>
+                  <View
+                    style={[
+                      styles.bandSeg,
+                      { backgroundColor: COLORS.softBlue },
+                    ]}
+                  />
+                  <View
+                    style={[
+                      styles.bandSeg,
+                      { backgroundColor: COLORS.accentGreen },
+                    ]}
+                  />
+                  <View
+                    style={[
+                      styles.bandSeg,
+                      { backgroundColor: COLORS.softOrange },
+                    ]}
+                  />
+
+                  <View
+                    style={[
+                      styles.bandDot,
+                      { backgroundColor: weightStatus.color },
+                      weightStatus.dotPosition === "left" && styles.bandDotLeft,
+                      weightStatus.dotPosition === "center" &&
+                        styles.bandDotCenter,
+                      weightStatus.dotPosition === "right" &&
+                        styles.bandDotRight,
+                    ]}
+                  />
+                </View>
+
+                <Text style={styles.bodyText}>{weightStatus.message}</Text>
+              </>
+            )}
           </View>
 
-          <FormInput
-            label="Age"
-            unit="yrs"
-            keyboardType="numeric"
-            value={form.age}
-            onChangeText={(val) =>
-              handleProfileChange("age", val.replace(/[^0-9]/g, ""))
-            }
-          />
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={() => {
+              console.log("Opening privacy modal");
+              setPrivacyVisible(true);
+            }}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.settingLabel}>Privacy Policy</Text>
+          </TouchableOpacity>
 
-          <FormInput
-            label="Height"
-            unit="cm"
-            keyboardType="numeric"
-            value={form.height}
-            onChangeText={(val) =>
-              handleProfileChange("height", val.replace(/[^0-9.]/g, ""))
-            }
-          />
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-          <FormInput
-            label="Weight"
-            unit="kg"
-            keyboardType="numeric"
-            value={form.weight}
-            onChangeText={(val) =>
-              handleProfileChange("weight", val.replace(/[^0-9.]/g, ""))
-            }
-          />
-        </View>
-
-        {/* Wellness band (monochrome-friendly) */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Wellness Band</Text>
-
-          {!weightStatus ? (
-            <Text style={styles.bodyText}>
-              Add your age, sex, and weight to see a gentle overview. This is a
-              guide only — not a diagnosis.
+          {/* Primary CTA */}
+          <TouchableOpacity
+            style={[
+              styles.primaryBtn,
+              (saving || !hasChanges) && styles.primaryBtnDisabled,
+            ]}
+            onPress={handleSave}
+            disabled={saving || !hasChanges}
+            activeOpacity={0.9}
+          >
+            <Text style={styles.primaryBtnText}>
+              {saving ? "Saving…" : hasChanges ? "Save changes" : "No changes"}
             </Text>
-          ) : (
-            <>
-              <View
-                style={[styles.statusTag, { borderColor: weightStatus.color }]}
-              >
-                <Text
-                  style={[styles.statusTagText, { color: weightStatus.color }]}
-                >
-                  {weightStatus.label}
-                </Text>
-              </View>
+          </TouchableOpacity>
 
-              <View style={styles.band}>
-                <View
-                  style={[styles.bandSeg, { backgroundColor: COLORS.softBlue }]}
-                />
-                <View
-                  style={[
-                    styles.bandSeg,
-                    { backgroundColor: COLORS.accentGreen },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.bandSeg,
-                    { backgroundColor: COLORS.softOrange },
-                  ]}
-                />
+          {/* Destructive outline */}
+          <TouchableOpacity
+            onPress={handleLogout}
+            style={styles.logoutBtn}
+            activeOpacity={0.9}
+          >
+            <Text style={styles.logoutText}>Log out</Text>
+          </TouchableOpacity>
 
-                <View
-                  style={[
-                    styles.bandDot,
-                    { backgroundColor: weightStatus.color },
-                    weightStatus.dotPosition === "left" && styles.bandDotLeft,
-                    weightStatus.dotPosition === "center" &&
-                      styles.bandDotCenter,
-                    weightStatus.dotPosition === "right" && styles.bandDotRight,
-                  ]}
-                />
-              </View>
-
-              <Text style={styles.bodyText}>{weightStatus.message}</Text>
-            </>
-          )}
-        </View>
-
-        <TouchableOpacity
-          style={styles.settingRow}
-          onPress={() => {
-            console.log("Opening privacy modal");
-            setPrivacyVisible(true);
-          }}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.settingLabel}>Privacy Policy</Text>
-        </TouchableOpacity>
-
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-        {/* Primary CTA */}
-        <TouchableOpacity
-          style={[
-            styles.primaryBtn,
-            (saving || !hasChanges) && styles.primaryBtnDisabled,
-          ]}
-          onPress={handleSave}
-          disabled={saving || !hasChanges}
-          activeOpacity={0.9}
-        >
-          <Text style={styles.primaryBtnText}>
-            {saving ? "Saving…" : hasChanges ? "Save changes" : "No changes"}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Destructive outline */}
-        <TouchableOpacity
-          onPress={handleLogout}
-          style={styles.logoutBtn}
-          activeOpacity={0.9}
-        >
-          <Text style={styles.logoutText}>Log out</Text>
-        </TouchableOpacity>
-
-        <View style={{ height: 24 }} />
-      </KeyboardAwareScrollView>
+          <View style={{ height: 24 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <PrivacyPolicyModal
         visible={privacyVisible}

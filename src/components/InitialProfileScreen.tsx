@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Switch,
   Text,
@@ -27,7 +28,6 @@ import {
   kgToLb,
   lbToKg,
 } from "@/utils/imperialMetricHelper";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { InputWithUnit } from "./ui/inputWithUnit";
 
 // UI-only fields shown in the screenshot
@@ -173,7 +173,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
       >
-        <KeyboardAwareScrollView
+        <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={[
             styles.content,
@@ -184,8 +184,6 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
             Platform.OS === "ios" ? "interactive" : "on-drag"
           }
           automaticallyAdjustKeyboardInsets
-          enableOnAndroid
-          extraScrollHeight={Platform.OS === "android" ? 18 : 10}
           showsVerticalScrollIndicator={true}
         >
           {/* Top helper text */}
@@ -412,7 +410,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
           </TouchableOpacity>
 
           <View style={{ height: 28 }} />
-        </KeyboardAwareScrollView>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
