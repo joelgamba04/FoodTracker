@@ -5,10 +5,10 @@ import { Platform } from "react-native";
 
 // you already have these patterns for steps
 import {
-    ensureAndroidSleepAccess,
-    readAndroidSleep,
-} from "./sleepServiceAndroid";
-import { ensureIosSleepAccess, readIOSSleep } from "./sleepServiceiOS";
+  ensureAndroidSleepAccess,
+  readAndroidSleep,
+} from "./sleepAndroidService";
+import { ensureIosSleepAccess, readIOSSleep } from "./sleepiOSService";
 
 export const ensureSleepAccess = async () => {
   if (Platform.OS === "android") {

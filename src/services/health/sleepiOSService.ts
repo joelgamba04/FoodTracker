@@ -3,9 +3,10 @@
 import type { SleepSummary } from "@/models/sleepModel";
 import AppleHealthKit from "react-native-health";
 
-const PERMS = {
+const permissions = {
   permissions: {
     read: [AppleHealthKit.Constants.Permissions.SleepAnalysis],
+    write: [],
   },
 };
 
@@ -14,7 +15,7 @@ export const ensureIosSleepAccess = (): Promise<{
   reason?: string;
 }> => {
   return new Promise((resolve) => {
-    AppleHealthKit.initHealthKit(PERMS, (error: string) => {
+    AppleHealthKit.initHealthKit(permissions, (error: string) => {
       if (error) {
         resolve({ ok: false, reason: error });
         return;
@@ -27,7 +28,7 @@ export const ensureIosSleepAccess = (): Promise<{
 
 export const readIOSSleep = async (): Promise<SleepSummary> => {
   await new Promise<void>((resolve, reject) => {
-    AppleHealthKit.initHealthKit(PERMS, (err) => {
+    AppleHealthKit.initHealthKit(permissions, (err) => {
       if (err) reject(err);
       else resolve();
     });
