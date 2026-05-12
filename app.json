@@ -11,7 +11,6 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSHealthShareUsageDescription": "Allow this app to read your health data.",
-        "NSHealthUpdateUsageDescription": "Allow this app to write health data.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "com.joelgamba.TaguigNutriApp"
@@ -65,7 +64,6 @@
         "react-native-health",
         {
           "healthSharePermission": "Allow this app to read your health data.",
-          "healthUpdatePermission": "Allow this app to write health data.",
           "isClinicalDataEnabled": false
         }
       ]
