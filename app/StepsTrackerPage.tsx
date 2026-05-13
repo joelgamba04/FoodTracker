@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
+  InteractionManager,
   Platform,
   Pressable,
   ScrollView,
@@ -11,56 +11,57 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch } from "react-redux";
 
 import AppHeader from "@/components/AppHeader";
-import { useSteps } from "@/hooks/useSteps";
-import type { StepsSummary } from "@/models/stepsModel";
+
+import { useHealth } from "@/hooks/useHealth";
 import {
   checkAndroidHealthConnectAvailability,
   openHealthConnectStorePage,
 } from "@/services/health/healthConnectInstall";
-import {
-  ensureStepsAccess,
-  readStepsSummary,
-} from "@/services/health/stepsService";
+import { ensureStepsAccess } from "@/services/health/stepsService";
+import { formatPrettyDate } from "@/utils/date";
+
 import { COLORS } from "@/theme/color";
-import { router } from "expo-router";
+import { useRouter } from "expo-router";
 
 type PageState =
   | "checking_availability"
   | "missing_provider"
   | "requesting_permission"
+  | "no_data"
   | "loading_data"
   | "ready"
+  | "provider_update_required"
   | "error";
 
-const formatPrettyDate = (ymd: string) => {
-  const d = new Date(`${ymd}T00:00:00`);
-  return d.toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-};
-
 const StepsTrackerPage = () => {
+  const router = useRouter();
   const [state, setState] = useState<PageState>("checking_availability");
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<StepsSummary | null>(null);
-  const { loading, data: stepsData, error: stepsError, loadSteps } = useSteps();
+  const { refreshHealth, data, loading, error: healthError } = useHealth();
 
-  const dispatch = useDispatch();
+  const waitForInteractions = () =>
+    new Promise<void>((resolve) => {
+      InteractionManager.runAfterInteractions(() => {
+        resolve();
+      });
+    });
 
   const load = useCallback(async () => {
     try {
       setError(null);
-      setData(null);
 
       if (Platform.OS === "android") {
+        console.log("Checking Android Health Connect availability...");
         setState("checking_availability");
 
         const availability = await checkAndroidHealthConnectAvailability();
+
+        if (availability.needsUpdate) {
+          setState("provider_update_required");
+          return;
+        }
 
         if (!availability.available) {
           setState("missing_provider");
@@ -69,6 +70,9 @@ const StepsTrackerPage = () => {
       }
 
       setState("requesting_permission");
+
+      await waitForInteractions(); // Wait for interactions to finish before requesting permissions
+
       const access = await ensureStepsAccess();
 
       if (!access.ok) {
@@ -78,57 +82,64 @@ const StepsTrackerPage = () => {
       }
 
       setState("loading_data");
-      const summary = await readStepsSummary();
-      setData(summary);
+      await refreshHealth();
       setState("ready");
     } catch (err: any) {
       setState("error");
       setError(err?.message ?? "Failed to load steps");
     }
-  }, []);
+  }, [refreshHealth]);
 
-  const init = async () => {
-    // 1. check Health Connect
-    const availability = await checkAndroidHealthConnectAvailability();
+  useEffect(() => {
+    if (loading) return;
 
-    if (!availability.available) {
-      setState("missing_provider");
-      return;
-    }
-
-    // 2. request permission
-    const access = await ensureStepsAccess();
-
-    if (!access.ok) {
+    if (healthError) {
       setState("error");
       return;
     }
 
-    // 3. load steps
-    await loadSteps();
+    const steps = data?.steps;
 
-    setState("ready");
-  };
-  useEffect(() => {
-    load();
-  }, [load]);
+    if (!steps) {
+      setState("error");
+      return;
+    }
+
+    const hasData =
+      steps.todaySteps > 0 || steps.last7Days.some((d) => d.count > 0);
+
+    setState(hasData ? "ready" : "no_data");
+  }, [loading, healthError, data]);
 
   return (
     <SafeAreaView style={styles.screen}>
       <AppHeader title="Steps" showBack onBackPress={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.content}>
-        {state === "checking_availability" ||
-        state === "requesting_permission" ||
-        state === "loading_data" ? (
+        {state === "checking_availability" ? (
           <View style={styles.centerCard}>
-            <ActivityIndicator />
+            <Text style={styles.title}>Connect Health Data</Text>
+
             <Text style={styles.infoText}>
-              {state === "checking_availability" &&
-                "Checking Health Connect..."}
-              {state === "requesting_permission" && "Requesting permission..."}
-              {state === "loading_data" && "Loading step data..."}
+              Connect Health Connect to read your steps and sleep data.
             </Text>
+
+            <Pressable style={styles.primaryBtn} onPress={load}>
+              <Text style={styles.primaryBtnText}>Continue</Text>
+            </Pressable>
+          </View>
+        ) : null}
+        {state === "requesting_permission" || state === "loading_data" ? (
+          <View style={styles.centerCard}>
+            <Text style={styles.title}>Connect Health Data</Text>
+
+            <Text style={styles.infoText}>
+              Connect Health Connect to read your steps and sleep data.
+            </Text>
+
+            <Pressable style={styles.primaryBtn} onPress={load}>
+              <Text style={styles.primaryBtnText}>Continue</Text>
+            </Pressable>
           </View>
         ) : null}
 
@@ -155,6 +166,23 @@ const StepsTrackerPage = () => {
           </View>
         ) : null}
 
+        {state === "provider_update_required" ? (
+          <View style={styles.centerCard}>
+            <Text style={styles.title}>Health Connect update required</Text>
+            <Text style={styles.infoText}>
+              Update Health Connect on Android so the app can read your step
+              data.
+            </Text>
+
+            <Pressable
+              style={styles.primaryBtn}
+              onPress={openHealthConnectStorePage}
+            >
+              <Text style={styles.primaryBtnText}>Open Play Store</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         {state === "error" ? (
           <View style={styles.centerCard}>
             <Text style={styles.title}>Could not load steps</Text>
@@ -166,12 +194,34 @@ const StepsTrackerPage = () => {
           </View>
         ) : null}
 
+        {state === "no_data" ? (
+          <View style={styles.centerCard}>
+            <Text style={styles.title}>No step data yet</Text>
+
+            <Text style={styles.infoText}>
+              Your app is connected, but no steps are available.
+            </Text>
+
+            <Text style={styles.infoText}>
+              Make sure another app is writing data to Health Connect:
+              {"\n\n"}• Google Fit
+              {"\n"}• Samsung Health
+              {"\n"}• Fitbit
+              {"\n"}• Smartwatch apps
+            </Text>
+
+            <Pressable style={styles.primaryBtn} onPress={load}>
+              <Text style={styles.primaryBtnText}>Refresh</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         {state === "ready" ? (
           <>
             <View style={styles.heroCard}>
               <Text style={styles.heroLabel}>Today</Text>
               <Text style={styles.heroValue}>
-                {data?.todaySteps?.toLocaleString?.() ?? "0"}
+                {data?.steps?.todaySteps?.toLocaleString?.() ?? "0"}
               </Text>
               <Text style={styles.heroSub}>steps</Text>
             </View>
@@ -179,7 +229,7 @@ const StepsTrackerPage = () => {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Last 7 Days</Text>
 
-              {(data?.last7Days ?? []).map((item) => (
+              {(data?.steps?.last7Days ?? []).map((item) => (
                 <View key={item.date} style={styles.row}>
                   <Text style={styles.dayText}>
                     {formatPrettyDate(item.date)}

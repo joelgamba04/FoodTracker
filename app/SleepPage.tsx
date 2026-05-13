@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
+  InteractionManager,
   Platform,
   Pressable,
   ScrollView,
@@ -13,48 +13,54 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import AppHeader from "@/components/AppHeader";
-import { useSleep } from "@/hooks/useSleep";
+import { useHealth } from "@/hooks/useHealth";
 import {
   checkAndroidHealthConnectAvailability,
   openHealthConnectStorePage,
 } from "@/services/health/healthConnectInstall";
-import { ensureSleepAccess } from "@/services/health/sleepService";
+import { formatPrettyDate } from "@/utils/date";
 
+import { ensureSleepAccess } from "@/services/health/sleepService";
 import { COLORS } from "@/theme/color";
-import { router } from "expo-router";
+import { useRouter } from "expo-router";
 
 type PageState =
-  | "no_data"
   | "checking_availability"
   | "missing_provider"
   | "requesting_permission"
+  | "no_data"
   | "loading_data"
   | "ready"
+  | "provider_update_required"
   | "error";
 
-const formatPrettyDate = (ymd: string) => {
-  const d = new Date(`${ymd}T00:00:00`);
-  return d.toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-};
-
 const SleepPage = () => {
+  const router = useRouter();
   const [state, setState] = useState<PageState>("checking_availability");
   const [error, setError] = useState<string | null>(null);
+  const { refreshHealth, data, loading, error: healthError } = useHealth();
 
-  const { loading, data, error: hookError, loadSleep } = useSleep();
+  const waitForInteractions = () =>
+    new Promise<void>((resolve) => {
+      InteractionManager.runAfterInteractions(() => {
+        resolve();
+      });
+    });
 
-  const init = useCallback(async () => {
+  const load = useCallback(async () => {
     try {
       setError(null);
 
       if (Platform.OS === "android") {
+        console.log("Checking Android Health Connect availability...");
         setState("checking_availability");
 
         const availability = await checkAndroidHealthConnectAvailability();
+
+        if (availability.needsUpdate) {
+          setState("provider_update_required");
+          return;
+        }
 
         if (!availability.available) {
           setState("missing_provider");
@@ -63,6 +69,8 @@ const SleepPage = () => {
       }
 
       setState("requesting_permission");
+
+      await waitForInteractions(); // Wait for interactions to finish before requesting permissions
 
       const access = await ensureSleepAccess();
 
@@ -73,32 +81,34 @@ const SleepPage = () => {
       }
 
       setState("loading_data");
-
-      await loadSleep(); // ✅ ONLY CALL THIS
+      await refreshHealth();
+      setState("ready");
     } catch (err: any) {
       setState("error");
-      setError(err?.message ?? "Failed to initialize sleep");
+      setError(err?.message ?? "Failed to load sleep data");
     }
-  }, [loadSleep]);
-
-  useEffect(() => {
-    void init();
-  }, [init]);
+  }, [refreshHealth]);
 
   useEffect(() => {
     if (loading) return;
 
-    if (hookError) {
+    if (healthError) {
       setState("error");
       return;
     }
 
-    if (!data) return;
+    const sleep = data?.sleep;
 
-    const hasData = (data.last7Days ?? []).some((d) => d.hours > 0);
+    if (!sleep) {
+      setState("error");
+      return;
+    }
+
+    const hasData =
+      sleep.lastNightHours > 0 || sleep.last7Days.some((d) => d.hours > 0);
 
     setState(hasData ? "ready" : "no_data");
-  }, [loading, hookError, data]);
+  }, [loading, healthError, data]);
 
   console.log("SleepPage: data loaded", { data, state, error });
   return (
@@ -107,17 +117,31 @@ const SleepPage = () => {
       <AppHeader title="Sleep" showBack onBackPress={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.content}>
-        {state === "checking_availability" ||
-        state === "requesting_permission" ||
-        state === "loading_data" ? (
+        {state === "checking_availability" ? (
           <View style={styles.centerCard}>
-            <ActivityIndicator />
+            <Text style={styles.title}>Connect Health Data</Text>
+
             <Text style={styles.infoText}>
-              {state === "checking_availability" &&
-                "Checking Health Connect..."}
-              {state === "requesting_permission" && "Requesting permission..."}
-              {state === "loading_data" && "Loading sleep data..."}
+              Connect Health Connect to read your steps and sleep data.
             </Text>
+
+            <Pressable style={styles.primaryBtn} onPress={load}>
+              <Text style={styles.primaryBtnText}>Continue</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {state === "requesting_permission" || state === "loading_data" ? (
+          <View style={styles.centerCard}>
+            <Text style={styles.title}>Connect Health Data</Text>
+
+            <Text style={styles.infoText}>
+              Connect Health Connect to read your steps and sleep data.
+            </Text>
+
+            <Pressable style={styles.primaryBtn} onPress={load}>
+              <Text style={styles.primaryBtnText}>Continue</Text>
+            </Pressable>
           </View>
         ) : null}
 
@@ -136,10 +160,27 @@ const SleepPage = () => {
               <Text style={styles.primaryBtnText}>Open Play Store</Text>
             </Pressable>
 
-            <Pressable style={styles.secondaryBtn} onPress={init}>
+            <Pressable style={styles.secondaryBtn} onPress={load}>
               <Text style={styles.secondaryBtnText}>
                 I already installed it
               </Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {state === "provider_update_required" ? (
+          <View style={styles.centerCard}>
+            <Text style={styles.title}>Health Connect update required</Text>
+            <Text style={styles.infoText}>
+              Update Health Connect on Android so the app can read your step
+              data.
+            </Text>
+
+            <Pressable
+              style={styles.primaryBtn}
+              onPress={openHealthConnectStorePage}
+            >
+              <Text style={styles.primaryBtnText}>Open Play Store</Text>
             </Pressable>
           </View>
         ) : null}
@@ -149,7 +190,7 @@ const SleepPage = () => {
             <Text style={styles.title}>Could not load sleep data</Text>
             <Text style={styles.errorText}>{error}</Text>
 
-            <Pressable style={styles.primaryBtn} onPress={init}>
+            <Pressable style={styles.primaryBtn} onPress={load}>
               <Text style={styles.primaryBtnText}>Try again</Text>
             </Pressable>
           </View>
@@ -165,6 +206,14 @@ const SleepPage = () => {
               Connect. Sleep data should start appearing here within 24 hours
               after you get it set up.
             </Text>
+
+            <Text style={styles.infoText}>
+              Make sure another app is writing data to Health Connect:
+              {"\n\n"}• Google Fit
+              {"\n"}• Samsung Health
+              {"\n"}• Fitbit
+              {"\n"}• Smartwatch apps
+            </Text>
           </View>
         ) : null}
 
@@ -173,7 +222,7 @@ const SleepPage = () => {
             <View style={styles.heroCard}>
               <Text style={styles.heroLabel}>Last Night</Text>
               <Text style={styles.heroValue}>
-                {data?.lastNightHours?.toFixed(1) ?? "0"}
+                {data?.sleep?.lastNightHours?.toFixed(1) ?? "0"}
               </Text>
               <Text style={styles.heroSub}>hours</Text>
             </View>
@@ -181,7 +230,7 @@ const SleepPage = () => {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Last 7 Days</Text>
 
-              {(data?.last7Days ?? []).map((item) => (
+              {(data?.sleep?.last7Days ?? []).map((item) => (
                 <View key={item.date} style={styles.row}>
                   <Text style={styles.dayText}>
                     {formatPrettyDate(item.date)}
