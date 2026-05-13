@@ -1,7 +1,7 @@
 // app/(tabs)/DashboardPage.tsx
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useMemo } from "react";
+import { useRouter } from "expo-router";
+import React, { useEffect, useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   SafeAreaView,
@@ -13,6 +13,7 @@ import AppHeader from "@/components/AppHeader";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { useHydration } from "@/context/hydrationContext";
 import { useHydrationToday } from "@/hooks/hydrationHooks";
+import { useHealth } from "@/hooks/useHealth";
 import { Food } from "@/models/models";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
@@ -64,6 +65,7 @@ const getMealByTimestamp = (
 
 // ---------- main screen ----------
 export const DashboardPage = () => {
+  const router = useRouter();
   const { log } = useFoodLog();
   const { entries: waterEntries, addMl } = useHydration();
   const { totalMl, goalMl } = useHydrationToday();
@@ -73,9 +75,7 @@ export const DashboardPage = () => {
   const endMs = end.getTime();
   const insets = useSafeAreaInsets();
 
-  // temporary until we implement steps in this screen
-  const stepsLoading = false;
-  const stepsData = null;
+  const { data: health, loadCachedHealth } = useHealth();
 
   const todaysFood = useMemo(() => {
     return (log ?? []).filter((e) => {
@@ -133,6 +133,10 @@ export const DashboardPage = () => {
     router.push("/AddFoodPage");
   };
 
+  useEffect(() => {
+    loadCachedHealth();
+  }, [loadCachedHealth]);
+
   return (
     <SafeAreaView style={[styles.screen, { paddingBottom: insets.bottom }]}>
       {/* Header */}
@@ -159,9 +163,7 @@ export const DashboardPage = () => {
 
           <AnimatedMetricCard
             title="Steps"
-            value={
-              "--" // stepsLoading ? "…" : stepsData ? `${stepsData.todaySteps}` : "—"
-            }
+            value={health?.steps?.todaySteps?.toLocaleString?.() ?? "Setup"}
             subtitle="steps today"
             icon="walk"
             onPress={() => router.push("/StepsTrackerPage")}
@@ -169,10 +171,10 @@ export const DashboardPage = () => {
 
           <AnimatedMetricCard
             title="Sleep"
-            value="—"
-            subtitle="Coming soon"
+            value={health?.sleep?.lastNightHours?.toFixed?.(1) ?? "Setup"}
+            subtitle="hrs last night"
             icon="moon"
-            disabled
+            onPress={() => router.push("/SleepPage")}
           />
         </View>
 

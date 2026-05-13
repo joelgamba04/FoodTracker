@@ -2,8 +2,8 @@
 
 import { Linking, Platform } from "react-native";
 import {
-    getSdkStatus,
-    SdkAvailabilityStatus,
+  getSdkStatus,
+  SdkAvailabilityStatus,
 } from "react-native-health-connect";
 
 const HEALTH_CONNECT_PACKAGE = "com.google.android.apps.healthdata";
@@ -26,6 +26,10 @@ export const checkAndroidHealthConnectAvailability = async () => {
     supported: true,
     available: status === SdkAvailabilityStatus.SDK_AVAILABLE,
     needsInstall: status !== SdkAvailabilityStatus.SDK_AVAILABLE,
+    needsUpdate:
+      status === SdkAvailabilityStatus.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED,
+
+    unavailable: status === SdkAvailabilityStatus.SDK_UNAVAILABLE,
     status,
   };
 };

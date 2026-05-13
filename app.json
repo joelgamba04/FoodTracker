@@ -11,8 +11,9 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSHealthShareUsageDescription": "Allow this app to read your health data.",
-        "NSHealthUpdateUsageDescription": "Allow this app to write health data."
-      }
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.joelgamba.TaguigNutriApp"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,13 +23,10 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "softwareKeyboardLayoutMode": "resize",
-      "predictiveBackGestureEnabled": false,
       "package": "com.joelgamba.TaguigNutriApp",
       "permissions": [
         "android.permission.health.READ_STEPS",
-        "android.permission.health.READ_HEART_RATE",
-        "android.permission.health.READ_SLEEP",
-        "android.permission.health.READ_WEIGHT"
+        "android.permission.health.READ_SLEEP"
       ]
     },
     "web": {
@@ -62,12 +60,10 @@
           }
         }
       ],
-      "expo-health-connect",
       [
         "react-native-health",
         {
           "healthSharePermission": "Allow this app to read your health data.",
-          "healthUpdatePermission": "Allow this app to write health data.",
           "isClinicalDataEnabled": false
         }
       ]

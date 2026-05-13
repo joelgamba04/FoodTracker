@@ -1,4 +1,4 @@
-// app/StepsTrackerPage.tsx
+// app/SleepPage.tsx
 
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -13,15 +13,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import AppHeader from "@/components/AppHeader";
-
 import { useHealth } from "@/hooks/useHealth";
 import {
   checkAndroidHealthConnectAvailability,
   openHealthConnectStorePage,
 } from "@/services/health/healthConnectInstall";
-import { ensureStepsAccess } from "@/services/health/stepsService";
 import { formatPrettyDate } from "@/utils/date";
 
+import { ensureSleepAccess } from "@/services/health/sleepService";
 import { COLORS } from "@/theme/color";
 import { useRouter } from "expo-router";
 
@@ -35,7 +34,7 @@ type PageState =
   | "provider_update_required"
   | "error";
 
-const StepsTrackerPage = () => {
+const SleepPage = () => {
   const router = useRouter();
   const [state, setState] = useState<PageState>("checking_availability");
   const [error, setError] = useState<string | null>(null);
@@ -73,11 +72,11 @@ const StepsTrackerPage = () => {
 
       await waitForInteractions(); // Wait for interactions to finish before requesting permissions
 
-      const access = await ensureStepsAccess();
+      const access = await ensureSleepAccess();
 
       if (!access.ok) {
         setState("error");
-        setError(access.reason ?? "Unable to access steps");
+        setError(access.reason ?? "Unable to access sleep data");
         return;
       }
 
@@ -86,7 +85,7 @@ const StepsTrackerPage = () => {
       setState("ready");
     } catch (err: any) {
       setState("error");
-      setError(err?.message ?? "Failed to load steps");
+      setError(err?.message ?? "Failed to load sleep data");
     }
   }, [refreshHealth]);
 
@@ -98,22 +97,24 @@ const StepsTrackerPage = () => {
       return;
     }
 
-    const steps = data?.steps;
+    const sleep = data?.sleep;
 
-    if (!steps) {
+    if (!sleep) {
       setState("error");
       return;
     }
 
     const hasData =
-      steps.todaySteps > 0 || steps.last7Days.some((d) => d.count > 0);
+      sleep.lastNightHours > 0 || sleep.last7Days.some((d) => d.hours > 0);
 
     setState(hasData ? "ready" : "no_data");
   }, [loading, healthError, data]);
 
+  console.log("SleepPage: data loaded", { data, state, error });
   return (
     <SafeAreaView style={styles.screen}>
-      <AppHeader title="Steps" showBack onBackPress={() => router.back()} />
+      {/* header */}
+      <AppHeader title="Sleep" showBack onBackPress={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.content}>
         {state === "checking_availability" ? (
@@ -129,6 +130,7 @@ const StepsTrackerPage = () => {
             </Pressable>
           </View>
         ) : null}
+
         {state === "requesting_permission" || state === "loading_data" ? (
           <View style={styles.centerCard}>
             <Text style={styles.title}>Connect Health Data</Text>
@@ -147,7 +149,7 @@ const StepsTrackerPage = () => {
           <View style={styles.centerCard}>
             <Text style={styles.title}>Health Connect required</Text>
             <Text style={styles.infoText}>
-              Install Health Connect on Android so the app can read your step
+              Install Health Connect on Android so the app can read your sleep
               data.
             </Text>
 
@@ -185,7 +187,7 @@ const StepsTrackerPage = () => {
 
         {state === "error" ? (
           <View style={styles.centerCard}>
-            <Text style={styles.title}>Could not load steps</Text>
+            <Text style={styles.title}>Could not load sleep data</Text>
             <Text style={styles.errorText}>{error}</Text>
 
             <Pressable style={styles.primaryBtn} onPress={load}>
@@ -196,10 +198,13 @@ const StepsTrackerPage = () => {
 
         {state === "no_data" ? (
           <View style={styles.centerCard}>
-            <Text style={styles.title}>No step data yet</Text>
-
+            <Text style={styles.title}>No sleep data found</Text>
             <Text style={styles.infoText}>
-              Your app is connected, but no steps are available.
+              We couldn't find any sleep data for the past 7 days. Make sure
+              your device is tracking sleep and that you've granted permission
+              to smart watch or health app to write sleep data to Health
+              Connect. Sleep data should start appearing here within 24 hours
+              after you get it set up.
             </Text>
 
             <Text style={styles.infoText}>
@@ -209,34 +214,28 @@ const StepsTrackerPage = () => {
               {"\n"}• Fitbit
               {"\n"}• Smartwatch apps
             </Text>
-
-            <Pressable style={styles.primaryBtn} onPress={load}>
-              <Text style={styles.primaryBtnText}>Refresh</Text>
-            </Pressable>
           </View>
         ) : null}
 
         {state === "ready" ? (
           <>
             <View style={styles.heroCard}>
-              <Text style={styles.heroLabel}>Today</Text>
+              <Text style={styles.heroLabel}>Last Night</Text>
               <Text style={styles.heroValue}>
-                {data?.steps?.todaySteps?.toLocaleString?.() ?? "0"}
+                {data?.sleep?.lastNightHours?.toFixed(1) ?? "0"}
               </Text>
-              <Text style={styles.heroSub}>steps</Text>
+              <Text style={styles.heroSub}>hours</Text>
             </View>
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Last 7 Days</Text>
 
-              {(data?.steps?.last7Days ?? []).map((item) => (
+              {(data?.sleep?.last7Days ?? []).map((item) => (
                 <View key={item.date} style={styles.row}>
                   <Text style={styles.dayText}>
                     {formatPrettyDate(item.date)}
                   </Text>
-                  <Text style={styles.countText}>
-                    {item.count.toLocaleString()}
-                  </Text>
+                  <Text style={styles.countText}>{item.hours.toFixed(1)}</Text>
                 </View>
               ))}
             </View>
@@ -354,4 +353,4 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
 });
-export default StepsTrackerPage;
+export default SleepPage;

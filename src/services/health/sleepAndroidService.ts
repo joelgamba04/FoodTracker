@@ -1,4 +1,5 @@
-import type { StepDay, StepsSummary } from "@/models/stepsModel";
+// src/services/health/sleepServiceAndroid.ts
+import type { SleepDay, SleepSummary } from "@/models/sleepModel";
 import { endOfDay, lastNDays, startOfDay, toYmd } from "@/utils/date";
 import {
   getSdkStatus,
@@ -8,7 +9,10 @@ import {
   SdkAvailabilityStatus,
 } from "react-native-health-connect";
 
-export const ensureAndroidStepsAccess = async () => {
+export const ensureAndroidSleepAccess = async () => {
+  // We request permission for steps, but it seems to be required to read sleep data as well
+  // (otherwise we get "Permission denied" error when trying to read sleep)
+
   const status = await getSdkStatus();
   console.log("Health Connect SDK status:", status);
 
@@ -24,7 +28,7 @@ export const ensureAndroidStepsAccess = async () => {
   const permissionResult = await requestPermission([
     {
       accessType: "read",
-      recordType: "Steps",
+      recordType: "SleepSession",
     },
   ]);
 
@@ -33,18 +37,18 @@ export const ensureAndroidStepsAccess = async () => {
   return { ok: true as const };
 };
 
-export const readAndroidStepsSummary = async (): Promise<StepsSummary> => {
+export const readAndroidSleep = async (): Promise<SleepSummary> => {
   const days = lastNDays(7);
 
-  const last7Days: StepDay[] = [];
+  const last7Days: SleepDay[] = [];
 
   for (const day of days) {
     const start = startOfDay(day).toISOString();
     const end = endOfDay(day).toISOString();
 
-    console.log(`Reading steps for ${toYmd(day)} from ${start} to ${end}...`);
+    console.log(`Reading sleep for ${toYmd(day)} from ${start} to ${end}...`);
 
-    const { records } = await readRecords("Steps", {
+    const { records } = await readRecords("SleepSession", {
       timeRangeFilter: {
         operator: "between",
         startTime: start,
@@ -55,21 +59,17 @@ export const readAndroidStepsSummary = async (): Promise<StepsSummary> => {
     console.log(`Records for ${toYmd(day)}:`, records);
 
     const total = (records ?? []).reduce((sum, record: any) => {
-      return sum + Number(record?.count ?? 0);
+      return sum + Number(record?.duration ?? 0);
     }, 0);
 
     last7Days.push({
       date: toYmd(day),
-      count: total,
-      source: records?.[0]?.metadata?.dataOrigin,
+      hours: total,
     });
   }
 
-  const todayKey = toYmd(new Date());
-  const todaySteps = last7Days.find((d) => d.date === todayKey)?.count ?? 0;
-
   return {
-    todaySteps,
+    lastNightHours: 0,
     last7Days,
   };
 };
