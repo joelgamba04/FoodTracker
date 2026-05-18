@@ -27,7 +27,8 @@
       "permissions": [
         "android.permission.health.READ_STEPS",
         "android.permission.health.READ_SLEEP"
-      ]
+      ],
+      "versionCode": 2
     },
     "web": {
       "output": "static",
