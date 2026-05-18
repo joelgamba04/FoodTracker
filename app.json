@@ -66,7 +66,8 @@
           "healthSharePermission": "Allow this app to read your health data.",
           "isClinicalDataEnabled": false
         }
-      ]
+      ],
+      "./plugins/withAdiRegistration"
     ],
     "experiments": {
       "typedRoutes": true,
