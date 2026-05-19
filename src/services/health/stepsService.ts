@@ -4,7 +4,6 @@ import {
   ensureAndroidStepsAccess,
   readAndroidStepsSummary,
 } from "./stepsAndroidService";
-import { ensureIosStepsAccess, readIosStepsSummary } from "./stepsIOSService";
 
 export const ensureStepsAccess = async () => {
   if (Platform.OS === "android") {
@@ -12,10 +11,10 @@ export const ensureStepsAccess = async () => {
     return ensureAndroidStepsAccess();
   }
 
-  if (Platform.OS === "ios") {
-    console.log("Checking iOS steps access...");
-    return ensureIosStepsAccess();
-  }
+  // if (Platform.OS === "ios") {
+  //   console.log("Checking iOS steps access...");
+  //   return ensureIosStepsAccess();
+  // }
 
   return {
     ok: false as const,
@@ -28,9 +27,9 @@ export const readStepsSummary = async (): Promise<StepsSummary> => {
     return readAndroidStepsSummary();
   }
 
-  if (Platform.OS === "ios") {
-    return readIosStepsSummary();
-  }
+  // if (Platform.OS === "ios") {
+  //   return readIosStepsSummary();
+  // }
 
   return {
     todaySteps: 0,
