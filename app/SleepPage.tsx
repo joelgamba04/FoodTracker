@@ -57,6 +57,13 @@ const SleepPage = () => {
 
         const availability = await checkAndroidHealthConnectAvailability();
 
+        console.log("Health Connect availability:", availability);
+
+        if (availability.needsInstall) {
+          setState("missing_provider");
+          return;
+        }
+
         if (availability.needsUpdate) {
           setState("provider_update_required");
           return;

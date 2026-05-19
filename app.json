@@ -68,7 +68,8 @@
           "isClinicalDataEnabled": false
         }
       ],
-      "./plugins/withAdiRegistration"
+      "./plugins/withAdiRegistration",
+      "expo-health-connect"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -1,3 +1,5 @@
+// src/services/health/stepsAndroidService.ts
+
 import type { StepDay, StepsSummary } from "@/models/stepsModel";
 import { endOfDay, lastNDays, startOfDay, toYmd } from "@/utils/date";
 import {
@@ -13,6 +15,7 @@ export const ensureAndroidStepsAccess = async () => {
   console.log("Health Connect SDK status:", status);
 
   if (status !== SdkAvailabilityStatus.SDK_AVAILABLE) {
+    console.warn("Health Connect SDK is not available:", status);
     return {
       ok: false as const,
       reason: "Health Connect is not available on this device.",
