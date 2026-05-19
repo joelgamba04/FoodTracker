@@ -29,6 +29,7 @@ import { HydrationProvider } from "@/context/hydrationContext";
 import { ProfileProvider } from "@/context/ProfileContext";
 import { loadJSON } from "@/lib/storage";
 import { UserProfile } from "@/models/models";
+import { COLORS } from "@/theme/color";
 
 const DISCLAIMERS = [
   {
@@ -85,7 +86,7 @@ const isProfileComplete = (profile: UserProfile | null): boolean => {
   return !!(profile.age && profile.sex && profile.height && profile.weight);
 };
 
-const AuthGate = ({ canNavigate }: { canNavigate: boolean }) => {
+const AuthGate = () => {
   const { authMode, isAuthLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
@@ -96,7 +97,6 @@ const AuthGate = ({ canNavigate }: { canNavigate: boolean }) => {
       isAuthLoading,
       segments,
     });
-    if (!canNavigate) return;
     if (isAuthLoading) return;
 
     const currentRoot = segments?.[0];
@@ -116,12 +116,12 @@ const AuthGate = ({ canNavigate }: { canNavigate: boolean }) => {
         router.replace("/(tabs)/DashboardPage");
       }
     }
-  }, [canNavigate, authMode, isAuthLoading, segments, router]);
+  }, [authMode, isAuthLoading, segments, router]);
 
   return (
     <>
       <Stack screenOptions={{ headerShown: false }} />
-      {canNavigate && isAuthLoading ? (
+      {isAuthLoading ? (
         <View style={styles.loadingScreen}>
           <ActivityIndicator size="large" />
           <Text style={styles.loadingText}>Auth is loading...</Text>
@@ -149,7 +149,6 @@ const AppBootstrap = () => {
   );
 
   const showDisclaimer = disclaimerStep < DISCLAIMERS.length;
-  const canNavigate = !showDisclaimer && profileStatus === "complete";
 
   console.log("AppBootstrap", {
     disclaimerStep,
@@ -175,35 +174,47 @@ const AppBootstrap = () => {
     };
   }, []);
 
+  if (showDisclaimer) {
+    return (
+      <>
+        <StatusBar style="auto" />
+
+        <View style={styles.blockingScreen}>
+          <DisclaimerModal
+            visible
+            title={currentDisclaimer?.title ?? ""}
+            onAccept={() => setDisclaimerStep((prev) => prev + 1)}
+          >
+            {currentDisclaimer?.body}
+          </DisclaimerModal>
+        </View>
+      </>
+    );
+  }
+
+  if (profileStatus === "checking") {
+    return (
+      <View style={styles.loadingScreen}>
+        <ActivityIndicator size="large" />
+        <Text style={styles.loadingText}>Loading your profile…</Text>
+      </View>
+    );
+  }
+
+  if (profileStatus === "incomplete") {
+    return (
+      <InitialProfileScreen
+        key="initial-profile"
+        onComplete={() => setProfileStatus("complete")}
+      />
+    );
+  }
+
   return (
     <>
-      {canNavigate ? <PostLoginSync /> : null}
-      <AuthGate canNavigate={canNavigate} />
+      <PostLoginSync />
+      <AuthGate />
       <StatusBar style="auto" />
-
-      <DisclaimerModal
-        visible={showDisclaimer}
-        title={currentDisclaimer?.title ?? ""}
-        onAccept={() => setDisclaimerStep((prev) => prev + 1)}
-      >
-        {currentDisclaimer?.body}
-      </DisclaimerModal>
-
-      {!showDisclaimer && profileStatus === "checking" ? (
-        <View style={styles.loadingScreen}>
-          <ActivityIndicator size="large" />
-          <Text style={styles.loadingText}>Loading your profile…</Text>
-        </View>
-      ) : null}
-
-      {!showDisclaimer && profileStatus === "incomplete" ? (
-        <View style={styles.fullScreenOverlay}>
-          <InitialProfileScreen
-            key="initial-profile"
-            onComplete={() => setProfileStatus("complete")}
-          />
-        </View>
-      ) : null}
     </>
   );
 };
@@ -245,7 +256,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff",
+    backgroundColor: COLORS.background,
   },
   loadingText: {
     fontSize: 16,
@@ -253,8 +264,14 @@ const styles = StyleSheet.create({
   },
   fullScreenOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#fff",
+    backgroundColor: COLORS.background,
     zIndex: 1000,
+  },
+  blockingScreen: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 
