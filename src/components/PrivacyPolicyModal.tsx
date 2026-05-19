@@ -18,7 +18,12 @@ const PrivacyPolicyModal = ({ visible, onClose }: Props) => {
       presentationStyle="fullScreen"
     >
       <SafeAreaView style={styles.screen}>
-        <AppHeader title="Privacy Policy" showBack onBackPress={onClose} />
+        <AppHeader
+          title="Privacy Policy"
+          showBack
+          onBackPress={onClose}
+          useTopInset
+        />
 
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>

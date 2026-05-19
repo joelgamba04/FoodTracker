@@ -13,6 +13,7 @@ interface AppHeaderProps {
   showBack?: boolean;
   onBackPress?: () => void;
   rightComponent?: React.ReactNode; // Optional component to render on the right side of the header (e.g., a settings icon) for future extensibility
+  useTopInset?: boolean; // Whether to add top inset padding (useful for screens that are at the top level)
 }
 
 export const AppHeader = ({
@@ -21,6 +22,7 @@ export const AppHeader = ({
   showBack = false,
   onBackPress,
   rightComponent,
+  useTopInset = false,
 }: AppHeaderProps) => {
   const insets = useSafeAreaInsets();
 
@@ -37,12 +39,12 @@ export const AppHeader = ({
       style={[
         styles.header,
         {
-          paddingTop: insets.top + 12,
+          paddingTop: useTopInset ? insets.top + 12 : 12,
         },
       ]}
     >
-      <View style={styles.leftSection}>
-        {showBack ? (
+      {showBack ? (
+        <View style={styles.leftSection}>
           <Pressable onPress={handleBack} style={styles.headerBtn}>
             <Ionicons
               name="chevron-back"
@@ -52,8 +54,8 @@ export const AppHeader = ({
 
             <Text style={styles.headerBtnText}>Back</Text>
           </Pressable>
-        ) : null}
-      </View>
+        </View>
+      ) : null}
 
       <View style={styles.centerSection}>
         <Text style={styles.headerTitle}>{title}</Text>
