@@ -66,17 +66,28 @@ export const AddFoodPage = () => {
   const onLog = async () => {
     if (!selected) return;
 
-    await addEntry({
-      localId: makeLocalId(),
-      timestamp: Date.now(),
-      food: selected,
-      quantity: qty,
-      syncStatus: "pending",
-      lastSyncError: null,
-      mealType: 1, // TODO: add a picker for mealType later (Breakfast/Lunch/Dinner)
-    });
+    try {
+      await addEntry({
+        localId: makeLocalId(),
+        timestamp: Date.now(),
+        food: selected,
+        quantity: qty,
+        syncStatus: "pending",
+        lastSyncError: null,
+        mealType: 1, // TODO: add a picker for mealType later (Breakfast/Lunch/Dinner)
+      });
 
-    router.back();
+      router.back();
+    } catch (error) {
+      console.error("Error logging food entry:", {
+        name: (error as any)?.name,
+        message: (error as any)?.message,
+        kind: isApiError(error) ? error.kind : undefined,
+        status: isApiError(error) ? error.status : undefined,
+        body: isApiError(error) ? error.body : undefined,
+      });
+      alert("Failed to log food entry. Please try again later.");
+    }
   };
 
   const handleSearch = async (raw: string) => {
@@ -113,7 +124,13 @@ export const AddFoodPage = () => {
     } catch (err: unknown) {
       if (seq !== searchSequence.current) return;
 
-      console.error("Search failed:", err);
+      console.error("Search failed:", {
+        name: (err as any)?.name,
+        message: (err as any)?.message,
+        kind: isApiError(err) ? err.kind : undefined,
+        status: isApiError(err) ? err.status : undefined,
+        body: isApiError(err) ? err.body : undefined,
+      });
 
       if (isApiError(err)) {
         switch (err.kind) {
@@ -143,6 +160,29 @@ export const AddFoodPage = () => {
 
           case "BAD_REQUEST":
             setSearchError(err.message || "Invalid search request.");
+            break;
+          case "UNAUTHORIZED":
+            setSearchError("Your session expired. Please log in again.");
+            setPauseAutoSearch(true);
+            break;
+
+          case "FORBIDDEN":
+            setSearchError("You do not have permission to search food items.");
+            setPauseAutoSearch(true);
+            break;
+
+          case "NOT_FOUND":
+            setSearchError("Search endpoint was not found.");
+            setPauseAutoSearch(true);
+            break;
+
+          case "VALIDATION_ERROR":
+            setSearchError(err.message || "Invalid search query.");
+            break;
+
+          case "TOO_MANY_REQUESTS":
+            setSearchError("Too many searches. Please wait and try again.");
+            setPauseAutoSearch(true);
             break;
 
           default:
@@ -190,7 +230,10 @@ export const AddFoodPage = () => {
         />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 16 }}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* results */}
         {!selected ? (
           <>
@@ -206,6 +249,7 @@ export const AddFoodPage = () => {
 
                 <Pressable
                   style={styles.retryBtn}
+                  disabled={searchLoading}
                   onPress={() => {
                     setPauseAutoSearch(false);
                     handleSearch(search);
