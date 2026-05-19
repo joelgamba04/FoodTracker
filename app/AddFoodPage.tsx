@@ -128,6 +128,12 @@ export const AddFoodPage = () => {
             setSearchError("Search timed out. Please try again.");
             break;
 
+          case "SERVER_ERROR":
+            setSearchError(
+              "Server error. Please contact support or try again later.",
+            );
+            setPauseAutoSearch(true);
+            break;
           case "SERVER_UNAVAILABLE":
             setSearchError(
               "Server is temporarily unavailable. Please contact support or try again later.",

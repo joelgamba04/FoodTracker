@@ -13,20 +13,26 @@ type ApiOptions = Omit<RequestInit, "headers"> & {
   _retried?: boolean; // internal only
 };
 
-class ApiError extends Error {
-  kind:
-    | "NETWORK"
-    | "TIMEOUT"
-    | "SERVER_UNAVAILABLE"
-    | "SERVER_ERROR"
-    | "UNAUTHORIZED"
-    | "BAD_REQUEST"
-    | "UNKNOWN";
+type ApiErrorKind =
+  | "NETWORK"
+  | "TIMEOUT"
+  | "SERVER_UNAVAILABLE"
+  | "SERVER_ERROR"
+  | "UNAUTHORIZED"
+  | "FORBIDDEN"
+  | "NOT_FOUND"
+  | "VALIDATION_ERROR"
+  | "BAD_REQUEST"
+  | "TOO_MANY_REQUESTS"
+  | "UNKNOWN";
+
+export class ApiError extends Error {
+  kind: ApiErrorKind;
   status?: number;
   body?: any;
 
   constructor(
-    kind: ApiError["kind"],
+    kind: ApiErrorKind,
     message: string,
     extra?: { status?: number; body?: any },
   ) {
@@ -38,40 +44,42 @@ class ApiError extends Error {
   }
 }
 
+export const isApiError = (error: unknown): error is ApiError =>
+  error instanceof ApiError;
+
 export const isServerUnavailableError = (err: unknown) => {
+  if (isApiError(err)) {
+    return (
+      err.kind === "SERVER_UNAVAILABLE" ||
+      err.kind === "SERVER_ERROR" ||
+      err.kind === "NETWORK" ||
+      err.kind === "TIMEOUT"
+    );
+  }
+
   const msg = String((err as any)?.message ?? "").toLowerCase();
 
-  console.warn("Checking if error is server unavailable...", msg);
-
-  // your apiClient message (HTML 503 / non-JSON)
-  if (msg.includes("server unavailable")) return true;
-
-  // common fetch/network errors (android/ios)
-  if (msg.includes("network request failed")) return true;
-  if (msg.includes("failed to fetch")) return true;
-  if (msg.includes("load failed")) return true;
-  if (msg.includes("network error")) return true;
-  if (msg.includes("connection refused")) return true;
-  if (msg.includes("unreachable")) return true;
-  if (msg.includes("check your internet")) return true;
-
-  // optional: timeouts if you add them later
-  if (msg.includes("timeout")) return true;
-
-  return false;
+  return (
+    msg.includes("server unavailable") ||
+    msg.includes("network request failed") ||
+    msg.includes("failed to fetch") ||
+    msg.includes("load failed") ||
+    msg.includes("network error") ||
+    msg.includes("connection refused") ||
+    msg.includes("unreachable") ||
+    msg.includes("check your internet") ||
+    msg.includes("timeout")
+  );
 };
 
 const normalizeUrl = (path: string) => {
   return path.startsWith("http") ? path : `${API_ROUTE_BASE_URL}${path}`;
 };
 
-const mergeHeaders = (base?: HeadersInit, extra?: HeadersInit): HeadersInit => {
-  return { ...(base as any), ...(extra as any) };
-};
-
 const parseJsonOrText = async (res: Response) => {
   const text = await res.text(); // IMPORTANT: can only be read once per Response
   if (!text) return null;
+
   try {
     return JSON.parse(text);
   } catch {
@@ -81,66 +89,179 @@ const parseJsonOrText = async (res: Response) => {
 
 const looksLikeHtml = (v: unknown) => {
   if (typeof v !== "string") return false;
+
   const s = v.trim().toLowerCase();
+
   return (
     s.startsWith("<!doctype") || s.startsWith("<html") || s.includes("<body")
   );
 };
 
+const getMessageFromBody = (
+  body: any,
+  fallback = "Request failed.",
+): string => {
+  if (!body) return fallback;
+  if (typeof body === "string") return body;
+
+  return (
+    body?.message ||
+    body?.error ||
+    body?.detail ||
+    body?.errors?.[0]?.message ||
+    fallback
+  );
+};
+
 const isTokenError = (status: number, body: any): boolean => {
   if (status === 401) return true;
+
   if (status === 403) {
-    const msg = String(body?.message || body || "").toLowerCase();
+    const msg = String(getMessageFromBody(body, "")).toLowerCase();
+
     return (
       msg.includes("token") ||
       msg.includes("expired") ||
-      msg.includes("invalid")
+      msg.includes("invalid") ||
+      msg.includes("unauthorized")
     );
   }
+
   return false;
 };
 
 const makeTimeoutSignal = (timeoutMs: number) => {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
-  return { signal: controller.signal, cancel: () => clearTimeout(id) };
+
+  return {
+    signal: controller.signal,
+    cancel: () => clearTimeout(id),
+  };
 };
 
-export const api = async <T>(
-  path: string,
-  options: ApiOptions = {},
-): Promise<T> => {
-  const url = normalizeUrl(path);
-  const authEnabled = options.auth !== false;
-
-  const { _retried, auth, timeoutMs = 20000, ...fetchOptions } = options;
-
+const buildHeaders = async (
+  fetchOptions: Omit<ApiOptions, "_retried" | "auth" | "timeoutMs">,
+  authEnabled: boolean,
+) => {
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     ...(fetchOptions.headers as any),
   };
 
+  const isFormData =
+    typeof FormData !== "undefined" && fetchOptions.body instanceof FormData;
+
+  if (!isFormData && !headers["Content-Type"] && !headers["content-type"]) {
+    headers["Content-Type"] = "application/json";
+  }
+
   if (authEnabled) {
     const token = await getAccessToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
-    else {
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    } else {
       authFatal("missing_access_token");
+      throw new ApiError("UNAUTHORIZED", "Missing access token.");
     }
   }
 
-  // Timeout support
+  return headers;
+};
+
+const classifyHttpError = (status: number, body: any): ApiError => {
+  if (looksLikeHtml(body) || [502, 503, 504].includes(status)) {
+    return new ApiError(
+      "SERVER_UNAVAILABLE",
+      "Server is temporarily unavailable. Please try again later.",
+      { status, body },
+    );
+  }
+
+  switch (status) {
+    case 400:
+      return new ApiError("BAD_REQUEST", getMessageFromBody(body), {
+        status,
+        body,
+      });
+
+    case 401:
+      return new ApiError("UNAUTHORIZED", "Your session has expired.", {
+        status,
+        body,
+      });
+
+    case 403:
+      return new ApiError(
+        "FORBIDDEN",
+        getMessageFromBody(body, "Access denied."),
+        {
+          status,
+          body,
+        },
+      );
+
+    case 404:
+      return new ApiError(
+        "NOT_FOUND",
+        getMessageFromBody(body, "Record not found."),
+        {
+          status,
+          body,
+        },
+      );
+
+    case 422:
+      return new ApiError(
+        "VALIDATION_ERROR",
+        getMessageFromBody(body, "Please check the submitted data."),
+        { status, body },
+      );
+
+    case 429:
+      return new ApiError(
+        "TOO_MANY_REQUESTS",
+        getMessageFromBody(body, "Too many requests. Please try again later."),
+        { status, body },
+      );
+
+    default:
+      if (status >= 500) {
+        return new ApiError(
+          "SERVER_ERROR",
+          getMessageFromBody(
+            body,
+            "Server error. Please contact administrators.",
+          ),
+          { status, body },
+        );
+      }
+
+      return new ApiError(
+        "UNKNOWN",
+        getMessageFromBody(body, `Request failed with ${status}.`),
+        { status, body },
+      );
+  }
+};
+
+const doFetch = async (
+  url: string,
+  fetchOptions: RequestInit,
+  timeoutMs: number,
+): Promise<{ res: Response; body: any }> => {
   const { signal, cancel } = makeTimeoutSignal(timeoutMs);
 
-  let res: Response;
   try {
-    res = await fetch(url, {
+    const res = await fetch(url, {
       ...fetchOptions,
-      headers: mergeHeaders(headers, fetchOptions.headers),
       signal,
     });
-  } catch (e: any) {
-    cancel();
 
+    const body = await parseJsonOrText(res);
+
+    return { res, body };
+  } catch (e: any) {
     console.warn(`API Request Failed: ${url}`, e.message ?? e);
 
     // Timeout (AbortController)
@@ -156,8 +277,29 @@ export const api = async <T>(
   } finally {
     cancel();
   }
+};
 
-  const body = await parseJsonOrText(res);
+export const api = async <T>(
+  path: string,
+  options: ApiOptions = {},
+): Promise<T> => {
+  const url = normalizeUrl(path);
+
+  const { _retried, auth, timeoutMs = 20000, ...fetchOptions } = options;
+
+  const authEnabled = auth !== false;
+
+  const headers = await buildHeaders(fetchOptions, authEnabled);
+
+  const { res, body } = await doFetch(
+    url,
+    {
+      ...fetchOptions,
+      headers,
+    },
+    timeoutMs,
+  );
+
   const contentType = res.headers.get("content-type") || "";
 
   // If backend sends HTML (maintenance page, nginx, apache), treat as outage
@@ -181,60 +323,48 @@ export const api = async <T>(
   if (authEnabled && !_retried && isTokenError(res.status, body)) {
     try {
       if (!refreshPromise) {
-        refreshPromise = refreshAccessToken().finally(
-          () => (refreshPromise = null),
-        );
+        refreshPromise = refreshAccessToken().finally(() => {
+          refreshPromise = null;
+        });
       }
+
       const newAccess = await refreshPromise;
 
-      const retryHeaders: Record<string, string> = {
+      const retryHeaders = {
         ...headers,
         Authorization: `Bearer ${newAccess}`,
       };
 
-      const retryRes = await fetch(url, {
-        ...fetchOptions,
-        headers: mergeHeaders(retryHeaders, fetchOptions.headers),
-      });
-
-      const retryBody = await parseJsonOrText(retryRes);
-      console.log(
-        `API Retry Response: ${url} status=${retryRes.status} body=`,
-        retryBody,
+      const retry = await doFetch(
+        url,
+        {
+          ...fetchOptions,
+          headers: retryHeaders,
+        },
+        timeoutMs,
       );
 
-      if (isTokenError(retryRes.status, retryBody)) {
+      if (isTokenError(retry.res.status, retry.body)) {
         authFatal("unauthorized_after_refresh");
-        throw new ApiError("UNAUTHORIZED", "Unauthorized after refresh", {
-          status: retryRes.status,
-          body: retryBody,
+
+        throw new ApiError("UNAUTHORIZED", "Unauthorized after refresh.", {
+          status: retry.res.status,
+          body: retry.body,
         });
       }
 
-      if (!retryRes.ok) {
-        if (
-          [502, 503, 504].includes(retryRes.status) ||
-          looksLikeHtml(retryBody)
-        ) {
-          throw new ApiError(
-            "SERVER_UNAVAILABLE",
-            "Server is temporarily unavailable. Please try again later.",
-            { status: retryRes.status, body: retryBody },
-          );
-        }
-
-        throw new ApiError(
-          "SERVER_ERROR",
-          typeof retryBody === "string"
-            ? retryBody
-            : retryBody?.message || `Request failed with ${retryRes.status}`,
-          { status: retryRes.status, body: retryBody },
-        );
+      if (!retry.res.ok) {
+        throw classifyHttpError(retry.res.status, retry.body);
       }
 
-      return retryBody as T;
-    } catch {
+      return retry.body as T;
+    } catch (err) {
+      if (isApiError(err) && err.kind !== "UNAUTHORIZED") {
+        throw err;
+      }
+
       authFatal("refresh_failed");
+
       throw new ApiError(
         "UNAUTHORIZED",
         "Session expired. Please log in again.",
@@ -244,37 +374,8 @@ export const api = async <T>(
 
   // Non-auth errors
   if (!res.ok) {
-    // 503 / gateway maintenance
-    if ([502, 503, 504].includes(res.status)) {
-      throw new ApiError(
-        "SERVER_UNAVAILABLE",
-        "Server is temporarily unavailable. Please contact adminstrators.",
-        { status: res.status, body },
-      );
-    }
-
-    // 400 validation, etc.
-    if (res.status >= 400 && res.status < 500) {
-      throw new ApiError(
-        "BAD_REQUEST",
-        typeof body === "string" ? body : body?.message || "Request failed.",
-        { status: res.status, body },
-      );
-    }
-
-    // 500+
-    throw new ApiError(
-      "SERVER_ERROR",
-      typeof body === "string"
-        ? body
-        : body?.message || `Request failed with ${res.status}`,
-      { status: res.status, body },
-    );
+    throw classifyHttpError(res.status, body);
   }
 
   return body as T;
 };
-
-//  Optional export to let UI distinguish cases
-export const isApiError = (error: unknown): error is ApiError =>
-  error instanceof ApiError;
