@@ -1,7 +1,7 @@
 // app/(tabs)/DashboardPage.tsx
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import React, { useEffect, useMemo } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   SafeAreaView,
@@ -15,6 +15,7 @@ import { useHydration } from "@/context/hydrationContext";
 import { useHydrationToday } from "@/hooks/hydrationHooks";
 import { useHealth } from "@/hooks/useHealth";
 import { Food } from "@/models/models";
+import { getHealthConnected } from "@/services/health/healthCache";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
 
@@ -76,6 +77,13 @@ export const DashboardPage = () => {
   const insets = useSafeAreaInsets();
 
   const { data: health, loadCachedHealth } = useHealth();
+  const [healthConnected, setHealthConnected] = useState(false);
+
+  const todaySteps = health?.steps?.todaySteps ?? null;
+  const lastNightHours = health?.sleep?.lastNightHours ?? null;
+
+  const hasStepsData = typeof todaySteps === "number" && todaySteps > 0;
+  const hasSleepData = typeof lastNightHours === "number" && lastNightHours > 0;
 
   const todaysFood = useMemo(() => {
     return (log ?? []).filter((e) => {
@@ -86,18 +94,6 @@ export const DashboardPage = () => {
       return ts >= startMs && ts < endMs;
     });
   }, [log, startMs, endMs]);
-
-  const todaysWaterMl = useMemo(() => {
-    let total = 0;
-    for (const e of waterEntries ?? []) {
-      const ts =
-        typeof e.timestamp === "number"
-          ? e.timestamp
-          : new Date(e.timestamp).getTime();
-      if (ts >= startMs && ts < endMs) total += e.amount_ml;
-    }
-    return total;
-  }, [waterEntries, startMs, endMs]);
 
   const todaysCalories = useMemo(() => {
     let total = 0;
@@ -133,9 +129,55 @@ export const DashboardPage = () => {
     router.push("/AddFoodPage");
   };
 
-  useEffect(() => {
-    loadCachedHealth();
-  }, [loadCachedHealth]);
+  const stepsValue = !healthConnected
+    ? "Setup"
+    : hasStepsData
+      ? todaySteps.toLocaleString()
+      : "No data";
+
+  const stepsSubtitle = !healthConnected
+    ? "Tap to connect"
+    : hasStepsData
+      ? "steps today"
+      : "Open steps page";
+
+  const sleepValue = !healthConnected
+    ? "Setup"
+    : hasSleepData
+      ? lastNightHours.toFixed(1)
+      : "No data";
+
+  const sleepSubtitle = !healthConnected
+    ? "Tap to connect"
+    : hasSleepData
+      ? "hrs last night"
+      : "Open sleep page";
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+
+      const loadHealth = async () => {
+        const connected = await getHealthConnected();
+
+        if (!active) return;
+
+        setHealthConnected(connected);
+
+        if (connected) {
+          await loadCachedHealth();
+        }
+      };
+
+      void loadHealth();
+
+      return () => {
+        active = false;
+      };
+    }, [loadCachedHealth]),
+  );
+
+  console.log("Health data on dashboard:", health);
 
   return (
     <SafeAreaView style={[styles.screen, { paddingBottom: insets.bottom }]}>
@@ -163,16 +205,16 @@ export const DashboardPage = () => {
 
           <AnimatedMetricCard
             title="Steps"
-            value={health?.steps?.todaySteps?.toLocaleString?.() ?? "Setup"}
-            subtitle="steps today"
+            value={stepsValue}
+            subtitle={stepsSubtitle}
             icon="walk"
             onPress={() => router.push("/StepsTrackerPage")}
           />
 
           <AnimatedMetricCard
             title="Sleep"
-            value={health?.sleep?.lastNightHours?.toFixed?.(1) ?? "Setup"}
-            subtitle="hrs last night"
+            value={sleepValue}
+            subtitle={sleepSubtitle}
             icon="moon"
             onPress={() => router.push("/SleepPage")}
           />
