@@ -59,7 +59,13 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
   const heightInRef = useRef<TextInput>(null);
   const weightRef = useRef<TextInput>(null);
 
+  const ageY = useRef(0);
+  const heightY = useRef(0);
+  const weightY = useRef(0);
+
   const { reloadLocalProfile } = useProfile();
+
+  const scrollRef = useRef<ScrollView>(null);
 
   // Pre-fill with existing draft if present
   useEffect(() => {
@@ -158,6 +164,15 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
     handleChange("sex", next);
   };
 
+  const scrollToInput = (y: number) => {
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({
+        y: Math.max(y - 120, 0),
+        animated: true,
+      });
+    }, 250);
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={[styles.screen, styles.center]}>
@@ -174,16 +189,17 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
         keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
       >
         <ScrollView
+          ref={scrollRef}
           style={{ flex: 1 }}
           contentContainerStyle={[
             styles.content,
-            { flexGrow: 1, paddingBottom: insets.bottom + 40 },
+            { flexGrow: 1, paddingBottom: insets.bottom + 180 },
           ]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={
             Platform.OS === "ios" ? "interactive" : "on-drag"
           }
-          automaticallyAdjustKeyboardInsets
+          automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
           showsVerticalScrollIndicator={true}
         >
           {/* Top helper text */}
@@ -255,21 +271,29 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
           <View style={styles.verticalSpacer} />
 
           {/* Age */}
-          <Text style={styles.label}>Age</Text>
-          <InputWithUnit
-            ref={ageRef}
-            value={String(form.age ?? "")}
-            placeholder="Yrs"
-            unit="yrs"
-            keyboardType="number-pad"
-            returnKeyType="next"
-            onSubmitEditing={() => {
-              if (useImperial) heightFtRef.current?.focus();
-              else heightRef.current?.focus();
+          <View
+            onLayout={(e) => {
+              ageY.current = e.nativeEvent.layout.y;
             }}
-            onChangeText={(v) => handleChange("age", v.replace(/[^0-9]/g, ""))}
-          />
-
+          >
+            <Text style={styles.label}>Age</Text>
+            <InputWithUnit
+              ref={ageRef}
+              value={String(form.age ?? "")}
+              placeholder="Yrs"
+              unit="yrs"
+              keyboardType="number-pad"
+              returnKeyType="next"
+              onFocus={() => scrollToInput(ageY.current)}
+              onSubmitEditing={() => {
+                if (useImperial) heightFtRef.current?.focus();
+                else heightRef.current?.focus();
+              }}
+              onChangeText={(v) =>
+                handleChange("age", v.replace(/[^0-9]/g, ""))
+              }
+            />
+          </View>
           <View style={styles.verticalSpacer} />
 
           {/* Units toggle */}
@@ -301,99 +325,107 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
           </View>
 
           {/* Height */}
-          <Text style={styles.label}>Height</Text>
-          {useImperial ? (
-            <View style={styles.row2}>
-              <View style={styles.col}>
-                <InputWithUnit
-                  ref={heightFtRef}
-                  value={heightFt}
-                  placeholder="0"
-                  unit="ft"
-                  keyboardType="number-pad"
-                  returnKeyType="next"
-                  onSubmitEditing={() => heightInRef.current?.focus()}
-                  onChangeText={(v) => {
-                    const clean = v.replace(/[^0-9]/g, "");
-                    setHeightFt(clean);
+          <View onLayout={(e) => (heightY.current = e.nativeEvent.layout.y)}>
+            <Text style={styles.label}>Height</Text>
+            {useImperial ? (
+              <View style={styles.row2}>
+                <View style={styles.col}>
+                  <InputWithUnit
+                    ref={heightFtRef}
+                    value={heightFt}
+                    placeholder="0"
+                    unit="ft"
+                    keyboardType="number-pad"
+                    returnKeyType="next"
+                    onFocus={() => scrollToInput(heightY.current)}
+                    onSubmitEditing={() => heightInRef.current?.focus()}
+                    onChangeText={(v) => {
+                      const clean = v.replace(/[^0-9]/g, "");
+                      setHeightFt(clean);
 
-                    const ft = Number(clean || 0);
-                    const inches = Number(heightIn || 0);
-                    const cm = ftInToCm(ft, inches);
-                    handleChange("height", cm ? cm.toFixed(1) : "");
-                  }}
-                />
-              </View>
-              <View style={styles.col}>
-                <InputWithUnit
-                  ref={heightInRef}
-                  value={heightIn}
-                  placeholder="0"
-                  unit="in"
-                  keyboardType="number-pad"
-                  returnKeyType="next"
-                  onSubmitEditing={() => weightRef.current?.focus()}
-                  onChangeText={(v) => {
-                    const clean = v.replace(/[^0-9]/g, "");
-                    setHeightIn(clean);
+                      const ft = Number(clean || 0);
+                      const inches = Number(heightIn || 0);
+                      const cm = ftInToCm(ft, inches);
+                      handleChange("height", cm ? cm.toFixed(1) : "");
+                    }}
+                  />
+                </View>
+                <View style={styles.col}>
+                  <InputWithUnit
+                    ref={heightInRef}
+                    value={heightIn}
+                    placeholder="0"
+                    unit="in"
+                    keyboardType="number-pad"
+                    returnKeyType="next"
+                    onFocus={() => scrollToInput(heightY.current)}
+                    onSubmitEditing={() => weightRef.current?.focus()}
+                    onChangeText={(v) => {
+                      const clean = v.replace(/[^0-9]/g, "");
+                      setHeightIn(clean);
 
-                    const ft = Number(heightFt || 0);
-                    const inches = Number(clean || 0);
-                    const cm = ftInToCm(ft, inches);
-                    handleChange("height", cm ? cm.toFixed(1) : "");
-                  }}
-                />
+                      const ft = Number(heightFt || 0);
+                      const inches = Number(clean || 0);
+                      const cm = ftInToCm(ft, inches);
+                      handleChange("height", cm ? cm.toFixed(1) : "");
+                    }}
+                  />
+                </View>
               </View>
-            </View>
-          ) : (
-            <InputWithUnit
-              ref={heightRef}
-              value={String(form.height ?? "")}
-              placeholder="0"
-              unit="cm"
-              keyboardType="decimal-pad"
-              returnKeyType="next"
-              onSubmitEditing={() => weightRef.current?.focus()}
-              onChangeText={(v) =>
-                handleChange("height", v.replace(/[^0-9.]/g, ""))
-              }
-            />
-          )}
+            ) : (
+              <InputWithUnit
+                ref={heightRef}
+                value={String(form.height ?? "")}
+                placeholder="0"
+                unit="cm"
+                keyboardType="decimal-pad"
+                returnKeyType="next"
+                onFocus={() => scrollToInput(heightY.current)}
+                onSubmitEditing={() => weightRef.current?.focus()}
+                onChangeText={(v) =>
+                  handleChange("height", v.replace(/[^0-9.]/g, ""))
+                }
+              />
+            )}
+          </View>
 
           {/* Weight */}
-          <Text style={styles.label}>Weight</Text>
-          <InputWithUnit
-            ref={weightRef}
-            unit={useImperial ? "lb" : "kg"}
-            placeholder={useImperial ? "lb" : "Kg"}
-            keyboardType={useImperial ? "number-pad" : "decimal-pad"}
-            returnKeyType="done"
-            onSubmitEditing={handleSubmit}
-            value={
-              useImperial
-                ? (() => {
-                    const kg = Number(form.weight);
-                    return Number.isFinite(kg) && kg > 0
-                      ? kgToLb(kg).toFixed(0)
-                      : "";
-                  })()
-                : String(form.weight ?? "")
-            }
-            onChangeText={(v) => {
-              const clean = v.replace(/[^0-9.]/g, "");
-              if (!useImperial) {
-                handleChange("weight", clean);
-                return;
+          <View onLayout={(e) => (weightY.current = e.nativeEvent.layout.y)}>
+            <Text style={styles.label}>Weight</Text>
+            <InputWithUnit
+              ref={weightRef}
+              unit={useImperial ? "lb" : "kg"}
+              placeholder={useImperial ? "lb" : "Kg"}
+              keyboardType={useImperial ? "number-pad" : "decimal-pad"}
+              returnKeyType="done"
+              onFocus={() => scrollToInput(weightY.current)}
+              onSubmitEditing={handleSubmit}
+              value={
+                useImperial
+                  ? (() => {
+                      const kg = Number(form.weight);
+                      return Number.isFinite(kg) && kg > 0
+                        ? kgToLb(kg).toFixed(0)
+                        : "";
+                    })()
+                  : String(form.weight ?? "")
               }
-              const lb = Number(clean);
-              if (!Number.isFinite(lb) || lb <= 0) {
-                handleChange("weight", "");
-                return;
-              }
-              const kg = lbToKg(lb);
-              handleChange("weight", kg.toFixed(1));
-            }}
-          />
+              onChangeText={(v) => {
+                const clean = v.replace(/[^0-9.]/g, "");
+                if (!useImperial) {
+                  handleChange("weight", clean);
+                  return;
+                }
+                const lb = Number(clean);
+                if (!Number.isFinite(lb) || lb <= 0) {
+                  handleChange("weight", "");
+                  return;
+                }
+                const kg = lbToKg(lb);
+                handleChange("weight", kg.toFixed(1));
+              }}
+            />
+          </View>
           {/* Error */}
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
