@@ -22,17 +22,21 @@ import {
 import { ensureStepsAccess } from "@/services/health/stepsService";
 import { formatPrettyDate } from "@/utils/date";
 
+import {
+  getHealthConnected,
+  setHealthConnected,
+} from "@/services/health/healthCache";
 import { COLORS } from "@/theme/color";
 import { useRouter } from "expo-router";
 
 type PageState =
+  | "connect_prompt"
   | "checking_availability"
   | "missing_provider"
   | "requesting_permission"
-  | "no_data"
   | "loading_data"
+  | "no_data"
   | "ready"
-  | "provider_update_required"
   | "error";
 
 const StepsTrackerPage = () => {
@@ -58,8 +62,8 @@ const StepsTrackerPage = () => {
 
         const availability = await checkAndroidHealthConnectAvailability();
 
-        if (availability.needsUpdate) {
-          setState("provider_update_required");
+        if (availability.needsInstall) {
+          setState("missing_provider");
           return;
         }
 
@@ -82,6 +86,7 @@ const StepsTrackerPage = () => {
       }
 
       setState("loading_data");
+      await setHealthConnected(); // Mark as connected to avoid showing connect prompt again
       await refreshHealth();
       setState("ready");
     } catch (err: any) {
@@ -95,13 +100,17 @@ const StepsTrackerPage = () => {
 
     if (healthError) {
       setState("error");
+      setError(healthError);
       return;
     }
 
+    if (!data) {
+      return;
+    }
     const steps = data?.steps;
 
     if (!steps) {
-      setState("error");
+      setState("no_data");
       return;
     }
 
@@ -111,35 +120,57 @@ const StepsTrackerPage = () => {
     setState(hasData ? "ready" : "no_data");
   }, [loading, healthError, data]);
 
+  useEffect(() => {
+    // On initial load, check if we've already connected to Health Connect before and skip straight to loading data if so
+    let active = true;
+
+    const bootstrap = async () => {
+      const connected = await getHealthConnected();
+
+      if (!active) return;
+
+      if (connected) {
+        void load();
+      } else {
+        setState("connect_prompt");
+      }
+    };
+
+    void bootstrap();
+
+    return () => {
+      active = false;
+    };
+  }, [load]);
+
+  console.log("StepsTrackerPage: data loaded", { data, state, error });
   return (
     <SafeAreaView style={styles.screen}>
       <AppHeader title="Steps" showBack onBackPress={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.content}>
-        {state === "checking_availability" ? (
+        {state === "checking_availability" ||
+        state === "requesting_permission" ||
+        state === "loading_data" ? (
           <View style={styles.centerCard}>
-            <Text style={styles.title}>Connect Health Data</Text>
+            <Text style={styles.title}>
+              {state === "checking_availability" && "Checking Health Connect"}
 
-            <Text style={styles.infoText}>
-              Connect Health Connect to read your steps and sleep data.
+              {state === "requesting_permission" && "Requesting Permission"}
+
+              {state === "loading_data" && "Loading Step Data"}
             </Text>
 
-            <Pressable style={styles.primaryBtn} onPress={load}>
-              <Text style={styles.primaryBtnText}>Continue</Text>
-            </Pressable>
-          </View>
-        ) : null}
-        {state === "requesting_permission" || state === "loading_data" ? (
-          <View style={styles.centerCard}>
-            <Text style={styles.title}>Connect Health Data</Text>
-
             <Text style={styles.infoText}>
-              Connect Health Connect to read your steps and sleep data.
-            </Text>
+              {state === "checking_availability" &&
+                "Checking if Health Connect is available..."}
 
-            <Pressable style={styles.primaryBtn} onPress={load}>
-              <Text style={styles.primaryBtnText}>Continue</Text>
-            </Pressable>
+              {state === "requesting_permission" &&
+                "Please allow access to your health data."}
+
+              {state === "loading_data" &&
+                "Checking your available step records..."}
+            </Text>
           </View>
         ) : null}
 
@@ -166,19 +197,16 @@ const StepsTrackerPage = () => {
           </View>
         ) : null}
 
-        {state === "provider_update_required" ? (
+        {state === "connect_prompt" ? (
           <View style={styles.centerCard}>
-            <Text style={styles.title}>Health Connect update required</Text>
+            <Text style={styles.title}>Connect Health Data</Text>
+
             <Text style={styles.infoText}>
-              Update Health Connect on Android so the app can read your step
-              data.
+              Connect Health Connect to read your steps and sleep data.
             </Text>
 
-            <Pressable
-              style={styles.primaryBtn}
-              onPress={openHealthConnectStorePage}
-            >
-              <Text style={styles.primaryBtnText}>Open Play Store</Text>
+            <Pressable style={styles.primaryBtn} onPress={load}>
+              <Text style={styles.primaryBtnText}>Continue</Text>
             </Pressable>
           </View>
         ) : null}
