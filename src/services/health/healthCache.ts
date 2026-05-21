@@ -1,5 +1,6 @@
 // src/services/health/healthCache.ts
 
+import { HEALTH_CONNECTION_STATUS_KEY } from "@/constants/storageKeys";
 import type { HealthSummary } from "@/models/healthModel";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -24,3 +25,17 @@ export async function loadHealthCache(): Promise<HealthSummary | null> {
 export async function clearHealthCache(): Promise<void> {
   await AsyncStorage.removeItem(HEALTH_CACHE_KEY);
 }
+
+// health connection status is stored separately so we can check it without needing to parse the full health summary cache, which may be large and slow to parse
+export const getHealthConnected = async (): Promise<boolean> => {
+  const value = await AsyncStorage.getItem(HEALTH_CONNECTION_STATUS_KEY);
+  return value === "true";
+};
+
+export const setHealthConnected = async (): Promise<void> => {
+  await AsyncStorage.setItem(HEALTH_CONNECTION_STATUS_KEY, "true");
+};
+
+export const clearHealthConnected = async (): Promise<void> => {
+  await AsyncStorage.removeItem(HEALTH_CONNECTION_STATUS_KEY);
+};

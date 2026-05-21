@@ -6,3 +6,4 @@ export const AUTH_USER_KEY = "@auth_user";
 export const USER_PROFILE_KEY = "@UserProfile";
 export const AUTH_MODE_KEY = "@auth_mode";
 export const PRIVACY_POLICY_ACCEPTED_KEY = "privacy_policy_accepted";
+export const HEALTH_CONNECTION_STATUS_KEY = "@health_connection_status";

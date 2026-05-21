@@ -20,23 +20,27 @@ import {
 } from "@/services/health/healthConnectInstall";
 import { formatPrettyDate } from "@/utils/date";
 
+import {
+  getHealthConnected,
+  setHealthConnected,
+} from "@/services/health/healthCache";
 import { ensureSleepAccess } from "@/services/health/sleepService";
 import { COLORS } from "@/theme/color";
 import { useRouter } from "expo-router";
 
 type PageState =
+  | "connect_prompt"
   | "checking_availability"
   | "missing_provider"
   | "requesting_permission"
-  | "no_data"
   | "loading_data"
+  | "no_data"
   | "ready"
-  | "provider_update_required"
   | "error";
 
 const SleepPage = () => {
   const router = useRouter();
-  const [state, setState] = useState<PageState>("checking_availability");
+  const [state, setState] = useState<PageState>("connect_prompt");
   const [error, setError] = useState<string | null>(null);
   const { refreshHealth, data, loading, error: healthError } = useHealth();
 
@@ -64,11 +68,6 @@ const SleepPage = () => {
           return;
         }
 
-        if (availability.needsUpdate) {
-          setState("provider_update_required");
-          return;
-        }
-
         if (!availability.available) {
           setState("missing_provider");
           return;
@@ -88,6 +87,7 @@ const SleepPage = () => {
       }
 
       setState("loading_data");
+      await setHealthConnected(); // Mark as connected to avoid showing connect prompt again
       await refreshHealth();
       setState("ready");
     } catch (err: any) {
@@ -101,13 +101,16 @@ const SleepPage = () => {
 
     if (healthError) {
       setState("error");
+      setError(healthError);
       return;
     }
 
-    const sleep = data?.sleep;
+    if (!data) return;
+
+    const sleep = data.sleep;
 
     if (!sleep) {
-      setState("error");
+      setState("no_data");
       return;
     }
 
@@ -116,6 +119,29 @@ const SleepPage = () => {
 
     setState(hasData ? "ready" : "no_data");
   }, [loading, healthError, data]);
+
+  useEffect(() => {
+    // On initial load, check if we've already connected to Health Connect before and skip straight to loading data if so
+    let active = true;
+
+    const bootstrap = async () => {
+      const connected = await getHealthConnected();
+
+      if (!active) return;
+
+      if (connected) {
+        void load();
+      } else {
+        setState("connect_prompt");
+      }
+    };
+
+    void bootstrap();
+
+    return () => {
+      active = false;
+    };
+  }, [load]);
 
   console.log("SleepPage: data loaded", { data, state, error });
   return (
@@ -140,15 +166,17 @@ const SleepPage = () => {
 
         {state === "requesting_permission" || state === "loading_data" ? (
           <View style={styles.centerCard}>
-            <Text style={styles.title}>Connect Health Data</Text>
-
-            <Text style={styles.infoText}>
-              Connect Health Connect to read your steps and sleep data.
+            <Text style={styles.title}>
+              {state === "requesting_permission"
+                ? "Requesting Permission"
+                : "Loading Sleep Data"}
             </Text>
 
-            <Pressable style={styles.primaryBtn} onPress={load}>
-              <Text style={styles.primaryBtnText}>Continue</Text>
-            </Pressable>
+            <Text style={styles.infoText}>
+              {state === "requesting_permission"
+                ? "Please allow access to your health data."
+                : "Checking your available sleep records..."}
+            </Text>
           </View>
         ) : null}
 
@@ -175,19 +203,16 @@ const SleepPage = () => {
           </View>
         ) : null}
 
-        {state === "provider_update_required" ? (
+        {state === "connect_prompt" ? (
           <View style={styles.centerCard}>
-            <Text style={styles.title}>Health Connect update required</Text>
+            <Text style={styles.title}>Connect Health Data</Text>
             <Text style={styles.infoText}>
-              Update Health Connect on Android so the app can read your step
-              data.
+              Connect Health Connect to display your sleep data from supported
+              health apps and devices.
             </Text>
 
-            <Pressable
-              style={styles.primaryBtn}
-              onPress={openHealthConnectStorePage}
-            >
-              <Text style={styles.primaryBtnText}>Open Play Store</Text>
+            <Pressable style={styles.primaryBtn} onPress={load}>
+              <Text style={styles.primaryBtnText}>Continue</Text>
             </Pressable>
           </View>
         ) : null}
@@ -195,7 +220,9 @@ const SleepPage = () => {
         {state === "error" ? (
           <View style={styles.centerCard}>
             <Text style={styles.title}>Could not load sleep data</Text>
-            <Text style={styles.errorText}>{error}</Text>
+            <Text style={styles.errorText}>
+              {error ?? "Something went wrong while loading sleep data."}
+            </Text>
 
             <Pressable style={styles.primaryBtn} onPress={load}>
               <Text style={styles.primaryBtnText}>Try again</Text>
