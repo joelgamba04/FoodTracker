@@ -62,7 +62,13 @@
         }
       ],
       "./plugins/withAdiRegistration",
-      "expo-health-connect"
+      "expo-health-connect",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "TaguigNutriApp reads your step count and sleep data to provide more relevant nutrition and wellness feedback."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
