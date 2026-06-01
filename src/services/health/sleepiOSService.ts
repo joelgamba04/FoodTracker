@@ -1,74 +1,113 @@
-// src/services/health/sleepServiceiOS.ts
+// src/services/health/sleepiOSService.ts
 
-import type { SleepSummary } from "@/models/sleepModel";
-import AppleHealthKit from "react-native-health";
+import type { SleepDay, SleepSummary } from "@/models/sleepModel";
+import { endOfDay, lastNDays, startOfDay, toYmd } from "@/utils/date";
+import {
+  isHealthDataAvailable,
+  queryCategorySamples,
+  requestAuthorization,
+} from "@kingstinct/react-native-healthkit";
 
-const permissions = {
-  permissions: {
-    read: [AppleHealthKit.Constants.Permissions.SleepAnalysis],
-    write: [],
-  },
-};
+const SLEEP_ANALYSIS = "HKCategoryTypeIdentifierSleepAnalysis" as const;
 
-export const ensureIosSleepAccess = (): Promise<{
+const ASLEEP_VALUES = new Set([
+  "asleep",
+  "asleepCore",
+  "asleepDeep",
+  "asleepREM",
+  "HKCategoryValueSleepAnalysisAsleep",
+  "HKCategoryValueSleepAnalysisAsleepCore",
+  "HKCategoryValueSleepAnalysisAsleepDeep",
+  "HKCategoryValueSleepAnalysisAsleepREM",
+  1,
+  3,
+  4,
+  5,
+]);
+
+export const ensureIosSleepAccess = async (): Promise<{
   ok: boolean;
   reason?: string;
 }> => {
-  return new Promise((resolve) => {
-    AppleHealthKit.initHealthKit(permissions, (error: string) => {
-      if (error) {
-        resolve({ ok: false, reason: error });
-        return;
-      }
+  const available = await isHealthDataAvailable();
 
-      resolve({ ok: true });
-    });
+  if (!available) {
+    return {
+      ok: false,
+      reason: "Apple Health is not available on this device.",
+    };
+  }
+
+  await requestAuthorization({
+    toRead: [SLEEP_ANALYSIS],
+    toShare: [],
   });
+
+  return { ok: true };
 };
 
 export const readIOSSleep = async (): Promise<SleepSummary> => {
-  await new Promise<void>((resolve, reject) => {
-    AppleHealthKit.initHealthKit(permissions, (err) => {
-      if (err) reject(err);
-      else resolve();
+  const days = lastNDays(7);
+  const last7Days: SleepDay[] = [];
+
+  for (const day of days) {
+    const startDate = startOfDay(day);
+    const endDate = endOfDay(day);
+
+    const samples = await queryCategorySamples(SLEEP_ANALYSIS, {
+      limit: 0,
+      ascending: true,
+      filter: {
+        date: {
+          startDate,
+          endDate,
+        },
+      },
     });
-  });
 
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(endDate.getDate() - 7);
+    const totalHours = (samples ?? []).reduce((sum, sample: any) => {
+      /**
+       * HealthKit sleep samples can include:
+       * - inBed
+       * - awake
+       * - asleep
+       * - asleepCore
+       * - asleepDeep
+       * - asleepREM
+       *
+       * For actual sleep hours, count only asleep values.
+       */
+      if (!ASLEEP_VALUES.has(sample.value)) {
+        return sum;
+      }
 
-  const options = {
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
-  };
+      const start = new Date(sample.startDate);
+      const end = new Date(sample.endDate);
 
-  const samples = await new Promise<any[]>((resolve, reject) => {
-    AppleHealthKit.getSleepSamples(options, (err, res) => {
-      if (err) reject(err);
-      else resolve(res);
+      const durationHours =
+        (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+
+      return sum + durationHours;
+    }, 0);
+
+    last7Days.push({
+      date: toYmd(day),
+      hours: Number(totalHours.toFixed(2)),
     });
-  });
+  }
 
-  // Convert to daily totals
-  const days: Record<string, number> = {};
+  const todayKey = toYmd(new Date());
+  const todayIndex = last7Days.findIndex((d) => d.date === todayKey);
 
-  samples.forEach((s) => {
-    const start = new Date(s.startDate);
-    const end = new Date(s.endDate);
-
-    const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-
-    const key = start.toISOString().slice(0, 10);
-    days[key] = (days[key] || 0) + durationHours;
-  });
-
-  const last7Days = Object.entries(days).map(([date, hours]) => ({
-    date,
-    hours,
-  }));
-
-  const lastNight = last7Days[last7Days.length - 1];
+  /**
+   * Your model calls this "lastNightHours".
+   * In a 7-day daily array, yesterday is usually a better approximation
+   * than today's partial sleep total.
+   */
+  const lastNight =
+    todayIndex > 0
+      ? last7Days[todayIndex - 1]
+      : last7Days[last7Days.length - 1];
 
   return {
     lastNightHours: lastNight?.hours ?? 0,

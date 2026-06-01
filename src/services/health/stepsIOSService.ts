@@ -1,68 +1,70 @@
+// src/services/health/stepsIOSService.ts
+
 import type { StepDay, StepsSummary } from "@/models/stepsModel";
-import { lastNDaysStart, toYmd } from "@/utils/date";
-import AppleHealthKit, {
-  HealthInputOptions,
-  HealthKitPermissions,
-} from "react-native-health";
+import { endOfDay, lastNDays, startOfDay, toYmd } from "@/utils/date";
+import {
+  isHealthDataAvailable,
+  queryStatisticsForQuantity,
+  requestAuthorization,
+} from "@kingstinct/react-native-healthkit";
 
-const permissions: HealthKitPermissions = {
-  permissions: {
-    read: [AppleHealthKit.Constants.Permissions.Steps],
-    write: [],
-  },
-};
+const STEP_COUNT = "HKQuantityTypeIdentifierStepCount" as const;
 
-export const ensureIosStepsAccess = (): Promise<{
+export const ensureIosStepsAccess = async (): Promise<{
   ok: boolean;
   reason?: string;
 }> => {
-  return new Promise((resolve) => {
-    AppleHealthKit.initHealthKit(permissions, (error: string) => {
-      if (error) {
-        resolve({ ok: false, reason: error });
-        return;
-      }
+  const available = await isHealthDataAvailable();
 
-      resolve({ ok: true });
-    });
+  if (!available) {
+    return {
+      ok: false,
+      reason: "Apple Health is not available on this device.",
+    };
+  }
+
+  await requestAuthorization({
+    toRead: [STEP_COUNT],
+    toShare: [],
   });
+
+  return { ok: true };
 };
 
-export const readIosStepsSummary = (): Promise<StepsSummary> => {
-  return new Promise((resolve, reject) => {
-    const options: HealthInputOptions = {
-      startDate: lastNDaysStart(7).toISOString(),
-    };
+export const readIosStepsSummary = async (): Promise<StepsSummary> => {
+  const days = lastNDays(7);
+  const last7Days: StepDay[] = [];
 
-    AppleHealthKit.getDailyStepCountSamples(
-      options,
-      (error: string, results: any[]) => {
-        if (error) {
-          reject(new Error(error));
-          return;
-        }
+  for (const day of days) {
+    const startDate = startOfDay(day);
+    const endDate = endOfDay(day);
 
-        const normalized: StepDay[] = (results ?? []).map((item) => {
-          const date = item.startDate
-            ? String(item.startDate).slice(0, 10)
-            : toYmd(new Date());
-
-          return {
-            date,
-            count: Number(item.value ?? 0),
-            source: item.sourceName,
-          };
-        });
-
-        const todayKey = toYmd(new Date());
-        const todaySteps =
-          normalized.find((d) => d.date === todayKey)?.count ?? 0;
-
-        resolve({
-          todaySteps,
-          last7Days: normalized,
-        });
+    const stats = await queryStatisticsForQuantity(
+      STEP_COUNT,
+      ["cumulativeSum"],
+      {
+        filter: {
+          date: {
+            startDate,
+            endDate,
+          },
+        },
+        unit: "count",
       },
     );
-  });
+
+    last7Days.push({
+      date: toYmd(day),
+      count: Number(stats.sumQuantity?.quantity ?? 0),
+      source: stats.sources?.[0]?.name,
+    });
+  }
+
+  const todayKey = toYmd(new Date());
+  const todaySteps = last7Days.find((d) => d.date === todayKey)?.count ?? 0;
+
+  return {
+    todaySteps,
+    last7Days,
+  };
 };
