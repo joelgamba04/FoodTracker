@@ -30,6 +30,7 @@ export const COLORS = {
   surfaceMuted: "#F3F5F7", // Pills, inputs, inactive areas
   surfaceBorder: "#E6E8EB", // Card/input borders
   divider: "#EEF0F2", // Section dividers
+  whiteBGTransparent: "rgba(255,255,255,0.1)",
 
   /* =========================
    * Status

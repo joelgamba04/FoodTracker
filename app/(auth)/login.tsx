@@ -9,6 +9,7 @@ import React, { useMemo, useRef, useState } from "react";
 import {
   Dimensions,
   Image,
+  ImageBackground,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -138,58 +139,66 @@ export const LoginScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 8 : 0}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <ScrollView
-            style={styles.flex}
-            contentContainerStyle={[
-              styles.scrollContent,
-              { paddingBottom: insets.bottom + 24 },
-            ]}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode={
-              Platform.OS === "ios" ? "interactive" : "on-drag"
-            }
+    <ImageBackground
+      source={require("../../assets/images/login_bg.png")}
+      style={{ flex: 1 }}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={styles.safe}>
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 8 : 0}
+        >
+          <TouchableWithoutFeedback
+            onPress={Keyboard.dismiss}
+            accessible={false}
           >
-            {/* BRAND BLOCK */}
-            <View style={styles.brandWrap}>
-              <View style={styles.brandCard}>
-                <Image
-                  source={require("../../assets/images/withbgthinkbig-01.png")}
-                  style={styles.thinkBig}
-                  resizeMode="contain"
-                />
-              </View>
-            </View>
-
-            {/* FORM CARD */}
-            <View style={[styles.card, { width: CARD_MAX_WIDTH }]}>
-              <View style={styles.logoRow}>
-                <View style={styles.logoHalo}>
+            <ScrollView
+              style={styles.flex}
+              contentContainerStyle={[
+                styles.scrollContent,
+                { paddingBottom: insets.bottom + 24 },
+              ]}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode={
+                Platform.OS === "ios" ? "interactive" : "on-drag"
+              }
+            >
+              {/* BRAND BLOCK */}
+              <View style={styles.brandWrap}>
+                <View style={styles.brandCard}>
                   <Image
-                    source={require("../../assets/images/FixedSquareNoBg.png")}
-                    style={styles.logo}
+                    source={require("../../assets/images/welcome_banner.png")}
+                    style={styles.thinkBig}
                     resizeMode="contain"
                   />
                 </View>
-
-                <View style={styles.brandText}>
-                  <Text style={styles.appName}>Taguig NutriApp</Text>
-                  <Text style={styles.appSub}>City Government of Taguig</Text>
-                </View>
               </View>
 
-              {/* <Text style={styles.title}>Log in</Text>
+              {/* FORM CARD */}
+              <View style={[styles.card, { width: CARD_MAX_WIDTH }]}>
+                <View style={styles.logoRow}>
+                  <View style={styles.logoHalo}>
+                    <Image
+                      source={require("../../assets/images/FixedSquareNoBg.png")}
+                      style={styles.logo}
+                      resizeMode="contain"
+                    />
+                  </View>
+
+                  <View style={styles.brandText}>
+                    <Text style={styles.appName}>Taguig NutriApp</Text>
+                    <Text style={styles.appSub}>City Government of Taguig</Text>
+                  </View>
+                </View>
+
+                {/* <Text style={styles.title}>Log in</Text>
               <Text style={styles.subtitle}>Use your account to continue.</Text> */}
 
-              {!!err && <Text style={styles.errorText}>{err}</Text>}
+                {!!err && <Text style={styles.errorText}>{err}</Text>}
 
-              {/* <View style={styles.field}>
+                {/* <View style={styles.field}>
                 <Text style={styles.label}>Email</Text>
                 <TextInput
                   ref={emailRef}
@@ -207,7 +216,7 @@ export const LoginScreen = () => {
                 />
               </View> */}
 
-              {/* <View style={styles.field}>
+                {/* <View style={styles.field}>
                 <Text style={styles.label}>Password</Text>
                 <View style={styles.passwordRow}>
                   <TextInput
@@ -239,34 +248,34 @@ export const LoginScreen = () => {
                 </View>
               </View> */}
 
-              {/* PRIVACY POLICY & SUBMIT */}
-              <View style={styles.privacyRow}>
-                <TouchableOpacity
-                  onPress={togglePrivacyAccepted}
-                  style={styles.checkbox}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: privacyAccepted }}
-                >
-                  <Text style={styles.checkboxMark}>
-                    {privacyAccepted ? "✓" : ""}
-                  </Text>
-                </TouchableOpacity>
-
-                <Text style={styles.privacyText}>
-                  I agree to the{" "}
-                  <Text
-                    style={styles.privacyLink}
-                    onPress={() => {
-                      console.log("Opening privacy modal");
-                      setPrivacyVisible(true);
-                    }}
+                {/* PRIVACY POLICY & SUBMIT */}
+                <View style={styles.privacyRow}>
+                  <TouchableOpacity
+                    onPress={togglePrivacyAccepted}
+                    style={styles.checkbox}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: privacyAccepted }}
                   >
-                    Privacy Policy
-                  </Text>
-                </Text>
-              </View>
+                    <Text style={styles.checkboxMark}>
+                      {privacyAccepted ? "✓" : ""}
+                    </Text>
+                  </TouchableOpacity>
 
-              {/* <TouchableOpacity
+                  <Text style={styles.privacyText}>
+                    I agree to the{" "}
+                    <Text
+                      style={styles.privacyLink}
+                      onPress={() => {
+                        console.log("Opening privacy modal");
+                        setPrivacyVisible(true);
+                      }}
+                    >
+                      Privacy Policy
+                    </Text>
+                  </Text>
+                </View>
+
+                {/* <TouchableOpacity
                 style={[
                   styles.primaryBtn,
                   !canSubmit && styles.primaryBtnDisabled,
@@ -284,35 +293,41 @@ export const LoginScreen = () => {
                 </Text>
               </TouchableOpacity> */}
 
-              <TouchableOpacity
-                onPress={onGuest}
-                style={[styles.guestBtn, loading && styles.primaryBtnDisabled]}
-                disabled={loading}
-              >
-                <Text style={styles.guestText}>Continue as Guest</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={onGuest}
+                  style={[
+                    styles.guestBtn,
+                    loading && styles.primaryBtnDisabled,
+                  ]}
+                  disabled={loading}
+                >
+                  <Text style={styles.guestText}>Continue as Guest</Text>
+                </TouchableOpacity>
 
-              <Text style={styles.legal}>
-                By continuing, you agree to the app’s terms and disclaimers.
+                <Text style={styles.legal}>
+                  By continuing, you agree to the app’s terms and disclaimers.
+                </Text>
+              </View>
+
+              {/* FOOTER */}
+              <Text style={styles.footer}>
+                © 2026 City Government of Taguig
               </Text>
-            </View>
-
-            {/* FOOTER */}
-            <Text style={styles.footer}>© 2026 City Government of Taguig</Text>
-          </ScrollView>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
-      <PrivacyPolicyModal
-        visible={privacyVisible}
-        onClose={() => setPrivacyVisible(false)}
-      />
-    </SafeAreaView>
+            </ScrollView>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+        <PrivacyPolicyModal
+          visible={privacyVisible}
+          onClose={() => setPrivacyVisible(false)}
+        />
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  safe: { flex: 1, backgroundColor: COLORS.background },
+  safe: { flex: 1, backgroundColor: COLORS.whiteBGTransparent },
 
   scrollContent: {
     flexGrow: 1,
@@ -323,17 +338,11 @@ const styles = StyleSheet.create({
   brandWrap: { paddingTop: 6, alignItems: "center" },
   brandCard: {
     width: CARD_MAX_WIDTH,
-    borderRadius: 18,
     paddingVertical: 14,
     paddingHorizontal: 14,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    shadowColor: COLORS.shadow,
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 3,
+    backgroundColor: COLORS.whiteBGTransparent,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   thinkBig: {
     width: "100%",
@@ -342,7 +351,7 @@ const styles = StyleSheet.create({
 
   card: {
     alignSelf: "center",
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.whiteBGTransparent,
     borderRadius: 18,
     borderWidth: 1,
     borderColor: COLORS.border,
