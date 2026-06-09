@@ -141,8 +141,9 @@ export const LoginScreen = () => {
   return (
     <ImageBackground
       source={require("../../assets/images/login_bg.png")}
-      style={{ flex: 1 }}
-      resizeMode="cover"
+      style={styles.bg}
+      imageStyle={styles.bgImage}
+      resizeMode="stretch"
     >
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView
@@ -326,6 +327,16 @@ export const LoginScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  bg: {
+    flex: 1,
+    backgroundColor: COLORS.whiteBGTransparent,
+  },
+
+  bgImage: {
+    width: "100%",
+    height: "100%",
+  },
+
   flex: { flex: 1 },
   safe: { flex: 1, backgroundColor: COLORS.whiteBGTransparent },
 
