@@ -33,12 +33,15 @@ InputWithUnit.displayName = "InputWithUnit";
 
 const styles = StyleSheet.create({
   inputUnitWrap: {
-    height: 48,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    backgroundColor: COLORS.surface,
+    minHeight: 58,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 18,
+    backgroundColor: COLORS.inputBackground,
+    borderColor: COLORS.inputBorder,
     flexDirection: "row",
     alignItems: "center",
+    color: COLORS.textPrimary,
   },
   inputUnitInput: {
     flex: 1,

@@ -4,6 +4,8 @@ import { UserProfile, defaultProfile } from "@/models/models";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
+  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -182,453 +184,481 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
-      >
-        <ScrollView
-          ref={scrollRef}
-          style={{ flex: 1 }}
-          contentContainerStyle={[
-            styles.content,
-            { flexGrow: 1, paddingBottom: insets.bottom + 180 },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode={
-            Platform.OS === "ios" ? "interactive" : "on-drag"
-          }
-          automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
-          showsVerticalScrollIndicator={true}
+    <ImageBackground
+      source={require("../../assets/images/login_bg.png")}
+      style={styles.bg}
+      imageStyle={styles.bgImage}
+      resizeMode="stretch"
+    >
+      <SafeAreaView style={styles.safe}>
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
         >
-          {/* Top helper text */}
-          <Text style={styles.helper}>
-            These details will help Taguig NutriApp provide{"\n"}
-            more relevant nutrition feedback
-          </Text>
-
-          {/* Avatar */}
-          <View style={styles.avatarWrap}>
-            <View style={styles.avatarCircle}>
-              <View style={styles.avatarHead} />
-              <View style={styles.avatarBody} />
-            </View>
-
-            {/* <View style={styles.avatarPlus}>
-              <Text style={styles.avatarPlusText}>+</Text>
-            </View> */}
-          </View>
-
-          {/* Title */}
-          <Text style={styles.title}>Create Profile</Text>
-
-          {/* First/Last name row */}
-          {/* <View style={styles.row2}>
-            <View style={styles.col}>
-              <Text style={styles.label}>First Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Placeholder"
-                placeholderTextColor={MUTED}
-                value={(form.firstName ?? "") as string}
-                onChangeText={(v) => handleChange("firstName", v)}
-                autoCapitalize="words"
-                returnKeyType="next"
-              />
-            </View>
-
-            <View style={styles.col}>
-              <Text style={styles.label}>Last Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Placeholder"
-                placeholderTextColor={MUTED}
-                value={(form.lastName ?? "") as string}
-                onChangeText={(v) => handleChange("lastName", v)}
-                autoCapitalize="words"
-                returnKeyType="next"
-              />
-            </View>
-          </View> */}
-
-          {/* Gender */}
-          <Text style={styles.label}>Sex</Text>
-          <TouchableOpacity
-            style={[styles.inputPressable, styles.genderRow]}
-            activeOpacity={0.85}
-            onPress={toggleGender}
+          <ScrollView
+            ref={scrollRef}
+            style={{ flex: 1 }}
+            contentContainerStyle={[
+              styles.content,
+              { flexGrow: 1, paddingBottom: insets.bottom + 180 },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={
+              Platform.OS === "ios" ? "interactive" : "on-drag"
+            }
+            automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+            showsVerticalScrollIndicator={true}
           >
-            <Text
-              style={form.sex ? styles.genderValue : styles.inputPressableText}
-            >
-              {form.sex ? String(form.sex) : "Select gender"}
-            </Text>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-          <Text style={styles.genderHint}>Tap to change</Text>
-
-          <View style={styles.verticalSpacer} />
-
-          {/* Age */}
-          <View
-            onLayout={(e) => {
-              ageY.current = e.nativeEvent.layout.y;
-            }}
-          >
-            <Text style={styles.label}>Age</Text>
-            <InputWithUnit
-              ref={ageRef}
-              value={String(form.age ?? "")}
-              placeholder="Yrs"
-              unit="yrs"
-              keyboardType="number-pad"
-              returnKeyType="next"
-              onFocus={() => scrollToInput(ageY.current)}
-              onSubmitEditing={() => {
-                if (useImperial) heightFtRef.current?.focus();
-                else heightRef.current?.focus();
-              }}
-              onChangeText={(v) =>
-                handleChange("age", v.replace(/[^0-9]/g, ""))
-              }
+            <Image
+              resizeMode="contain"
+              source={require("../../assets/images/nutrition_logo.png")}
+              style={styles.logo}
             />
-          </View>
-          <View style={styles.verticalSpacer} />
 
-          {/* Units toggle */}
+            <Text style={styles.helper}>
+              These details will help{"\n"}
+              <Text style={styles.red}>Taguig </Text>
+              <Text style={styles.blue}>Nutri</Text>
+              <Text style={styles.yellow}> App </Text>
+              provide more relevant{"\n"}
+              nutrition feedback
+            </Text>
 
-          <View style={styles.unitRow}>
-            <Text style={styles.unitTitle}>Units</Text>
-
-            <View style={styles.unitToggle}>
-              <Text
-                style={[
-                  styles.unitLabel,
-                  !useImperial && styles.unitLabelActive,
-                ]}
-              >
-                Metric
-              </Text>
-
-              <Switch value={useImperial} onValueChange={setUseImperial} />
-
-              <Text
-                style={[
-                  styles.unitLabel,
-                  useImperial && styles.unitLabelActive,
-                ]}
-              >
-                Imperial
-              </Text>
-            </View>
-          </View>
-
-          {/* Height */}
-          <View onLayout={(e) => (heightY.current = e.nativeEvent.layout.y)}>
-            <Text style={styles.label}>Height</Text>
-            {useImperial ? (
-              <View style={styles.row2}>
-                <View style={styles.col}>
-                  <InputWithUnit
-                    ref={heightFtRef}
-                    value={heightFt}
-                    placeholder="0"
-                    unit="ft"
-                    keyboardType="number-pad"
-                    returnKeyType="next"
-                    onFocus={() => scrollToInput(heightY.current)}
-                    onSubmitEditing={() => heightInRef.current?.focus()}
-                    onChangeText={(v) => {
-                      const clean = v.replace(/[^0-9]/g, "");
-                      setHeightFt(clean);
-
-                      const ft = Number(clean || 0);
-                      const inches = Number(heightIn || 0);
-                      const cm = ftInToCm(ft, inches);
-                      handleChange("height", cm ? cm.toFixed(1) : "");
-                    }}
-                  />
+            {/* Avatar */}
+            <View style={styles.card}>
+              {/* <View style={styles.avatarWrap}>
+                <Text style={styles.avatarIcon}>👤</Text>
+                <View style={styles.plusCircle}>
+                  <Text style={styles.plusText}>+</Text>
                 </View>
-                <View style={styles.col}>
+              </View> */}
+
+              <Text style={styles.title}>Create Profile</Text>
+
+              {/* Decorative lines under title */}
+              <View style={styles.titleLines}>
+                <View
+                  style={[styles.line, { backgroundColor: COLORS.taguigRed }]}
+                />
+                <View
+                  style={[styles.line, { backgroundColor: COLORS.taguigBlue }]}
+                />
+                <View
+                  style={[
+                    styles.line,
+                    { backgroundColor: COLORS.taguigYellow },
+                  ]}
+                />
+              </View>
+
+              <Text style={styles.label}>Sex</Text>
+              <TouchableOpacity style={styles.input} onPress={toggleGender}>
+                <Text style={styles.inputText}>{form.sex || "Select sex"}</Text>
+              </TouchableOpacity>
+
+              {/* Age */}
+              <View
+                onLayout={(e) => {
+                  ageY.current = e.nativeEvent.layout.y;
+                }}
+              >
+                <Text style={styles.label}>Age</Text>
+                <InputWithUnit
+                  ref={ageRef}
+                  value={String(form.age ?? "")}
+                  placeholder="Enter your age"
+                  unit="yrs"
+                  keyboardType="numeric"
+                  returnKeyType="next"
+                  onFocus={() => scrollToInput(ageY.current)}
+                  onSubmitEditing={() => {
+                    if (useImperial) heightFtRef.current?.focus();
+                    else heightRef.current?.focus();
+                  }}
+                  onChangeText={(v) => handleChange("age", v)}
+                />
+              </View>
+              {/* Units toggle */}
+              <View style={styles.unitRow}>
+                <Text style={styles.unitTitle}>Units</Text>
+
+                <View style={styles.unitToggle}>
+                  <Text
+                    style={[
+                      styles.unitLabel,
+                      !useImperial && styles.unitLabelActive,
+                    ]}
+                  >
+                    Metric
+                  </Text>
+
+                  <Switch value={useImperial} onValueChange={setUseImperial} />
+
+                  <Text
+                    style={[
+                      styles.unitLabel,
+                      useImperial && styles.unitLabelActive,
+                    ]}
+                  >
+                    Imperial
+                  </Text>
+                </View>
+              </View>
+
+              {/* Height */}
+              <View
+                onLayout={(e) => (heightY.current = e.nativeEvent.layout.y)}
+              >
+                <Text style={styles.label}>Height</Text>
+
+                {useImperial ? (
+                  <View style={styles.row}>
+                    <View style={styles.halfField}>
+                      <InputWithUnit
+                        ref={heightFtRef}
+                        value={heightFt}
+                        placeholder="Feet"
+                        unit="ft"
+                        keyboardType="number-pad"
+                        returnKeyType="next"
+                        onFocus={() => scrollToInput(heightY.current)}
+                        onSubmitEditing={() => heightInRef.current?.focus()}
+                        onChangeText={(v) => {
+                          const clean = v.replace(/[^0-9]/g, "");
+                          setHeightFt(clean);
+
+                          const cm = ftInToCm(
+                            Number(clean || 0),
+                            Number(heightIn || 0),
+                          );
+                          handleChange("height", cm ? cm.toFixed(1) : "");
+                        }}
+                      />
+                    </View>
+
+                    <View style={styles.halfField}>
+                      <InputWithUnit
+                        ref={heightInRef}
+                        value={heightIn}
+                        placeholder="Inches"
+                        unit="in"
+                        keyboardType="number-pad"
+                        returnKeyType="next"
+                        onFocus={() => scrollToInput(heightY.current)}
+                        onSubmitEditing={() => weightRef.current?.focus()}
+                        onChangeText={(v) => {
+                          const clean = v.replace(/[^0-9]/g, "");
+                          setHeightIn(clean);
+
+                          const cm = ftInToCm(
+                            Number(heightFt || 0),
+                            Number(clean || 0),
+                          );
+                          handleChange("height", cm ? cm.toFixed(1) : "");
+                        }}
+                      />
+                    </View>
+                  </View>
+                ) : (
                   <InputWithUnit
-                    ref={heightInRef}
-                    value={heightIn}
-                    placeholder="0"
-                    unit="in"
-                    keyboardType="number-pad"
+                    ref={heightRef}
+                    value={String(form.height ?? "")}
+                    placeholder="Enter your height"
+                    unit="cm"
+                    keyboardType="decimal-pad"
                     returnKeyType="next"
                     onFocus={() => scrollToInput(heightY.current)}
                     onSubmitEditing={() => weightRef.current?.focus()}
-                    onChangeText={(v) => {
-                      const clean = v.replace(/[^0-9]/g, "");
-                      setHeightIn(clean);
-
-                      const ft = Number(heightFt || 0);
-                      const inches = Number(clean || 0);
-                      const cm = ftInToCm(ft, inches);
-                      handleChange("height", cm ? cm.toFixed(1) : "");
-                    }}
+                    onChangeText={(v) =>
+                      handleChange("height", v.replace(/[^0-9.]/g, ""))
+                    }
                   />
-                </View>
+                )}
               </View>
-            ) : (
-              <InputWithUnit
-                ref={heightRef}
-                value={String(form.height ?? "")}
-                placeholder="0"
-                unit="cm"
-                keyboardType="decimal-pad"
-                returnKeyType="next"
-                onFocus={() => scrollToInput(heightY.current)}
-                onSubmitEditing={() => weightRef.current?.focus()}
-                onChangeText={(v) =>
-                  handleChange("height", v.replace(/[^0-9.]/g, ""))
-                }
-              />
-            )}
-          </View>
 
-          {/* Weight */}
-          <View onLayout={(e) => (weightY.current = e.nativeEvent.layout.y)}>
-            <Text style={styles.label}>Weight</Text>
-            <InputWithUnit
-              ref={weightRef}
-              unit={useImperial ? "lb" : "kg"}
-              placeholder={useImperial ? "lb" : "Kg"}
-              keyboardType={useImperial ? "number-pad" : "decimal-pad"}
-              returnKeyType="done"
-              onFocus={() => scrollToInput(weightY.current)}
-              onSubmitEditing={handleSubmit}
-              value={
-                useImperial
-                  ? (() => {
-                      const kg = Number(form.weight);
-                      return Number.isFinite(kg) && kg > 0
-                        ? kgToLb(kg).toFixed(0)
-                        : "";
-                    })()
-                  : String(form.weight ?? "")
-              }
-              onChangeText={(v) => {
-                const clean = v.replace(/[^0-9.]/g, "");
-                if (!useImperial) {
-                  handleChange("weight", clean);
-                  return;
-                }
-                const lb = Number(clean);
-                if (!Number.isFinite(lb) || lb <= 0) {
-                  handleChange("weight", "");
-                  return;
-                }
-                const kg = lbToKg(lb);
-                handleChange("weight", kg.toFixed(1));
-              }}
-            />
-          </View>
-          {/* Error */}
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+              {/* Weight */}
+              <View
+                onLayout={(e) => (weightY.current = e.nativeEvent.layout.y)}
+              >
+                <Text style={styles.label}>Weight</Text>
 
-          {/* Save button */}
-          <TouchableOpacity
-            style={[styles.button, saving && { opacity: 0.75 }]}
-            onPress={handleSubmit}
-            disabled={saving}
-            activeOpacity={0.9}
-          >
-            <Text style={styles.buttonText}>
-              {saving ? "Saving..." : "Save & continue"}
-            </Text>
-          </TouchableOpacity>
+                <InputWithUnit
+                  ref={weightRef}
+                  unit={useImperial ? "lb" : "kg"}
+                  placeholder={useImperial ? "lb" : "Kg"}
+                  keyboardType={useImperial ? "number-pad" : "decimal-pad"}
+                  returnKeyType="done"
+                  onFocus={() => scrollToInput(weightY.current)}
+                  onSubmitEditing={handleSubmit}
+                  value={
+                    useImperial
+                      ? form.weight
+                        ? kgToLb(Number(form.weight)).toFixed(0)
+                        : ""
+                      : String(form.weight ?? "")
+                  }
+                  onChangeText={(v) => {
+                    const clean = v.replace(/[^0-9.]/g, "");
 
-          <View style={{ height: 28 }} />
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+                    if (useImperial) {
+                      const kg = lbToKg(Number(clean || 0));
+                      handleChange("weight", kg ? kg.toFixed(1) : "");
+                    } else {
+                      handleChange("weight", clean);
+                    }
+                  }}
+                />
+              </View>
+
+              {error && <Text style={styles.errorText}>{error}</Text>}
+
+              <TouchableOpacity
+                style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+                onPress={handleSubmit}
+                disabled={saving}
+              >
+                <Text style={styles.saveText}>
+                  {saving ? "Saving..." : "Save & Continue  →"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
+
+  bg: {
+    flex: 1,
+    backgroundColor: COLORS.whiteBGTransparent,
+  },
+
+  bgImage: {
+    width: "100%",
+    height: "100%",
+  },
+
+  safe: {
+    flex: 1,
+    backgroundColor: "transparent",
+  },
+
+  content: {
+    flexGrow: 1,
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    paddingBottom: 40,
+  },
+
+  logo: {
+    width: 200,
+    height: 200,
+    resizeMode: "contain",
+    marginTop: 10,
+  },
+
+  helper: {
+    marginTop: 12,
+    textAlign: "center",
+    fontSize: 22,
+    lineHeight: 32,
+    color: "#07143B",
+    fontWeight: "500",
+  },
+
+  red: {
+    color: COLORS.taguigRed,
+    fontWeight: "900",
+  },
+
+  blue: {
+    color: COLORS.taguigBlue,
+    fontWeight: "900",
+  },
+
+  yellow: {
+    color: COLORS.taguigYellow,
+    fontWeight: "900",
+  },
+
+  card: {
+    width: "100%",
+    maxWidth: 720,
+    marginTop: 70,
+    backgroundColor: COLORS.whiteBGTransparent,
+    paddingHorizontal: 28,
+    paddingTop: 78,
+    paddingBottom: 28,
+  },
+
+  avatarWrap: {
+    position: "absolute",
+    top: -58,
+    alignSelf: "center",
+    width: 116,
+    height: 116,
+    borderRadius: 58,
+    backgroundColor: COLORS.whiteBGTransparent,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 5,
+  },
+
+  avatarIcon: {
+    fontSize: 58,
+    color: COLORS.taguigBlue,
+  },
+
+  plusCircle: {
+    position: "absolute",
+    right: 8,
+    bottom: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.taguigBlue,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 3,
+    borderColor: COLORS.white,
+  },
+
+  plusText: {
+    color: COLORS.white,
+    fontSize: 24,
+    fontWeight: "900",
+    marginTop: -2,
+  },
+
+  title: {
+    textAlign: "center",
+    fontSize: 38,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+
+  titleLines: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 12,
+    marginBottom: 24,
+  },
+
+  line: {
+    width: 44,
+    height: 5,
+    borderRadius: 99,
+  },
+
+  row: {
+    flexDirection: "row",
+    gap: 18,
+  },
+
+  halfField: {
+    flex: 1,
+  },
+
+  unitRow: {
+    marginTop: 18,
+    marginBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  unitTitle: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#07143B",
+  },
+
+  unitToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  unitLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#8A90A3",
+  },
+
+  unitLabelActive: {
+    color: "#0057FF",
+  },
+
+  label: {
+    marginTop: 16,
+    marginBottom: 8,
+    fontSize: 16,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+
+  input: {
+    minHeight: 58,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.inputBorder,
+    backgroundColor: COLORS.inputBackground,
+    paddingHorizontal: 18,
+    fontSize: 16,
+    color: "#07143B",
+    justifyContent: "center",
+  },
+
+  inputText: {
+    fontSize: 16,
+    color: COLORS.textPrimary,
+  },
+
+  errorText: {
+    marginTop: 16,
+    color: COLORS.dangerRed,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+
+  saveBtn: {
+    marginTop: 28,
+    minHeight: 68,
+    borderRadius: 12,
+    backgroundColor: COLORS.taguigBlue,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  saveBtnDisabled: {
+    opacity: 0.6,
+  },
+
+  saveText: {
+    color: COLORS.white,
+    fontSize: 22,
+    fontWeight: "900",
+  },
+
   screen: {
     flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  content: {
-    paddingHorizontal: 18,
-    paddingTop: 14,
+    backgroundColor: COLORS.white,
   },
   center: {
     justifyContent: "center",
     alignItems: "center",
   },
-
-  helper: {
-    textAlign: "center",
-    color: COLORS.textMuted,
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 16,
-  },
-
-  avatarWrap: {
-    alignSelf: "center",
-    marginBottom: 14,
-    position: "relative",
-  },
-  avatarCircle: {
-    width: 78,
-    height: 78,
-    borderRadius: 39,
-    backgroundColor: COLORS.avatarCircle,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarHead: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: COLORS.background,
-    opacity: 0.9,
-    marginBottom: 6,
-  },
-  avatarBody: {
-    width: 40,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#FFFFFF",
-    opacity: 0.9,
-  },
-  avatarPlus: {
-    position: "absolute",
-    right: -2,
-    bottom: 4,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: COLORS.background,
-  },
-  avatarPlusText: {
-    color: COLORS.textInverse,
-    fontWeight: "800",
-    fontSize: 14,
-    lineHeight: 14,
-    marginTop: -1,
-  },
-
-  title: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: COLORS.textPrimary,
-    marginBottom: 18,
-  },
-
-  row2: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  col: {
-    flex: 1,
-  },
-
-  label: {
-    color: COLORS.textPrimary,
-    fontSize: 13,
-    fontWeight: "600",
-    marginBottom: 8,
-    marginTop: 12,
-  },
-
-  input: {
-    height: 48,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    backgroundColor: COLORS.surfaceMuted,
-    color: COLORS.textPrimary,
-    fontSize: 14,
-  },
-
-  inputPressable: {
-    height: 48,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    backgroundColor: COLORS.surfaceMuted,
-    justifyContent: "center",
-  },
-  inputPressableText: {
-    color: COLORS.textMuted, // matches placeholder look in screenshot
-    fontSize: 14,
-  },
-
-  error: {
-    marginTop: 12,
-    color: COLORS.dangerRed,
-    textAlign: "center",
-    fontSize: 13,
-  },
-
-  button: {
-    marginTop: 18,
-    height: 52,
-    borderRadius: 10,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  buttonText: {
-    color: COLORS.textInverse,
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  genderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  genderValue: {
-    color: COLORS.textPrimary,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  genderHint: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-    marginTop: 4,
-  },
-  chevron: {
-    color: COLORS.textMuted,
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  unitRow: {
-    marginTop: 6,
-    marginBottom: 6,
-  },
-  unitTitle: {
-    color: COLORS.textPrimary,
-    fontSize: 13,
-    fontWeight: "700",
-    marginBottom: 10,
-  },
-  unitToggle: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  unitLabel: {
-    color: COLORS.textMuted,
-    fontSize: 13,
-    fontWeight: "600",
-    width: 64,
-    textAlign: "center",
-  },
-  unitLabelActive: {
-    color: COLORS.textPrimary,
-  },
-  verticalSpacer: { height: 12 },
 });
 
 export default InitialProfileScreen;

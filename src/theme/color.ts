@@ -17,7 +17,7 @@ export const COLORS = {
   /* =========================
    * Text
    * ========================= */
-  textPrimary: "#111111", // Main titles, food names
+  textPrimary: "#07143B", // Main titles, food names
   textSecondary: "#6B7280", // Subtitles, metadata
   textMuted: "#9AA0A6", // Helper text, placeholders
   textInverse: "#FFFFFF",
@@ -62,4 +62,27 @@ export const COLORS = {
   disabledText: "#4B5563",
 
   avatarCircle: "#D1D3D8",
+
+  /* =========================
+   * Taguig City Colors
+   * ========================= */
+  taguigBlue: "#2563EB",
+  taguigRed: "#EF1B24",
+  taguigYellow: "#FFCC00",
+  taguigGreen: "#4CD964",
+
+  white: "#FFFFFF",
+
+  /* =========================
+   * Text Colors
+   * ========================= */
+  textPrimaryDark: "#07143B",
+  textSecondaryDark: "#6B7280",
+  textMutedDark: "#9AA0A6",
+
+  /* =========================
+   * Text Input
+   * ========================= */
+  inputBackground: "#F7F8FC",
+  inputBorder: "#D8DDEA",
 };
