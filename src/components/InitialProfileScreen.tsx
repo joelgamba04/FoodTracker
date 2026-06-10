@@ -293,7 +293,18 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
                     Metric
                   </Text>
 
-                  <Switch value={useImperial} onValueChange={setUseImperial} />
+                  <Switch
+                    value={useImperial}
+                    onValueChange={setUseImperial}
+                    trackColor={{
+                      false: COLORS.inputBorder,
+                      true: COLORS.taguigBlue,
+                    }}
+                    thumbColor={
+                      Platform.OS === "android" ? COLORS.white : undefined
+                    }
+                    ios_backgroundColor={COLORS.inputBorder}
+                  />
 
                   <Text
                     style={[
@@ -468,7 +479,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 22,
     lineHeight: 32,
-    color: "#07143B",
+    color: COLORS.textSecondary,
     fontWeight: "500",
   },
 
@@ -581,7 +592,7 @@ const styles = StyleSheet.create({
   unitTitle: {
     fontSize: 16,
     fontWeight: "900",
-    color: "#07143B",
+    color: COLORS.textPrimary,
   },
 
   unitToggle: {
@@ -593,11 +604,11 @@ const styles = StyleSheet.create({
   unitLabel: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#8A90A3",
+    color: COLORS.textMuted,
   },
 
   unitLabelActive: {
-    color: "#0057FF",
+    color: COLORS.taguigBlue,
   },
 
   label: {
@@ -616,7 +627,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.inputBackground,
     paddingHorizontal: 18,
     fontSize: 16,
-    color: "#07143B",
+    color: COLORS.textPrimary,
     justifyContent: "center",
   },
 
