@@ -54,6 +54,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
   const [useImperial, setUseImperial] = useState(false);
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
+  const [weightLb, setWeightLb] = useState("");
 
   const ageRef = useRef<TextInput>(null);
   const heightRef = useRef<TextInput>(null);
@@ -295,7 +296,20 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
 
                   <Switch
                     value={useImperial}
-                    onValueChange={setUseImperial}
+                    onValueChange={(value) => {
+                      setUseImperial(value);
+
+                      if (value && form.weight) {
+                        setWeightLb(kgToLb(Number(form.weight)).toFixed(0));
+                      }
+
+                      if (!value && weightLb) {
+                        handleChange(
+                          "weight",
+                          lbToKg(Number(weightLb)).toFixed(1),
+                        );
+                      }
+                    }}
                     trackColor={{
                       false: COLORS.inputBorder,
                       true: COLORS.taguigBlue,
@@ -395,30 +409,22 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
                 <Text style={styles.label}>Weight</Text>
 
                 <InputWithUnit
-                  ref={weightRef}
-                  unit={useImperial ? "lb" : "kg"}
-                  placeholder={useImperial ? "lb" : "Kg"}
-                  keyboardType={useImperial ? "number-pad" : "decimal-pad"}
-                  returnKeyType="done"
-                  onFocus={() => scrollToInput(weightY.current)}
-                  onSubmitEditing={handleSubmit}
-                  value={
-                    useImperial
-                      ? form.weight
-                        ? kgToLb(Number(form.weight)).toFixed(0)
-                        : ""
-                      : String(form.weight ?? "")
-                  }
+                  value={useImperial ? weightLb : String(form.weight ?? "")}
                   onChangeText={(v) => {
                     const clean = v.replace(/[^0-9.]/g, "");
 
                     if (useImperial) {
+                      setWeightLb(clean);
+
                       const kg = lbToKg(Number(clean || 0));
-                      handleChange("weight", kg ? kg.toFixed(1) : "");
+                      handleChange("weight", clean ? kg.toFixed(1) : "");
                     } else {
                       handleChange("weight", clean);
                     }
                   }}
+                  placeholder="Enter your weight"
+                  unit={useImperial ? "lb" : "kg"}
+                  keyboardType="decimal-pad"
                 />
               </View>
 
