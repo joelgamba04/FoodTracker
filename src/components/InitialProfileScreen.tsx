@@ -1,6 +1,6 @@
 // src/components/InitialProfileScreen.tsx
 import { loadJSON, saveJSON } from "@/lib/storage";
-import { UserProfile, defaultProfile } from "@/models/models";
+import { defaultProfile, UserProfile } from "@/models/models";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -14,6 +14,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import {
@@ -69,6 +70,11 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
   const { reloadLocalProfile } = useProfile();
 
   const scrollRef = useRef<ScrollView>(null);
+
+  const { width, height } = useWindowDimensions();
+
+  const wp = (percent: number) => width * (percent / 100);
+  const hp = (percent: number) => height * (percent / 100);
 
   // Pre-fill with existing draft if present
   useEffect(() => {
@@ -211,10 +217,69 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
             automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
             showsVerticalScrollIndicator={true}
           >
+            <View pointerEvents="none" style={styles.decorLayer}>
+              <Image
+                source={require("../../assets/images/apple-and-heart.png")}
+                style={[
+                  styles.decorImage,
+                  {
+                    width: wp(30),
+                    height: wp(30),
+                    left: wp(6),
+                    top: hp(6),
+                  },
+                ]}
+              />
+
+              <Image
+                source={require("../../assets/images/brocolli-carrots.png")}
+                style={[
+                  styles.decorImage,
+                  {
+                    width: wp(30),
+                    height: wp(30),
+                    right: wp(2),
+                    top: hp(6),
+                  },
+                ]}
+              />
+
+              <Image
+                source={require("../../assets/images/shoes.png")}
+                style={[
+                  styles.decorImage,
+                  {
+                    width: wp(30),
+                    height: wp(30),
+                    left: wp(0),
+                    top: hp(15),
+                  },
+                ]}
+              />
+
+              <Image
+                source={require("../../assets/images/moon.png")}
+                style={[
+                  styles.decorImage,
+                  {
+                    width: wp(30),
+                    height: wp(30),
+                    right: wp(1),
+                    top: hp(14),
+                  },
+                ]}
+              />
+            </View>
             <Image
               resizeMode="contain"
               source={require("../../assets/images/nutrition_logo.png")}
-              style={styles.logo}
+              style={{
+                width: wp(26),
+                height: wp(26),
+                resizeMode: "contain",
+                zIndex: 2,
+                marginTop: hp(6),
+              }}
             />
 
             <Text style={styles.helper}>
@@ -227,7 +292,19 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
             </Text>
 
             {/* Avatar */}
-            <View style={styles.card}>
+            <View
+              style={[
+                styles.card,
+                {
+                  maxWidth: wp(90),
+                  marginTop: hp(8),
+                  borderRadius: wp(8),
+                  paddingHorizontal: wp(6),
+                  paddingTop: hp(7),
+                  paddingBottom: hp(3),
+                },
+              ]}
+            >
               {/* <View style={styles.avatarWrap}>
                 <Text style={styles.avatarIcon}>👤</Text>
                 <View style={styles.plusCircle}>
@@ -253,32 +330,53 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
                 />
               </View>
 
-              <Text style={styles.label}>Sex</Text>
-              <TouchableOpacity style={styles.input} onPress={toggleGender}>
-                <Text style={styles.inputText}>{form.sex || "Select sex"}</Text>
-              </TouchableOpacity>
+              <View style={styles.fieldRow}>
+                <View style={styles.fieldIconWrap}>
+                  <Image
+                    source={require("../../assets/images/gender.png")}
+                    style={styles.fieldIcon}
+                  />
+                </View>
+
+                <View style={styles.fieldContent}>
+                  <Text style={styles.unitTitle}>Sex</Text>
+
+                  <TouchableOpacity style={styles.input}>
+                    <Text>Male</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
 
               {/* Age */}
               <View
                 onLayout={(e) => {
                   ageY.current = e.nativeEvent.layout.y;
                 }}
+                style={styles.fieldRow}
               >
-                <Text style={styles.label}>Age</Text>
-                <InputWithUnit
-                  ref={ageRef}
-                  value={String(form.age ?? "")}
-                  placeholder="Enter your age"
-                  unit="yrs"
-                  keyboardType="numeric"
-                  returnKeyType="next"
-                  onFocus={() => scrollToInput(ageY.current)}
-                  onSubmitEditing={() => {
-                    if (useImperial) heightFtRef.current?.focus();
-                    else heightRef.current?.focus();
-                  }}
-                  onChangeText={(v) => handleChange("age", v)}
-                />
+                <View style={styles.fieldIconWrap}>
+                  <Image
+                    source={require("../../assets/images/birthdate.png")}
+                    style={styles.fieldIcon}
+                  />
+                </View>
+                <View style={styles.fieldContent}>
+                  <Text style={styles.unitTitle}>Age</Text>
+                  <InputWithUnit
+                    ref={ageRef}
+                    value={String(form.age ?? "")}
+                    placeholder="Enter your age"
+                    unit="yrs"
+                    keyboardType="numeric"
+                    returnKeyType="next"
+                    onFocus={() => scrollToInput(ageY.current)}
+                    onSubmitEditing={() => {
+                      if (useImperial) heightFtRef.current?.focus();
+                      else heightRef.current?.focus();
+                    }}
+                    onChangeText={(v) => handleChange("age", v)}
+                  />
+                </View>
               </View>
               {/* Units toggle */}
               <View style={styles.unitRow}>
@@ -334,98 +432,116 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
               {/* Height */}
               <View
                 onLayout={(e) => (heightY.current = e.nativeEvent.layout.y)}
+                style={styles.fieldRow}
               >
-                <Text style={styles.label}>Height</Text>
-
-                {useImperial ? (
-                  <View style={styles.row}>
-                    <View style={styles.halfField}>
-                      <InputWithUnit
-                        ref={heightFtRef}
-                        value={heightFt}
-                        placeholder="Feet"
-                        unit="ft"
-                        keyboardType="number-pad"
-                        returnKeyType="next"
-                        onFocus={() => scrollToInput(heightY.current)}
-                        onSubmitEditing={() => heightInRef.current?.focus()}
-                        onChangeText={(v) => {
-                          const clean = v.replace(/[^0-9]/g, "");
-                          setHeightFt(clean);
-
-                          const cm = ftInToCm(
-                            Number(clean || 0),
-                            Number(heightIn || 0),
-                          );
-                          handleChange("height", cm ? cm.toFixed(1) : "");
-                        }}
-                      />
-                    </View>
-
-                    <View style={styles.halfField}>
-                      <InputWithUnit
-                        ref={heightInRef}
-                        value={heightIn}
-                        placeholder="Inches"
-                        unit="in"
-                        keyboardType="number-pad"
-                        returnKeyType="next"
-                        onFocus={() => scrollToInput(heightY.current)}
-                        onSubmitEditing={() => weightRef.current?.focus()}
-                        onChangeText={(v) => {
-                          const clean = v.replace(/[^0-9]/g, "");
-                          setHeightIn(clean);
-
-                          const cm = ftInToCm(
-                            Number(heightFt || 0),
-                            Number(clean || 0),
-                          );
-                          handleChange("height", cm ? cm.toFixed(1) : "");
-                        }}
-                      />
-                    </View>
-                  </View>
-                ) : (
-                  <InputWithUnit
-                    ref={heightRef}
-                    value={String(form.height ?? "")}
-                    placeholder="Enter your height"
-                    unit="cm"
-                    keyboardType="decimal-pad"
-                    returnKeyType="next"
-                    onFocus={() => scrollToInput(heightY.current)}
-                    onSubmitEditing={() => weightRef.current?.focus()}
-                    onChangeText={(v) =>
-                      handleChange("height", v.replace(/[^0-9.]/g, ""))
-                    }
+                <View style={styles.fieldIconWrap}>
+                  <Image
+                    source={require("../../assets/images/height.png")}
+                    style={styles.fieldIcon}
                   />
-                )}
+                </View>
+
+                <View style={styles.fieldContent}>
+                  <Text style={styles.unitTitle}>Height</Text>
+                  {useImperial ? (
+                    <View style={styles.row}>
+                      <View style={styles.halfField}>
+                        <InputWithUnit
+                          ref={heightFtRef}
+                          value={heightFt}
+                          placeholder="Feet"
+                          unit="ft"
+                          keyboardType="number-pad"
+                          returnKeyType="next"
+                          onFocus={() => scrollToInput(heightY.current)}
+                          onSubmitEditing={() => heightInRef.current?.focus()}
+                          onChangeText={(v) => {
+                            const clean = v.replace(/[^0-9]/g, "");
+                            setHeightFt(clean);
+
+                            const cm = ftInToCm(
+                              Number(clean || 0),
+                              Number(heightIn || 0),
+                            );
+                            handleChange("height", cm ? cm.toFixed(1) : "");
+                          }}
+                        />
+                      </View>
+
+                      <View style={styles.halfField}>
+                        <InputWithUnit
+                          ref={heightInRef}
+                          value={heightIn}
+                          placeholder="Inches"
+                          unit="in"
+                          keyboardType="number-pad"
+                          returnKeyType="next"
+                          onFocus={() => scrollToInput(heightY.current)}
+                          onSubmitEditing={() => weightRef.current?.focus()}
+                          onChangeText={(v) => {
+                            const clean = v.replace(/[^0-9]/g, "");
+                            setHeightIn(clean);
+
+                            const cm = ftInToCm(
+                              Number(heightFt || 0),
+                              Number(clean || 0),
+                            );
+                            handleChange("height", cm ? cm.toFixed(1) : "");
+                          }}
+                        />
+                      </View>
+                    </View>
+                  ) : (
+                    <InputWithUnit
+                      ref={heightRef}
+                      value={String(form.height ?? "")}
+                      placeholder="Enter your height"
+                      unit="cm"
+                      keyboardType="decimal-pad"
+                      returnKeyType="next"
+                      onFocus={() => scrollToInput(heightY.current)}
+                      onSubmitEditing={() => weightRef.current?.focus()}
+                      onChangeText={(v) =>
+                        handleChange("height", v.replace(/[^0-9.]/g, ""))
+                      }
+                    />
+                  )}
+                </View>
               </View>
 
               {/* Weight */}
               <View
                 onLayout={(e) => (weightY.current = e.nativeEvent.layout.y)}
+                style={styles.fieldRow}
               >
-                <Text style={styles.label}>Weight</Text>
+                <View style={styles.fieldIconWrap}>
+                  <Image
+                    source={require("../../assets/images/weight.png")}
+                    style={styles.fieldIcon}
+                  />
+                </View>
 
-                <InputWithUnit
-                  value={useImperial ? weightLb : String(form.weight ?? "")}
-                  onChangeText={(v) => {
-                    const clean = v.replace(/[^0-9.]/g, "");
+                <View style={styles.fieldContent}>
+                  <Text style={styles.unitTitle}>Weight</Text>
+                  <InputWithUnit
+                    value={useImperial ? weightLb : String(form.weight ?? "")}
+                    onChangeText={(v) => {
+                      const clean = v.replace(/[^0-9.]/g, "");
 
-                    if (useImperial) {
-                      setWeightLb(clean);
+                      if (useImperial) {
+                        setWeightLb(clean);
 
-                      const kg = lbToKg(Number(clean || 0));
-                      handleChange("weight", clean ? kg.toFixed(1) : "");
-                    } else {
-                      handleChange("weight", clean);
-                    }
-                  }}
-                  placeholder="Enter your weight"
-                  unit={useImperial ? "lb" : "kg"}
-                  keyboardType="decimal-pad"
-                />
+                        const kg = lbToKg(Number(clean || 0));
+                        handleChange("weight", clean ? kg.toFixed(1) : "");
+                      } else {
+                        handleChange("weight", clean);
+                      }
+                    }}
+                    placeholder="Enter your weight"
+                    unit={useImperial ? "lb" : "kg"}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
               </View>
 
               {error && <Text style={styles.errorText}>{error}</Text>}
@@ -468,16 +584,31 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     alignItems: "center",
-    paddingHorizontal: 24,
-    paddingTop: 28,
+    paddingHorizontal: 5,
+    paddingTop: 10,
     paddingBottom: 40,
   },
 
+  decorLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "40%",
+    zIndex: 1,
+  },
+
+  decorImage: {
+    position: "absolute",
+    resizeMode: "contain",
+  },
+
   logo: {
-    width: 200,
-    height: 200,
+    width: 150,
+    height: 150,
     resizeMode: "contain",
     marginTop: 10,
+    zIndex: 2,
   },
 
   helper: {
@@ -487,6 +618,7 @@ const styles = StyleSheet.create({
     lineHeight: 32,
     color: COLORS.textSecondary,
     fontWeight: "500",
+    zIndex: 2,
   },
 
   red: {
@@ -506,12 +638,7 @@ const styles = StyleSheet.create({
 
   card: {
     width: "100%",
-    maxWidth: 720,
-    marginTop: 70,
-    backgroundColor: COLORS.whiteBGTransparent,
-    paddingHorizontal: 28,
-    paddingTop: 78,
-    paddingBottom: 28,
+    paddingHorizontal: 26,
   },
 
   avatarWrap: {
@@ -587,6 +714,36 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  fieldRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    width: "100%",
+    marginTop: 14,
+  },
+
+  fieldIconWrap: {
+    width: 42,
+    alignItems: "center",
+    paddingTop: 30,
+  },
+
+  fieldIcon: {
+    width: 40,
+    height: 40,
+    resizeMode: "stretch",
+  },
+
+  fieldContent: {
+    flex: 1,
+  },
+
+  label: {
+    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+
   unitRow: {
     marginTop: 18,
     marginBottom: 8,
@@ -615,14 +772,6 @@ const styles = StyleSheet.create({
 
   unitLabelActive: {
     color: COLORS.taguigBlue,
-  },
-
-  label: {
-    marginTop: 16,
-    marginBottom: 8,
-    fontSize: 16,
-    fontWeight: "900",
-    color: COLORS.textPrimary,
   },
 
   input: {
