@@ -72,6 +72,7 @@ export const COLORS = {
   taguigGreen: "#4CD964",
 
   white: "#FFFFFF",
+  black: "#000000",
 
   /* =========================
    * Text Colors
@@ -85,4 +86,9 @@ export const COLORS = {
    * ========================= */
   inputBackground: "#F7F8FC",
   inputBorder: "#D8DDEA",
+
+  /* =========================
+   * Tab Bar Colors
+   * ========================= */
+  tabBarIconInactive: "#A0A7B8",
 };

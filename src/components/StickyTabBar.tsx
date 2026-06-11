@@ -2,7 +2,13 @@
 import { COLORS } from "@/theme/color";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { LayoutChangeEvent, Pressable, StyleSheet, View } from "react-native";
+import {
+  LayoutChangeEvent,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -14,9 +20,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type ItemLayout = { x: number; width: number };
 
-const BAR_H = 64;
-const INNER_H = 50;
-const PAD = 10;
+const BAR_H = 66;
+const CENTER_SIZE = 58;
+const PAD = 8;
 
 export const StickyTabBar = ({
   state,
@@ -136,11 +142,20 @@ export const StickyTabBar = ({
             }
           };
 
+          const activeColor =
+            options.tabBarActiveTintColor?.toString() ?? COLORS.taguigRed;
+
+          const inactiveColor =
+            options.tabBarInactiveTintColor?.toString() ??
+            COLORS.tabBarIconInactive;
+
+          const tabColor = isFocused ? activeColor : inactiveColor;
+
           const iconEl = options.tabBarIcon
             ? options.tabBarIcon({
                 focused: isFocused,
-                color: isFocused ? "#000" : "#FFF",
-                size: 22,
+                color: tabColor,
+                size: route.name === "add" ? 30 : 22,
               })
             : null;
 
@@ -151,7 +166,23 @@ export const StickyTabBar = ({
               onLayout={onItemLayout(vIndex)}
               style={styles.item}
             >
-              <View style={styles.itemInner}>{iconEl}</View>
+              <View
+                style={[
+                  styles.itemInner,
+                  route.name === "add" && styles.centerButton,
+                ]}
+              >
+                {iconEl}
+              </View>
+
+              {route.name !== "add" && (
+                <Text
+                  style={[styles.label, { color: tabColor }]}
+                  numberOfLines={1}
+                >
+                  {options.title ?? route.name}
+                </Text>
+              )}
             </Pressable>
           );
         })}
@@ -163,39 +194,60 @@ export const StickyTabBar = ({
 const styles = StyleSheet.create({
   wrap: {
     paddingHorizontal: 18,
-    paddingBottom: 12,
-    backgroundColor: COLORS.background,
+    backgroundColor: "transparent",
   },
   bar: {
     height: BAR_H,
-    borderRadius: BAR_H / 2,
-    backgroundColor: "#000",
+    borderRadius: 34,
+    backgroundColor: COLORS.white,
     flexDirection: "row",
     alignItems: "center",
     position: "relative",
     paddingHorizontal: PAD,
-    overflow: "hidden",
+    shadowColor: COLORS.black,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
   },
+
   pill: {
-    position: "absolute",
-    left: 0,
-    height: INNER_H,
-    borderRadius: INNER_H / 2,
-    backgroundColor: "#fff",
+    display: "none",
   },
+
   item: {
     flex: 1,
-    height: INNER_H,
+    height: BAR_H,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 2,
   },
+
   itemInner: {
-    width: INNER_H,
-    height: INNER_H,
-    borderRadius: INNER_H / 2,
+    width: 28,
+    height: 28,
     justifyContent: "center",
     alignItems: "center",
+  },
+
+  centerButton: {
+    width: CENTER_SIZE,
+    height: CENTER_SIZE,
+    borderRadius: CENTER_SIZE / 2,
+    backgroundColor: COLORS.taguigRed,
+    marginTop: -28,
+    shadowColor: COLORS.black,
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 10,
+  },
+
+  label: {
+    marginTop: 2,
+    fontSize: 10,
+    fontWeight: "700",
+    color: COLORS.tabBarIconInactive,
   },
 });
 
