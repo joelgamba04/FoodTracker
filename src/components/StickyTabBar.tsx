@@ -123,7 +123,12 @@ export const StickyTabBar = ({
   }));
 
   return (
-    <View style={[styles.wrap, { paddingBottom: insets.bottom + 12 }]}>
+    <View
+      style={[
+        styles.wrap,
+        { paddingBottom: insets.bottom + 12, backgroundColor: COLORS.white },
+      ]}
+    >
       <View style={styles.bar}>
         <Animated.View style={[styles.pill, pillStyle]} />
 
@@ -194,7 +199,6 @@ export const StickyTabBar = ({
 const styles = StyleSheet.create({
   wrap: {
     paddingHorizontal: 18,
-    backgroundColor: "transparent",
   },
   bar: {
     height: BAR_H,
