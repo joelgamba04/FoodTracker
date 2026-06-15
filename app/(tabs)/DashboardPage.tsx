@@ -2,14 +2,18 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ImageBackground,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
-import { AnimatedMetricCard } from "@/components/AnimatedMetricCard";
-import AppHeader from "@/components/AppHeader";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { useHydration } from "@/context/hydrationContext";
 import { useHydrationToday } from "@/hooks/hydrationHooks";
@@ -18,6 +22,10 @@ import { Food } from "@/models/models";
 import { getHealthConnected } from "@/services/health/healthCache";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
+
+import ChartPlaceholder from "@/components/ChartPlaceholder";
+import MetricLine from "@/components/MetricLine";
+import SmallMetricCard from "@/components/SmallMetricCard";
 
 // ---------- helpers ----------
 const formatDate = (d: Date) => {
@@ -180,134 +188,336 @@ export const DashboardPage = () => {
   console.log("Health data on dashboard:", health);
 
   return (
-    <SafeAreaView style={[styles.screen, { paddingBottom: insets.bottom }]}>
-      {/* Header */}
-      <AppHeader title="Today" subtitle={formatDate(new Date())} />
+    <ImageBackground
+      source={require("../../assets/images/login_bg.png")}
+      style={styles.bg}
+      imageStyle={styles.bgImage}
+      resizeMode="stretch"
+    >
+      <SafeAreaView style={styles.screen}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: 110 + insets.bottom },
+          ]}
+        >
+          <View style={styles.hero}>
+            {/* <View style={styles.heroImages}>
+              <View style={styles.foodImageLeft}>
+                <Text style={styles.placeholderText}>Food Image</Text>
+              </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Metrics grid */}
-        <View style={styles.grid}>
-          <AnimatedMetricCard
-            title="Calories"
-            value={`${todaysCalories}`}
-            subtitle="kcal today"
-            icon="flame"
-            onPress={goToAddFood}
-          />
+              <View style={styles.foodImageRight}>
+                <Text style={styles.placeholderText}>Meal Image</Text>
+              </View>
+            </View> */}
 
-          <AnimatedMetricCard
-            title="Water"
-            value={`${totalMl}`}
-            subtitle={`/${goalMl} ml today`}
-            icon="water"
-            onPress={() => router.push("/HydrationPage")}
-          />
+            <Text style={styles.greeting}>
+              <Text style={styles.redText}>Good </Text>
+              <Text style={styles.blueText}>Morning!</Text> 👋
+            </Text>
 
-          <AnimatedMetricCard
-            title="Steps"
-            value={stepsValue}
-            subtitle={stepsSubtitle}
-            icon="walk"
-            onPress={() => router.push("/StepsTrackerPage")}
-          />
-
-          <AnimatedMetricCard
-            title="Sleep"
-            value={sleepValue}
-            subtitle={sleepSubtitle}
-            icon="moon"
-            onPress={() => router.push("/SleepPage")}
-          />
-        </View>
-
-        {/* Quick water buttons (minimal) */}
-        <View style={styles.quickRow}>
-          <Pressable style={styles.quickBtn} onPress={() => addMl(250)}>
-            <Text style={styles.quickBtnText}>+250 ml</Text>
-          </Pressable>
-          <Pressable style={styles.quickBtn} onPress={() => addMl(500)}>
-            <Text style={styles.quickBtnText}>+500 ml</Text>
-          </Pressable>
-        </View>
-
-        {/* Food log */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Food Log</Text>
-            <Pressable onPress={goToAddFood} style={styles.linkBtn}>
-              <Ionicons name="add" size={16} color={COLORS.primary} />
-              <Text style={styles.linkBtnText}>Add Food</Text>
-            </Pressable>
+            <Text style={styles.greetingSub}>
+              Let's make today a healthy one.
+            </Text>
           </View>
 
-          {todaysFood.length === 0 ? (
-            <Text style={styles.emptyText}>No meals logged yet.</Text>
-          ) : (
-            <>
-              {(["Breakfast", "Lunch", "Dinner"] as const).map((m) => {
-                const items = grouped[m] ?? [];
-                return (
-                  <View key={m} style={styles.mealBlock}>
-                    <Text style={styles.mealTitle}>{m}</Text>
+          <View style={styles.dateRow}>
+            {[8, 9, 10, 11, 12, 13, 14].map((day) => {
+              const active = day === 10;
 
-                    {items.length === 0 ? (
-                      <Text style={styles.muted}>—</Text>
-                    ) : (
-                      items.map((entry) => (
-                        <View key={entry.localId} style={styles.foodRow}>
-                          <Text style={styles.foodTitle}>
-                            {getFoodTitle(entry.food)}
-                          </Text>
-                          <Text style={styles.foodMeta}>
-                            {Math.round(
-                              getKcalFromFood(entry.food) *
-                                (entry.quantity ?? 1),
-                            )}{" "}
-                            kcal
-                          </Text>
-                        </View>
-                      ))
-                    )}
+              return (
+                <View key={day} style={styles.dateItem}>
+                  <Text style={styles.dateWeek}>
+                    {["Su", "S", "M", "T", "W", "Th", "F"][day - 8]}
+                  </Text>
+
+                  <View
+                    style={[styles.dateCircle, active && styles.dateActive]}
+                  >
+                    <Text
+                      style={[styles.dateNum, active && styles.dateNumActive]}
+                    >
+                      {day}
+                    </Text>
                   </View>
-                );
-              })}
-            </>
-          )}
-        </View>
 
-        {/* Bottom spacer so pill tab bar doesn’t overlap */}
-        <View style={{ height: 90 }} />
-      </ScrollView>
+                  {active && <View style={styles.dateUnderline} />}
+                </View>
+              );
+            })}
+          </View>
 
-      {/* Floating Add Food */}
-      <Pressable style={styles.fab} onPress={goToAddFood}>
-        <Ionicons name="add" size={26} color={COLORS.textInverse} />
-      </Pressable>
-    </SafeAreaView>
+          <View style={styles.calorieCard}>
+            <View style={styles.calorieLeft}>
+              <Text style={styles.cardTitle}>Calories Left</Text>
+              <Text style={styles.caloriesLeft}>
+                {Math.max(0, 1600 - todaysCalories)}
+              </Text>
+              <Text style={styles.smallMuted}>food left</Text>
+
+              <View style={styles.goalPill}>
+                <Ionicons name="flame" size={14} color={COLORS.taguigBlue} />
+                <Text style={styles.goalText}>1,600 kcal goal</Text>
+              </View>
+            </View>
+
+            <View style={styles.calorieMiddle}>
+              <MetricLine
+                icon="disc-outline"
+                color={COLORS.taguigRed}
+                label="Food"
+                value={`${todaysCalories} kcal`}
+              />
+              <MetricLine
+                icon="water"
+                color={COLORS.taguigBlue}
+                label="Burned"
+                value="400 kcal"
+              />
+              <MetricLine
+                icon="flame"
+                color={COLORS.taguigYellow}
+                label="Remaining"
+                value={`${Math.max(0, 1600 - todaysCalories)} kcal`}
+              />
+            </View>
+
+            <View style={styles.progressCircle}>
+              <Text style={styles.progressEmoji}>🍎</Text>
+            </View>
+          </View>
+
+          <View style={styles.smallCardsRow}>
+            <SmallMetricCard
+              color={COLORS.taguigBlue}
+              icon="water"
+              title="Water Intake"
+              value={`${(totalMl / 1000).toFixed(1)} L`}
+              subtitle={`/ ${(goalMl / 1000).toFixed(1)} L goal`}
+              percent={Math.min(100, Math.round((totalMl / goalMl) * 100))}
+              onPress={() => router.push("/HydrationPage")}
+            />
+
+            <SmallMetricCard
+              color={COLORS.taguigBlue}
+              icon="walk"
+              title="Steps"
+              value={hasStepsData ? todaySteps.toLocaleString() : "0"}
+              subtitle="/ 10,000 steps"
+              percent={
+                hasStepsData
+                  ? Math.min(100, Math.round((todaySteps / 10000) * 100))
+                  : 0
+              }
+              onPress={() => router.push("/StepsTrackerPage")}
+            />
+
+            <SmallMetricCard
+              color="#0B3D91"
+              icon="moon"
+              title="Sleep"
+              value={hasSleepData ? `${lastNightHours.toFixed(1)}h` : "0h"}
+              subtitle="/ 8 h goal"
+              percent={
+                hasSleepData
+                  ? Math.min(100, Math.round((lastNightHours / 8) * 100))
+                  : 0
+              }
+              onPress={() => router.push("/SleepPage")}
+            />
+          </View>
+
+          <ChartPlaceholder
+            title="Weight"
+            subtitle="Last 90 days"
+            color={COLORS.taguigRed}
+          />
+          <ChartPlaceholder
+            title="Steps"
+            subtitle="7 Days"
+            color={COLORS.taguigBlue}
+          />
+        </ScrollView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: COLORS.background },
+  bg: {
+    flex: 1,
+    backgroundColor: COLORS.whiteBGTransparent,
+  },
+
+  bgImage: {
+    width: "100%",
+    height: "100%",
+  },
+  screen: { flex: 1, backgroundColor: "transparent" },
   content: { padding: 16 },
 
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginHorizontal: -6,
+  hero: {
+    minHeight: 270,
+    marginHorizontal: -16,
+    paddingTop: 10,
+    alignItems: "center",
+    overflow: "hidden",
   },
 
-  quickRow: { flexDirection: "row", gap: 10, marginTop: 8, marginBottom: 10 },
-  quickBtn: {
-    flex: 1,
-    backgroundColor: COLORS.surfaceMuted,
-    borderRadius: 14,
-    paddingVertical: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: COLORS.surfaceBorder,
+  heroTop: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+    zIndex: 2,
   },
-  quickBtnText: { fontWeight: "800", color: COLORS.textPrimary },
+
+  bellWrap: { position: "relative" },
+  badge: {
+    position: "absolute",
+    right: -5,
+    top: -5,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: COLORS.taguigRed,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badgeText: { color: "#FFFFFF", fontSize: 10, fontWeight: "900" },
+
+  heroImages: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  foodImageLeft: {
+    position: "absolute",
+    left: -20,
+    top: 80,
+    width: 170,
+    height: 120,
+    borderRadius: 24,
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  foodImageRight: {
+    position: "absolute",
+    right: -24,
+    top: 78,
+    width: 170,
+    height: 120,
+    borderRadius: 24,
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  greeting: {
+    marginTop: 90,
+    fontSize: 30,
+    fontWeight: "900",
+    zIndex: 2,
+  },
+  greetingSub: {
+    marginTop: 8,
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    fontWeight: "600",
+    zIndex: 2,
+  },
+  redText: { color: COLORS.taguigRed },
+  blueText: { color: COLORS.taguigBlue },
+
+  dateRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: -26,
+    marginBottom: 18,
+  },
+  dateItem: { alignItems: "center", flex: 1 },
+  dateWeek: { fontSize: 13, fontWeight: "800", color: COLORS.textPrimary },
+  dateCircle: {
+    marginTop: 8,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  progressCircle: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 9,
+    borderColor: "#2DBE45",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+  },
+  progressEmoji: { fontSize: 42 },
+
+  smallCardsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 16,
+  },
+
+  placeholderText: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  dateActive: {
+    backgroundColor: COLORS.taguigRed,
+    borderColor: COLORS.taguigRed,
+  },
+  dateNum: { fontSize: 18, fontWeight: "900", color: COLORS.textPrimary },
+  dateNumActive: { color: "#FFFFFF" },
+  dateUnderline: {
+    marginTop: 8,
+    width: 34,
+    height: 4,
+    borderRadius: 99,
+    backgroundColor: COLORS.taguigRed,
+  },
+
+  calorieCard: {
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
+  },
+  calorieLeft: { flex: 1 },
+  cardTitle: { fontSize: 15, fontWeight: "900", color: COLORS.textPrimary },
+  caloriesLeft: { fontSize: 54, fontWeight: "900", color: COLORS.taguigRed },
+  smallMuted: { color: COLORS.textSecondary, fontWeight: "600" },
+  goalPill: {
+    marginTop: 12,
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    gap: 6,
+    backgroundColor: "#EAF2FF",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  goalText: { color: COLORS.taguigBlue, fontWeight: "800", fontSize: 12 },
+
+  calorieMiddle: {
+    flex: 1,
+    justifyContent: "center",
+    gap: 12,
+  },
 
   section: {
     marginTop: 10,
