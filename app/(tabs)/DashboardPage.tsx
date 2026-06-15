@@ -4,6 +4,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   ImageBackground,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,7 +16,7 @@ import {
 } from "react-native-safe-area-context";
 
 import { useFoodLog } from "@/context/FoodLogContext";
-import { useHydration } from "@/context/hydrationContext";
+import { useProfile } from "@/context/ProfileContext";
 import { useHydrationToday } from "@/hooks/hydrationHooks";
 import { useHealth } from "@/hooks/useHealth";
 import { Food } from "@/models/models";
@@ -76,7 +77,8 @@ const getMealByTimestamp = (
 export const DashboardPage = () => {
   const router = useRouter();
   const { log } = useFoodLog();
-  const { entries: waterEntries, addMl } = useHydration();
+  const { rdi } = useProfile();
+
   const { totalMl, goalMl } = useHydrationToday();
 
   const { start, end } = getTodayWindow();
@@ -112,6 +114,20 @@ export const DashboardPage = () => {
     }
     return Math.round(total);
   }, [todaysFood]);
+
+  const calorieRDI = useMemo(() => {
+    const amount = rdi?.Calories?.amount;
+    return typeof amount === "number" && isFinite(amount) ? amount : 1600;
+  }, [rdi]);
+
+  const waterRDI = useMemo(() => {
+    const amount = rdi?.Water?.amount;
+    return typeof amount === "number" && isFinite(amount) ? amount : goalMl;
+  }, [rdi, goalMl]);
+
+  const caloriesLeft = useMemo(() => {
+    return Math.max(0, calorieRDI - todaysCalories);
+  }, [calorieRDI, todaysCalories]);
 
   const grouped = useMemo(() => {
     const map: Record<"Breakfast" | "Lunch" | "Dinner", typeof todaysFood> = {
@@ -249,17 +265,17 @@ export const DashboardPage = () => {
             })}
           </View>
 
-          <View style={styles.calorieCard}>
+          <Pressable onPress={goToAddFood} style={styles.calorieCard}>
             <View style={styles.calorieLeft}>
               <Text style={styles.cardTitle}>Calories Left</Text>
-              <Text style={styles.caloriesLeft}>
-                {Math.max(0, 1600 - todaysCalories)}
-              </Text>
+              <Text style={styles.caloriesLeft}>{caloriesLeft}</Text>
               <Text style={styles.smallMuted}>food left</Text>
 
               <View style={styles.goalPill}>
                 <Ionicons name="flame" size={14} color={COLORS.taguigBlue} />
-                <Text style={styles.goalText}>1,600 kcal goal</Text>
+                <Text style={styles.goalText}>
+                  {calorieRDI.toLocaleString()} kcal goal
+                </Text>
               </View>
             </View>
 
@@ -280,21 +296,21 @@ export const DashboardPage = () => {
                 icon="flame"
                 color={COLORS.taguigYellow}
                 label="Remaining"
-                value={`${Math.max(0, 1600 - todaysCalories)} kcal`}
+                value={`${caloriesLeft} kcal`}
               />
             </View>
 
             <View style={styles.progressCircle}>
               <Text style={styles.progressEmoji}>🍎</Text>
             </View>
-          </View>
+          </Pressable>
 
           <View style={styles.smallCardsRow}>
             <SmallMetricCard
               color={COLORS.taguigBlue}
               icon="water"
               title="Water Intake"
-              value={`${(totalMl / 1000).toFixed(1)} L`}
+              value={waterRDI > 0 ? `${(totalMl / 1000).toFixed(1)} L` : "0 L"}
               subtitle={`/ ${(goalMl / 1000).toFixed(1)} L goal`}
               percent={Math.min(100, Math.round((totalMl / goalMl) * 100))}
               onPress={() => router.push("/HydrationPage")}
@@ -329,16 +345,20 @@ export const DashboardPage = () => {
             />
           </View>
 
-          <ChartPlaceholder
-            title="Weight"
-            subtitle="Last 90 days"
-            color={COLORS.taguigRed}
-          />
-          <ChartPlaceholder
-            title="Steps"
-            subtitle="7 Days"
-            color={COLORS.taguigBlue}
-          />
+          <Pressable onPress={() => router.push("/StepsTrackerPage")}>
+            <ChartPlaceholder
+              title="Steps"
+              subtitle="7 Days"
+              color={COLORS.taguigRed}
+            />
+          </Pressable>
+          <Pressable onPress={() => router.push("/SleepPage")}>
+            <ChartPlaceholder
+              title="Sleep Quality"
+              subtitle="7 Days"
+              color={COLORS.taguigBlue}
+            />
+          </Pressable>
         </ScrollView>
       </SafeAreaView>
     </ImageBackground>
@@ -361,7 +381,6 @@ const styles = StyleSheet.create({
   hero: {
     minHeight: 270,
     marginHorizontal: -16,
-    paddingTop: 10,
     alignItems: "center",
     overflow: "hidden",
   },
