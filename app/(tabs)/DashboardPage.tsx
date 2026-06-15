@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
+  Image,
   ImageBackground,
   Pressable,
   ScrollView,
@@ -219,15 +220,19 @@ export const DashboardPage = () => {
           ]}
         >
           <View style={styles.hero}>
-            {/* <View style={styles.heroImages}>
-              <View style={styles.foodImageLeft}>
-                <Text style={styles.placeholderText}>Food Image</Text>
-              </View>
+            <View style={styles.heroImages}>
+              <Image
+                source={require("../../assets/images/header_asset_left.png")}
+                style={styles.foodImageLeft}
+                resizeMode="contain"
+              />
 
-              <View style={styles.foodImageRight}>
-                <Text style={styles.placeholderText}>Meal Image</Text>
-              </View>
-            </View> */}
+              <Image
+                source={require("../../assets/images/header_asset_right.png")}
+                style={styles.foodImageRight}
+                resizeMode="contain"
+              />
+            </View>
 
             <Text style={styles.greeting}>
               <Text style={styles.redText}>Good </Text>
@@ -379,71 +384,47 @@ const styles = StyleSheet.create({
   content: { padding: 16 },
 
   hero: {
-    minHeight: 270,
+    minHeight: 220,
     marginHorizontal: -16,
-    alignItems: "center",
     overflow: "hidden",
   },
-
-  heroTop: {
-    width: "100%",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 24,
-    zIndex: 2,
-  },
-
-  bellWrap: { position: "relative" },
-  badge: {
-    position: "absolute",
-    right: -5,
-    top: -5,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: COLORS.taguigRed,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badgeText: { color: "#FFFFFF", fontSize: 10, fontWeight: "900" },
 
   heroImages: {
     ...StyleSheet.absoluteFillObject,
   },
+
   foodImageLeft: {
     position: "absolute",
-    left: -20,
-    top: 80,
-    width: 170,
-    height: 120,
-    borderRadius: 24,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    justifyContent: "center",
+    left: -25,
+    top: 55,
+    width: 150,
+    height: 150,
   },
   foodImageRight: {
     position: "absolute",
-    right: -24,
-    top: 78,
-    width: 170,
-    height: 120,
-    borderRadius: 24,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    justifyContent: "center",
+    right: -35,
+    top: 45,
+    width: 165,
+    height: 165,
+  },
+  headerImage: {
+    width: "100%",
+    height: "100%",
   },
 
   greeting: {
-    marginTop: 90,
-    fontSize: 30,
+    marginTop: 65,
+    fontSize: 34,
     fontWeight: "900",
+    textAlign: "center",
     zIndex: 2,
   },
   greetingSub: {
-    marginTop: 8,
+    marginTop: 4,
     fontSize: 16,
     color: COLORS.textSecondary,
     fontWeight: "600",
+    textAlign: "center",
     zIndex: 2,
   },
   redText: { color: COLORS.taguigRed },
