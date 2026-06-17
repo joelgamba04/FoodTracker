@@ -9,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import {
@@ -25,10 +26,30 @@ import { getHealthConnected } from "@/services/health/healthCache";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
 
-import ChartPlaceholder from "@/components/ChartPlaceholder";
 import MetricLine from "@/components/MetricLine";
+import SleepQualityChart from "@/components/SleepChart";
 import SmallMetricCard from "@/components/SmallMetricCard";
+import StepsChart from "@/components/StepsChart";
 
+const sampleStepsData = [
+  { value: 11200, label: "Mon" },
+  { value: 8200, label: "Tue" },
+  { value: 10400, label: "Wed" },
+  { value: 7600, label: "Thu" },
+  { value: 6100, label: "Fri" },
+  { value: 10900, label: "Sat" },
+  { value: 8400, label: "Sun" },
+];
+
+const sampleSleepQuality = [
+  { value: 78, label: "Mon" },
+  { value: 85, label: "Tue" },
+  { value: 72, label: "Wed" },
+  { value: 91, label: "Thu" },
+  { value: 80, label: "Fri" },
+  { value: 88, label: "Sat" },
+  { value: 84, label: "Sun" },
+];
 // ---------- helpers ----------
 const formatDate = (d: Date) => {
   return d.toLocaleDateString(undefined, {
@@ -76,6 +97,7 @@ const getMealByTimestamp = (
 
 // ---------- main screen ----------
 export const DashboardPage = () => {
+  const { width } = useWindowDimensions();
   const router = useRouter();
   const { log } = useFoodLog();
   const { rdi } = useProfile();
@@ -95,6 +117,9 @@ export const DashboardPage = () => {
 
   const hasStepsData = typeof todaySteps === "number" && todaySteps > 0;
   const hasSleepData = typeof lastNightHours === "number" && lastNightHours > 0;
+
+  const chartWidth = Math.min(width - 58, 680);
+  const barSpacing = Math.max(16, chartWidth / 13);
 
   const todaysFood = useMemo(() => {
     return (log ?? []).filter((e) => {
@@ -351,18 +376,40 @@ export const DashboardPage = () => {
           </View>
 
           <Pressable onPress={() => router.push("/StepsTrackerPage")}>
-            <ChartPlaceholder
-              title="Steps"
-              subtitle="7 Days"
-              color={COLORS.taguigRed}
-            />
+            <View style={styles.chartCard}>
+              <View style={styles.chartHeader}>
+                <View
+                  style={[
+                    styles.chartIcon,
+                    { backgroundColor: COLORS.taguigBlue },
+                  ]}
+                >
+                  <Ionicons name="stats-chart" size={22} color="#FFFFFF" />
+                </View>
+                <Text style={styles.chartTitle}>Steps</Text>
+                <Text style={styles.chartPeriod}>7 Days</Text>
+              </View>
+
+              <StepsChart width={chartWidth} />
+            </View>
           </Pressable>
           <Pressable onPress={() => router.push("/SleepPage")}>
-            <ChartPlaceholder
-              title="Sleep Quality"
-              subtitle="7 Days"
-              color={COLORS.taguigBlue}
-            />
+            <View style={styles.chartCard}>
+              <View style={styles.chartHeader}>
+                <View
+                  style={[
+                    styles.chartIcon,
+                    { backgroundColor: COLORS.taguigBlue },
+                  ]}
+                >
+                  <Ionicons name="stats-chart" size={22} color="#FFFFFF" />
+                </View>
+                <Text style={styles.chartTitle}>Sleep Quality</Text>
+                <Text style={styles.chartPeriod}>7 Days</Text>
+              </View>
+
+              <SleepQualityChart width={chartWidth} />
+            </View>
           </Pressable>
         </ScrollView>
       </SafeAreaView>
@@ -552,17 +599,69 @@ const styles = StyleSheet.create({
   foodTitle: { fontSize: 14, fontWeight: "800", color: COLORS.textPrimary },
   foodMeta: { marginTop: 4, fontSize: 12, opacity: 0.65 },
 
-  fab: {
-    position: "absolute",
-    right: 18,
-    bottom: 94, // above your pill tab bar
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.primary,
+  chartCard: {
+    marginTop: 14,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    paddingTop: 14,
+    paddingHorizontal: 14,
+    paddingBottom: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 4,
+  },
+
+  chartHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+
+  chartIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    elevation: 6,
+    marginRight: 10,
+  },
+
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+
+  chartSubtitle: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: COLORS.textSecondary,
+  },
+
+  chartPeriod: {
+    marginLeft: "auto",
+    height: 32,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#EEF1F7",
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  chartPeriodText: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: COLORS.taguigBlue,
+  },
+
+  chartBody: {
+    marginTop: 4,
+    marginLeft: -10,
+    overflow: "hidden",
   },
 });
 
