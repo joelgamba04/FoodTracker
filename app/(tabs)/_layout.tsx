@@ -89,7 +89,7 @@ export const TabLayout = () => {
             <TabIcon
               name="calendar"
               focused={focused}
-              focusedColor={COLORS.taguigRed}
+              focusedColor={COLORS.taguigYellow}
             />
           ),
         }}
@@ -103,21 +103,6 @@ export const TabLayout = () => {
           tabBarIcon: ({ focused }) => (
             <TabIcon
               name="settings"
-              focused={focused}
-              focusedColor={COLORS.taguigYellow}
-            />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="ProfileScreenPage"
-        options={{
-          title: "Profile",
-          tabBarActiveTintColor: COLORS.taguigBlue,
-          tabBarIcon: ({ focused }) => (
-            <TabIcon
-              name="person"
               focused={focused}
               focusedColor={COLORS.taguigBlue}
             />
