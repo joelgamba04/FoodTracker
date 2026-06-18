@@ -82,7 +82,7 @@ export const TabLayout = () => {
 
       {/* CENTER BUTTON */}
       <Tabs.Screen
-        name="add"
+        name="AddFoodPage"
         options={{
           title: "",
           tabBarIcon: ({ color, size }) => (

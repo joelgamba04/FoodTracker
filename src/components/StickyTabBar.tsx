@@ -139,10 +139,6 @@ export const StickyTabBar = ({
           const isFocused = vIndex === activeVisibleIndex;
 
           const onPress = () => {
-            if (route.name === "add") {
-              router.push("/AddFoodPage");
-              return;
-            }
             const event = navigation.emit({
               type: "tabPress",
               target: route.key,
@@ -166,7 +162,7 @@ export const StickyTabBar = ({
             ? options.tabBarIcon({
                 focused: isFocused,
                 color: tabColor,
-                size: route.name === "add" ? 30 : 22,
+                size: route.name === "AddFoodPage" ? 30 : 22,
               })
             : null;
 
@@ -180,13 +176,13 @@ export const StickyTabBar = ({
               <View
                 style={[
                   styles.itemInner,
-                  route.name === "add" && styles.centerButton,
+                  route.name === "AddFoodPage" && styles.centerButton,
                 ]}
               >
                 {iconEl}
               </View>
 
-              {route.name !== "add" && (
+              {route.name !== "AddFoodPage" && (
                 <Text
                   style={[styles.label, { color: tabColor }]}
                   numberOfLines={1}
