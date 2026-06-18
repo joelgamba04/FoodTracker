@@ -1,6 +1,7 @@
 // src/components/StickyTabBar.tsx
 import { COLORS } from "@/theme/color";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   LayoutChangeEvent,
@@ -29,6 +30,7 @@ export const StickyTabBar = ({
   descriptors,
   navigation,
 }: BottomTabBarProps) => {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   // Build visible routes first (same rule as render)
   const visibleRoutes = useMemo(() => {
@@ -137,6 +139,10 @@ export const StickyTabBar = ({
           const isFocused = vIndex === activeVisibleIndex;
 
           const onPress = () => {
+            if (route.name === "add") {
+              router.push("/AddFoodPage");
+              return;
+            }
             const event = navigation.emit({
               type: "tabPress",
               target: route.key,

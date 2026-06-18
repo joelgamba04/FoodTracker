@@ -80,11 +80,22 @@ export const TabLayout = () => {
         }}
       />
 
+      {/* CENTER BUTTON */}
+      <Tabs.Screen
+        name="add"
+        options={{
+          title: "",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add" size={34} color={COLORS.white} />
+          ),
+        }}
+      />
+
       <Tabs.Screen
         name="HistoryPage"
         options={{
           title: "History",
-          tabBarActiveTintColor: COLORS.taguigRed,
+          tabBarActiveTintColor: COLORS.taguigYellow,
           tabBarIcon: ({ focused }) => (
             <TabIcon
               name="calendar"
@@ -99,7 +110,7 @@ export const TabLayout = () => {
         name="SettingsPage"
         options={{
           title: "Settings",
-          tabBarActiveTintColor: COLORS.taguigYellow,
+          tabBarActiveTintColor: COLORS.taguigBlue,
           tabBarIcon: ({ focused }) => (
             <TabIcon
               name="settings"
