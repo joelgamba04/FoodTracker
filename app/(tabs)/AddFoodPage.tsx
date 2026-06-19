@@ -4,6 +4,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  Image,
+  ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,7 +20,6 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
-import AppHeader from "@/components/AppHeader";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { isApiError } from "@/lib/apiClient";
 import { mapFoodDetailToFood } from "@/mappers/foodMapper";
@@ -28,6 +31,72 @@ type FoodItem = any;
 
 const makeLocalId = () => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
+const SearchBox = ({ search, setSearch, onSubmit, scan = false }: any) => (
+  <View style={styles.searchBox}>
+    <Ionicons name="search" size={28} color={COLORS.textPrimary} />
+
+    <TextInput
+      value={search}
+      onChangeText={setSearch}
+      placeholder="Search food or meal"
+      placeholderTextColor="#9CA3AF"
+      style={styles.searchInput}
+      autoCorrect={false}
+      autoCapitalize="none"
+      returnKeyType="search"
+      onSubmitEditing={onSubmit}
+    />
+
+    <Ionicons
+      name={scan ? "scan-outline" : "chevron-down"}
+      size={28}
+      color={COLORS.taguigBlue}
+    />
+  </View>
+);
+
+const MealCard = ({ item, index, onPress }: any) => {
+  const colors = [
+    COLORS.taguigRed,
+    COLORS.taguigBlue,
+    COLORS.taguigYellow,
+    COLORS.taguigRed,
+  ];
+  const categories = ["Carbohydrate", "Protein", "Vegetable", "Fruit"];
+
+  return (
+    <Pressable style={styles.mealCard} onPress={onPress}>
+      <View
+        style={[
+          styles.mealAccent,
+          { backgroundColor: colors[index % colors.length] },
+        ]}
+      />
+
+      <View style={styles.mealInfo}>
+        <Text style={styles.mealTitle} numberOfLines={1}>
+          <Text style={{ color: colors[index % colors.length] }}>1 cup </Text>
+          {item?.name ?? "Food"}
+        </Text>
+
+        <View style={styles.mealPill}>
+          <Text style={styles.mealPillText}>
+            {categories[index % categories.length]}
+          </Text>
+        </View>
+
+        <View style={styles.mealMetaRow}>
+          <Text style={styles.mealMeta}>🔥 {item?.calories ?? 205} kcal</Text>
+          <Text style={styles.mealDivider}>|</Text>
+          <Text style={styles.mealMeta}>⚖️ {item?.servingSize ?? "160 g"}</Text>
+        </View>
+      </View>
+
+      <Ionicons name="ellipsis-vertical" size={24} color={COLORS.taguigBlue} />
+    </Pressable>
+  );
 };
 
 export const AddFoodPage = () => {
@@ -45,6 +114,8 @@ export const AddFoodPage = () => {
   const [pauseAutoSearch, setPauseAutoSearch] = useState(false); // to pause auto-search when error is encountered
 
   const canLog = !!selected && qty > 0;
+  const hasQuery = search.trim().length > 0;
+  const compactMode = hasQuery || !!selected;
 
   useEffect(() => {
     if (pauseAutoSearch) return;
@@ -202,264 +273,698 @@ export const AddFoodPage = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.screen, { paddingBottom: insets.bottom }]}>
-      {/* header */}
-      <AppHeader title="Add Food" showBack onBackPress={() => router.back()} />
+    <ImageBackground
+      source={require("../../assets/images/login_bg.png")}
+      style={styles.bg}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={[styles.screen, { paddingBottom: insets.bottom }]}>
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <View style={styles.topArea}>
+            <View
+              style={compactMode ? styles.compactHeader : styles.fullHeader}
+            >
+              <Pressable
+                style={compactMode ? styles.searchBackBtn : styles.backBtn}
+                onPress={() => {
+                  if (selected) {
+                    setSelected(null);
+                    return;
+                  }
 
-      {/* search */}
-      <View style={styles.searchWrap}>
-        <Ionicons name="search" size={18} color={COLORS.iconPrimary} />
-        <TextInput
-          value={search}
-          onChangeText={(t) => {
-            setSearch(t);
-            setSelected(null);
-            setPauseAutoSearch(false); // reset pause when user types
-            setSearchError(null); // clear error on new input
-          }}
-          placeholder="Search food…"
-          style={styles.searchInput}
-          autoCorrect={false}
-          autoCapitalize="none"
-          clearButtonMode="while-editing"
-          returnKeyType="search"
-          onSubmitEditing={() => {
-            setPauseAutoSearch(false);
-            handleSearch(search);
-          }}
-        />
-      </View>
+                  router.back();
+                }}
+              >
+                <Ionicons
+                  name="arrow-back"
+                  size={24}
+                  color={COLORS.taguigBlue}
+                />
+              </Pressable>
 
-      <ScrollView
-        contentContainerStyle={{ padding: 16 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* results */}
-        {!selected ? (
-          <>
-            <Text style={styles.sectionTitle}>Results</Text>
+              {!compactMode && (
+                <>
+                  <View style={styles.logoPlaceholder}>
+                    <Image
+                      source={require("../../assets/images/nutrition_logo.png")}
+                      style={styles.logo}
+                      resizeMode="contain"
+                    />
+                  </View>
 
-            {search.trim().length === 0 ? (
-              <Text style={styles.muted}>Type to search.</Text>
-            ) : searchLoading ? (
-              <Text style={styles.muted}>Searching…</Text>
-            ) : searchError ? (
-              <View style={styles.errorWrap}>
-                <Text style={styles.errorText}>{searchError}</Text>
+                  <Text style={styles.pageTitle}>
+                    <Text style={styles.red}>Log </Text>
+                    <Text style={styles.blue}>Your </Text>
+                    <Text style={styles.yellow}>Meal</Text>
+                  </Text>
 
-                <Pressable
-                  style={styles.retryBtn}
-                  disabled={searchLoading}
-                  onPress={() => {
+                  <View style={styles.titleLines}>
+                    <View
+                      style={[
+                        styles.line,
+                        { backgroundColor: COLORS.taguigRed },
+                      ]}
+                    />
+                    <View
+                      style={[
+                        styles.line,
+                        { backgroundColor: COLORS.taguigBlue },
+                      ]}
+                    />
+                    <View
+                      style={[
+                        styles.line,
+                        { backgroundColor: COLORS.taguigYellow },
+                      ]}
+                    />
+                  </View>
+                </>
+              )}
+
+              <View style={compactMode && styles.searchHeaderInput}>
+                <SearchBox
+                  search={search}
+                  setSearch={(t: string) => {
+                    setSearch(t);
+                    setPauseAutoSearch(false);
+                    setSearchError(null);
+                  }}
+                  onSubmit={() => {
                     setPauseAutoSearch(false);
                     handleSearch(search);
                   }}
-                >
-                  <Text style={styles.retryBtnText}>Retry</Text>
-                </Pressable>
+                  scan={!!selected}
+                />
               </View>
-            ) : results.length === 0 ? (
-              <Text style={styles.muted}>No results.</Text>
-            ) : (
-              results.map((item) => (
-                <Pressable
-                  key={String(item.id)}
-                  style={styles.row}
-                  onPress={() => {
-                    setSelected(item);
-                    setQty(1);
-                  }}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.rowTitle}>{item?.name ?? "Food"}</Text>
-                    {!!item?.englishName && (
-                      <Text style={styles.rowSub} numberOfLines={1}>
-                        {item.englishName}
-                      </Text>
-                    )}
-                  </View>
-                  <Ionicons
-                    name="add-circle-outline"
-                    size={22}
-                    color={COLORS.iconPrimary}
-                  />
-                </Pressable>
-              ))
-            )}
-          </>
-        ) : (
-          <>
-            {/* selected */}
-            <Text style={styles.sectionTitle}>Selected</Text>
-            <View style={styles.selectedCard}>
-              <Text style={styles.selectedTitle}>
-                {selected?.name ?? selected?.title ?? "Food"}
-              </Text>
-              <Text style={styles.selectedMeta}>
-                {selected?.englishName ?? "—"}
-              </Text>
-              <Text style={styles.selectedMeta}>
-                {"Serving Size: "}
-                {selected?.servingSize ?? "—"}
-              </Text>
-
-              <View style={styles.qtyRow}>
-                <Pressable
-                  style={[styles.qtyBtn, qty <= 1 && { opacity: 0.4 }]}
-                  disabled={qty <= 1}
-                  onPress={() => setQty((v) => Math.max(1, v - 1))}
-                >
-                  <Ionicons
-                    name="remove"
-                    size={18}
-                    color={COLORS.iconPrimary}
-                  />
-                </Pressable>
-
-                <Text style={styles.qtyValue}>{qty}</Text>
-
-                <Pressable
-                  style={styles.qtyBtn}
-                  onPress={() => setQty((v) => v + 1)}
-                >
-                  <Ionicons name="add" size={18} color={COLORS.iconPrimary} />
-                </Pressable>
-              </View>
-
-              <Pressable
-                style={[styles.primaryBtn, !canLog && { opacity: 0.5 }]}
-                disabled={!canLog}
-                onPress={onLog}
-              >
-                <Text style={styles.primaryBtnText}>Log</Text>
-              </Pressable>
-
-              <Pressable
-                style={styles.secondaryBtn}
-                onPress={() => {
-                  setSelected(null);
-                  setQty(1);
-                }}
-              >
-                <Text style={styles.secondaryBtnText}>Clear Selection</Text>
-              </Pressable>
             </View>
-          </>
-        )}
+          </View>
 
-        <View style={{ height: 30 }} />
-      </ScrollView>
-    </SafeAreaView>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.content}
+          >
+            {!selected && (
+              <>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Recent Meals</Text>
+                  <Text style={styles.viewAll}>View All ›</Text>
+                </View>
+
+                {search.trim().length === 0 ? (
+                  <View style={styles.emptyCard}>
+                    <Text style={styles.muted}>
+                      Search food or meal to begin.
+                    </Text>
+                  </View>
+                ) : searchLoading ? (
+                  <View style={styles.emptyCard}>
+                    <Text style={styles.muted}>Searching…</Text>
+                  </View>
+                ) : searchError ? (
+                  <View style={styles.emptyCard}>
+                    <Text style={styles.errorText}>{searchError}</Text>
+
+                    <Pressable
+                      style={styles.retryBtn}
+                      disabled={searchLoading}
+                      onPress={() => {
+                        setPauseAutoSearch(false);
+                        handleSearch(search);
+                      }}
+                    >
+                      <Text style={styles.retryBtnText}>Retry</Text>
+                    </Pressable>
+                  </View>
+                ) : results.length === 0 ? (
+                  <View style={styles.emptyCard}>
+                    <Text style={styles.muted}>No results found.</Text>
+                  </View>
+                ) : (
+                  results.map((item, index) => (
+                    <MealCard
+                      key={String(item.id)}
+                      item={item}
+                      index={index}
+                      onPress={() => {
+                        setSelected(item);
+                        setQty(1);
+                      }}
+                    />
+                  ))
+                )}
+              </>
+            )}
+
+            {!!selected && (
+              <>
+                <View style={styles.foodDetailCard}>
+                  <Text style={styles.foodTitle}>
+                    <Text style={styles.red}>1 CUP </Text>
+                    <Text style={styles.darkText}>
+                      of {selected?.name ?? selected?.title ?? "Food"}
+                    </Text>
+                  </Text>
+
+                  <View style={styles.categoryPill}>
+                    <Ionicons
+                      name="nutrition"
+                      size={16}
+                      color={COLORS.taguigYellow}
+                    />
+                    <Text style={styles.categoryText}>Carbohydrate</Text>
+                  </View>
+
+                  <Text style={styles.fieldLabel}>Serving Size</Text>
+
+                  <View style={styles.sliderFake}>
+                    <Text style={styles.sliderEdge}>½</Text>
+
+                    <View style={styles.sliderLine}>
+                      <View style={styles.sliderActiveLine} />
+                      <View style={styles.sliderThumb}>
+                        <Text style={styles.sliderThumbText}>{qty}</Text>
+                      </View>
+                    </View>
+
+                    <Text style={styles.sliderEdge}>1½</Text>
+                  </View>
+
+                  <View style={styles.servingBadge}>
+                    <Ionicons
+                      name="fast-food-outline"
+                      size={28}
+                      color="#FFFFFF"
+                    />
+                    <Text style={styles.servingBadgeText}>{qty} CUP</Text>
+                  </View>
+
+                  <Pressable
+                    style={[styles.addMealBtn, !canLog && { opacity: 0.5 }]}
+                    disabled={!canLog}
+                    onPress={onLog}
+                  >
+                    <Text style={styles.addMealText}>Add Meal</Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
+
+            <View style={{ height: 90 }} />
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: COLORS.background },
+  flex: { flex: 1 },
 
-  searchWrap: {
-    marginHorizontal: 16,
-    marginBottom: 8,
-    backgroundColor: COLORS.surfaceMuted,
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceBorder,
+  bg: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+
+  screen: {
+    flex: 1,
+    backgroundColor: "transparent",
+  },
+
+  content: {
+    paddingHorizontal: 28,
+    paddingTop: 18,
+  },
+
+  backBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: "rgba(239, 27, 36, 0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  topArea: {
+    paddingHorizontal: 28,
+    paddingTop: 18,
+  },
+
+  fullHeader: {},
+
+  compactHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
   },
-  searchInput: { flex: 1, fontSize: 14 },
 
-  sectionTitle: { fontSize: 13, fontWeight: "900", marginBottom: 10 },
-  muted: { opacity: 0.6 },
-
-  row: {
-    backgroundColor: COLORS.surfaceMuted,
-    borderRadius: 14,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceBorder,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 10,
+  searchHeaderInput: {
+    flex: 1,
   },
-  rowTitle: { fontSize: 14, fontWeight: "800", color: COLORS.textPrimary },
-  rowSub: { marginTop: 4, fontSize: 12, opacity: 0.65 },
 
-  selectedCard: {
-    backgroundColor: COLORS.surfaceMuted,
-    borderRadius: 18,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceBorder,
-  },
-  selectedTitle: { fontSize: 16, fontWeight: "900", marginBottom: 12 },
-  selectedMeta: { fontSize: 13, opacity: 0.75, marginTop: 2 },
-
-  qtyRow: {
-    flexDirection: "row",
+  logoPlaceholder: {
+    alignSelf: "center",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
     alignItems: "center",
     justifyContent: "center",
-    gap: 16,
+    marginTop: -6,
+  },
+
+  logo: {
+    width: 120,
+    height: 120,
+  },
+
+  logoText: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: COLORS.taguigBlue,
+  },
+
+  pageTitle: {
+    marginTop: 12,
+    textAlign: "center",
+    fontSize: 40,
+    fontWeight: "900",
+  },
+
+  red: {
+    color: COLORS.taguigRed,
+    fontWeight: "900",
+  },
+
+  blue: {
+    color: COLORS.taguigBlue,
+    fontWeight: "900",
+  },
+
+  yellow: {
+    color: COLORS.taguigYellow,
+    fontWeight: "900",
+  },
+
+  darkText: {
+    color: COLORS.textPrimary,
+    fontWeight: "900",
+  },
+
+  titleLines: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 7,
+    marginTop: 10,
     marginBottom: 14,
   },
-  qtyBtn: {
+
+  line: {
+    width: 54,
+    height: 5,
+    borderRadius: 99,
+  },
+
+  subtitle: {
+    textAlign: "center",
+    fontSize: 21,
+    lineHeight: 28,
+    fontWeight: "700",
+    color: COLORS.textSecondary,
+    marginBottom: 28,
+  },
+
+  searchBox: {
+    minHeight: 68,
+    borderRadius: 34,
+    borderWidth: 2,
+    borderColor: COLORS.taguigBlue,
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 22,
+    gap: 14,
+    shadowColor: COLORS.taguigBlue,
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+
+  searchHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 22,
+  },
+
+  searchBackBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: COLORS.background,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceBorder,
+    backgroundColor: "rgba(239, 27, 36, 0.12)",
     alignItems: "center",
     justifyContent: "center",
   },
-  qtyValue: {
-    fontSize: 16,
+
+  searchInput: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+  },
+
+  sectionHeader: {
+    marginTop: 34,
+    marginBottom: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  sectionTitle: {
+    fontSize: 26,
     fontWeight: "900",
-    minWidth: 30,
-    textAlign: "center",
+    color: COLORS.textPrimary,
   },
 
-  primaryBtn: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 14,
-    paddingVertical: 12,
+  viewAll: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: COLORS.taguigBlue,
+  },
+
+  mealCard: {
+    minHeight: 132,
+    borderRadius: 22,
+    backgroundColor: "#FFFFFF",
+    marginBottom: 20,
+    padding: 14,
+    paddingLeft: 20,
+    flexDirection: "row",
     alignItems: "center",
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
   },
-  primaryBtnText: { color: COLORS.textInverse, fontWeight: "900" },
 
-  secondaryBtn: {
+  mealAccent: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 8,
+  },
+
+  mealImagePlaceholder: {
+    width: 104,
+    height: 104,
+    borderRadius: 14,
+    backgroundColor: "#EEF2F7",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 16,
+  },
+
+  placeholderText: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: "#9CA3AF",
+  },
+
+  mealInfo: {
+    flex: 1,
+  },
+
+  mealTitle: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+
+  mealPill: {
+    alignSelf: "flex-start",
     marginTop: 10,
-    backgroundColor: COLORS.surfaceMuted,
-    borderRadius: 14,
-    paddingVertical: 12,
-    alignItems: "center",
+    backgroundColor: "#FFF2CC",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 99,
   },
-  secondaryBtnText: { color: COLORS.textPrimary, fontWeight: "800" },
+
+  mealPillText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+  },
+
+  mealMetaRow: {
+    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+
+  mealMeta: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+  },
+
+  mealDivider: {
+    color: "#CBD5E1",
+    fontWeight: "900",
+  },
+
+  foodDetailCard: {
+    marginTop: 18,
+    borderRadius: 28,
+    backgroundColor: "#FFFFFF",
+    padding: 26,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 5,
+  },
+
+  foodTitle: {
+    fontSize: 32,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+
+  categoryPill: {
+    alignSelf: "flex-start",
+    marginTop: 14,
+    marginBottom: 26,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#FFF5D6",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 99,
+  },
+
+  categoryText: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+
+  fieldLabel: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+    marginBottom: 12,
+  },
+
+  sliderFake: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+
+  sliderEdge: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: COLORS.textSecondary,
+  },
+
+  sliderLine: {
+    flex: 1,
+    height: 6,
+    borderRadius: 99,
+    backgroundColor: "#E5E7EB",
+    position: "relative",
+  },
+
+  sliderActiveLine: {
+    width: "45%",
+    height: "100%",
+    borderRadius: 99,
+    backgroundColor: COLORS.taguigBlue,
+  },
+
+  sliderThumb: {
+    position: "absolute",
+    left: "42%",
+    top: -20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.taguigRed,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  sliderThumbText: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "900",
+  },
+
+  servingBadge: {
+    alignSelf: "center",
+    marginTop: 34,
+    marginBottom: 24,
+    width: 130,
+    height: 104,
+    borderRadius: 14,
+    backgroundColor: "#071B52",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  servingBadgeText: {
+    marginTop: 6,
+    fontSize: 20,
+    fontWeight: "900",
+    color: "#FFFFFF",
+  },
+
+  noteInputWrap: {
+    minHeight: 62,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#D8DDEA",
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+  },
+
+  noteInput: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+  },
+
+  noteHelp: {
+    marginTop: 10,
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.textSecondary,
+  },
+
+  addMealBtn: {
+    marginTop: 24,
+    height: 68,
+    borderRadius: 12,
+    backgroundColor: COLORS.taguigRed,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  addMealText: {
+    fontSize: 24,
+    fontWeight: "900",
+    color: "#FFFFFF",
+  },
+
+  didYouKnow: {
+    marginTop: 20,
+    borderRadius: 14,
+    backgroundColor: "#EAF2FF",
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+
+  lightBulb: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  didTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: COLORS.taguigBlue,
+  },
+
+  didText: {
+    marginTop: 2,
+    fontSize: 14,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+  },
+
+  smallFoodPlaceholder: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  emptyCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+
+  muted: {
+    color: COLORS.textSecondary,
+    fontWeight: "700",
+  },
 
   errorText: {
     color: COLORS.dangerRed,
-    fontWeight: "700",
+    fontWeight: "800",
     marginBottom: 10,
   },
-  errorWrap: {
-    gap: 10,
-  },
+
   retryBtn: {
-    alignItems: "center",
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceBorder,
+    alignSelf: "flex-start",
     borderRadius: 12,
-    paddingHorizontal: 14,
+    backgroundColor: COLORS.taguigBlue,
+    paddingHorizontal: 16,
     paddingVertical: 10,
   },
 
   retryBtnText: {
-    color: COLORS.textPrimary,
-    fontWeight: "800",
+    color: "#FFFFFF",
+    fontWeight: "900",
   },
 });
 
