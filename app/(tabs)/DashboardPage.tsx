@@ -95,6 +95,17 @@ const getMealByTimestamp = (
   return "Dinner"; // 4:00pm–11:59pm
 };
 
+const getTimestampMs = (timestamp: unknown): number => {
+  if (typeof timestamp === "number") return timestamp;
+  if (typeof timestamp === "string") {
+    const parsed = Number(timestamp);
+    if (!Number.isNaN(parsed)) return parsed;
+    return new Date(timestamp).getTime();
+  }
+  if (timestamp instanceof Date) return timestamp.getTime();
+  return NaN;
+};
+
 // ---------- main screen ----------
 export const DashboardPage = () => {
   const { width } = useWindowDimensions();
@@ -123,23 +134,22 @@ export const DashboardPage = () => {
 
   const todaysFood = useMemo(() => {
     return (log ?? []).filter((e) => {
-      const ts =
-        typeof e.timestamp === "number"
-          ? e.timestamp
-          : new Date(e.timestamp).getTime();
+      const ts = getTimestampMs(e.timestamp);
       return ts >= startMs && ts < endMs;
     });
   }, [log, startMs, endMs]);
 
-  const todaysCalories = useMemo(() => {
-    let total = 0;
-    for (const entry of todaysFood) {
-      const kcalPerUnit = getKcalFromFood(entry.food);
-      const qty = typeof entry.quantity === "number" ? entry.quantity : 1;
-      total += kcalPerUnit * qty;
-    }
-    return Math.round(total);
+  const todaysFoodCalories = useMemo(() => {
+    return todaysFood.reduce((total, entry) => {
+      console.log("Calculating calories for entry:", entry);
+      const kcalPerServing = getKcalFromFood(entry.food);
+      const quantity = typeof entry.quantity === "number" ? entry.quantity : 1;
+
+      return total + kcalPerServing * quantity;
+    }, 0);
   }, [todaysFood]);
+
+  const todaysCalories = Math.round(todaysFoodCalories);
 
   const calorieRDI = useMemo(() => {
     const amount = rdi?.Calories?.amount;
@@ -163,11 +173,7 @@ export const DashboardPage = () => {
     };
 
     for (const e of todaysFood) {
-      const ts =
-        typeof e.timestamp === "number"
-          ? e.timestamp
-          : new Date(e.timestamp).getTime();
-
+      const ts = getTimestampMs(e.timestamp);
       const meal = getMealByTimestamp(ts);
       map[meal].push(e);
     }
