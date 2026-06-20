@@ -129,6 +129,15 @@ export const DashboardPage = () => {
   const hasStepsData = typeof todaySteps === "number" && todaySteps > 0;
   const hasSleepData = typeof lastNightHours === "number" && lastNightHours > 0;
 
+  const burnedCalories = useMemo(() => {
+    if (todaySteps === null || todaySteps === undefined) return null;
+    const caloriesPerStep = 0.04; // estimated kcal burned per step
+    return Math.round(todaySteps * caloriesPerStep);
+  }, [todaySteps]);
+
+  const burnedCaloriesDisplay =
+    burnedCalories === null ? "Unavailable" : `${burnedCalories} kcal`;
+
   const chartWidth = Math.min(width - 58, 680);
   const barSpacing = Math.max(16, chartWidth / 13);
 
@@ -326,7 +335,7 @@ export const DashboardPage = () => {
                 icon="water"
                 color={COLORS.taguigBlue}
                 label="Burned"
-                value="400 kcal"
+                value={burnedCaloriesDisplay}
               />
               <MetricLine
                 icon="flame"
