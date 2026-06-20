@@ -1,6 +1,7 @@
 // app/AddFoodPage.tsx
 
 import { Ionicons } from "@expo/vector-icons";
+import Slider from "@react-native-community/slider";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -27,8 +28,6 @@ import { Food } from "@/models/models";
 import { searchFoods } from "@/services/foodSearchService";
 import { COLORS } from "@/theme/color";
 
-type FoodItem = any;
-
 const makeLocalId = () => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
@@ -49,11 +48,11 @@ const SearchBox = ({ search, setSearch, onSubmit, scan = false }: any) => (
       onSubmitEditing={onSubmit}
     />
 
-    <Ionicons
+    {/* <Ionicons
       name={scan ? "scan-outline" : "chevron-down"}
       size={28}
       color={COLORS.taguigBlue}
-    />
+    /> */}
   </View>
 );
 
@@ -102,7 +101,7 @@ const MealCard = ({ item, index, onPress }: any) => {
 export const AddFoodPage = () => {
   const { addEntry } = useFoodLog();
 
-  const [selected, setSelected] = useState<FoodItem | null>(null);
+  const [selected, setSelected] = useState<Food | null>(null);
   const [qty, setQty] = useState(1);
   const insets = useSafeAreaInsets();
 
@@ -116,6 +115,55 @@ export const AddFoodPage = () => {
   const canLog = !!selected && qty > 0;
   const hasQuery = search.trim().length > 0;
   const compactMode = hasQuery || !!selected;
+
+  const formatServing = (value: number) => {
+    if (value === 0.5) return "½";
+    return Number.isInteger(value) ? String(value) : value.toFixed(1);
+  };
+
+  const getNutrientAmount = (food: Food | null, names: string[]) => {
+    if (!food) return 0;
+
+    const nutrient = food.nutrients.find((n) =>
+      names.some((name) => n.name.toLowerCase().includes(name.toLowerCase())),
+    );
+
+    return nutrient?.amount ?? 0;
+  };
+
+  const getNutrientUnit = (
+    food: Food | null,
+    names: string[],
+    fallback = "g",
+  ) => {
+    if (!food) return fallback;
+
+    const nutrient = food.nutrients.find((n) =>
+      names.some((name) => n.name.toLowerCase().includes(name.toLowerCase())),
+    );
+
+    return nutrient?.unit ?? fallback;
+  };
+
+  const caloriesPerServing = getNutrientAmount(selected, ["calorie", "energy"]);
+  const carbsPerServing = getNutrientAmount(selected, [
+    "carbohydrate",
+    "carbs",
+  ]);
+  const proteinPerServing = getNutrientAmount(selected, ["protein"]);
+  const fatPerServing = getNutrientAmount(selected, ["fat"]);
+
+  const calorieUnit = getNutrientUnit(selected, ["calorie", "energy"], "kcal");
+  const carbsUnit = getNutrientUnit(selected, ["carbohydrate", "carbs"], "g");
+  const proteinUnit = getNutrientUnit(selected, ["protein"], "g");
+  const fatUnit = getNutrientUnit(selected, ["fat"], "g");
+
+  const nutrientSummary = {
+    calories: Math.round(caloriesPerServing * qty),
+    carbs: +(carbsPerServing * qty).toFixed(1),
+    protein: +(proteinPerServing * qty).toFixed(1),
+    fat: +(fatPerServing * qty).toFixed(1),
+  };
 
   useEffect(() => {
     if (pauseAutoSearch) return;
@@ -147,6 +195,9 @@ export const AddFoodPage = () => {
         lastSyncError: null,
         mealType: 1, // TODO: add a picker for mealType later (Breakfast/Lunch/Dinner)
       });
+
+      setSelected(null);
+      setSearch("");
 
       router.back();
     } catch (error) {
@@ -274,7 +325,7 @@ export const AddFoodPage = () => {
 
   return (
     <ImageBackground
-      source={require("../../assets/images/login_bg.png")}
+      source={require("../../assets/images/foodlogbg.png")}
       style={styles.bg}
       resizeMode="cover"
     >
@@ -423,34 +474,29 @@ export const AddFoodPage = () => {
               <>
                 <View style={styles.foodDetailCard}>
                   <Text style={styles.foodTitle}>
-                    <Text style={styles.red}>1 CUP </Text>
                     <Text style={styles.darkText}>
-                      of {selected?.name ?? selected?.title ?? "Food"}
+                      {selected?.name ?? selected?.name ?? "Food"}
                     </Text>
                   </Text>
 
-                  <View style={styles.categoryPill}>
-                    <Ionicons
-                      name="nutrition"
-                      size={16}
-                      color={COLORS.taguigYellow}
-                    />
-                    <Text style={styles.categoryText}>Carbohydrate</Text>
-                  </View>
-
                   <Text style={styles.fieldLabel}>Serving Size</Text>
 
-                  <View style={styles.sliderFake}>
+                  <View style={styles.sliderRow}>
                     <Text style={styles.sliderEdge}>½</Text>
 
-                    <View style={styles.sliderLine}>
-                      <View style={styles.sliderActiveLine} />
-                      <View style={styles.sliderThumb}>
-                        <Text style={styles.sliderThumbText}>{qty}</Text>
-                      </View>
-                    </View>
+                    <Slider
+                      style={styles.slider}
+                      minimumValue={0.5}
+                      maximumValue={10}
+                      step={0.5}
+                      value={qty}
+                      minimumTrackTintColor={COLORS.taguigBlue}
+                      maximumTrackTintColor="#E5E7EB"
+                      thumbTintColor={COLORS.taguigRed}
+                      onValueChange={setQty}
+                    />
 
-                    <Text style={styles.sliderEdge}>1½</Text>
+                    <Text style={styles.sliderEdge}>10</Text>
                   </View>
 
                   <View style={styles.servingBadge}>
@@ -459,7 +505,47 @@ export const AddFoodPage = () => {
                       size={28}
                       color="#FFFFFF"
                     />
-                    <Text style={styles.servingBadgeText}>{qty} CUP</Text>
+                    <Text style={styles.servingBadgeText}>
+                      {" "}
+                      {formatServing(qty)} SERVING
+                    </Text>
+                  </View>
+
+                  <View style={styles.summaryBox}>
+                    <Text style={styles.summaryTitle}>This will add</Text>
+
+                    <View style={styles.summaryGrid}>
+                      <View style={styles.summaryItem}>
+                        <Text style={styles.summaryValue}>
+                          {nutrientSummary.calories}
+                        </Text>
+                        <Text style={styles.summaryLabel}>{calorieUnit}</Text>
+                      </View>
+
+                      <View style={styles.summaryItem}>
+                        <Text style={styles.summaryValue}>
+                          {nutrientSummary.carbs}
+                          {carbsUnit}
+                        </Text>
+                        <Text style={styles.summaryLabel}>Carbs</Text>
+                      </View>
+
+                      <View style={styles.summaryItem}>
+                        <Text style={styles.summaryValue}>
+                          {nutrientSummary.protein}
+                          {proteinUnit}
+                        </Text>
+                        <Text style={styles.summaryLabel}>Protein</Text>
+                      </View>
+
+                      <View style={styles.summaryItem}>
+                        <Text style={styles.summaryValue}>
+                          {nutrientSummary.fat}
+                          {fatUnit}
+                        </Text>
+                        <Text style={styles.summaryLabel}>Fat</Text>
+                      </View>
+                    </View>
                   </View>
 
                   <Pressable
@@ -786,16 +872,57 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     marginBottom: 12,
   },
-
-  sliderFake: {
+  sliderRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: 12,
+  },
+
+  slider: {
+    flex: 1,
+    height: 44,
   },
 
   sliderEdge: {
-    fontSize: 26,
-    fontWeight: "800",
+    fontSize: 22,
+    fontWeight: "900",
+    color: COLORS.textSecondary,
+  },
+
+  nutrientBox: {
+    marginTop: 18,
+    borderRadius: 16,
+    backgroundColor: "#EAF2FF",
+    padding: 14,
+  },
+
+  nutrientTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: COLORS.taguigBlue,
+    marginBottom: 12,
+  },
+
+  nutrientGrid: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+
+  nutrientItem: {
+    alignItems: "center",
+    flex: 1,
+  },
+
+  nutrientValue: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+
+  nutrientLabel: {
+    marginTop: 2,
+    fontSize: 11,
+    fontWeight: "700",
     color: COLORS.textSecondary,
   },
 
@@ -869,10 +996,40 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
 
-  noteHelp: {
-    marginTop: 10,
+  summaryBox: {
+    marginTop: 18,
+    borderRadius: 16,
+    backgroundColor: "#EAF2FF",
+    padding: 14,
+  },
+
+  summaryTitle: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "900",
+    color: COLORS.taguigBlue,
+    marginBottom: 12,
+  },
+
+  summaryGrid: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+
+  summaryItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+
+  summaryValue: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+
+  summaryLabel: {
+    marginTop: 2,
+    fontSize: 11,
+    fontWeight: "700",
     color: COLORS.textSecondary,
   },
 
