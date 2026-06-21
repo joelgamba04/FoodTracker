@@ -405,7 +405,12 @@ export const DashboardPage = () => {
                 <Text style={styles.chartPeriod}>7 Days</Text>
               </View>
 
-              <StepsChart width={chartWidth} />
+              <StepsChart
+                data={sampleStepsData}
+                width={chartWidth}
+                height={170}
+                maxValue={20000}
+              />
             </View>
           </Pressable>
           <Pressable onPress={() => router.push("/SleepPage")}>
@@ -423,7 +428,7 @@ export const DashboardPage = () => {
                 <Text style={styles.chartPeriod}>7 Days</Text>
               </View>
 
-              <SleepQualityChart width={chartWidth} />
+              <SleepQualityChart data={sampleSleepQuality} width={chartWidth} />
             </View>
           </Pressable>
         </ScrollView>

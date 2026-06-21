@@ -1,34 +1,46 @@
 import React from "react";
 import Svg, { Line, Rect, Text as SvgText } from "react-native-svg";
 
-const stepsData = [
-  { label: "Mon", value: 12000 },
-  { label: "Tue", value: 8000 },
-  { label: "Wed", value: 10500 },
-  { label: "Thu", value: 7500 },
-  { label: "Fri", value: 6000 },
-  { label: "Sat", value: 11000 },
-  { label: "Sun", value: 8200 },
-];
+export type ChartPoint = {
+  label: string;
+  value: number;
+};
 
-const StepsChart = ({ width = 320, height = 170 }) => {
-  const max = 15000;
+type StepsChartProps = {
+  data: ChartPoint[];
+  width?: number;
+  height?: number;
+  maxValue?: number;
+};
+
+const StepsChart = ({
+  data,
+  width = 320,
+  height = 170,
+  maxValue = 15000,
+}: StepsChartProps) => {
   const chartTop = 15;
   const chartBottom = 32;
   const chartHeight = height - chartTop - chartBottom;
   const barWidth = 26;
+
+  const safeData = data.length > 0 ? data : [{ label: "-", value: 0 }];
+  const max = Math.max(maxValue, ...safeData.map((item) => item.value), 1);
+
   const gap =
-    (width - 50 - stepsData.length * barWidth) / (stepsData.length - 1);
+    safeData.length > 1
+      ? (width - 50 - safeData.length * barWidth) / (safeData.length - 1)
+      : 0;
 
   return (
     <Svg width={width} height={height}>
-      {[0, 5000, 10000, 15000].map((tick) => {
+      {[0, max * 0.33, max * 0.66, max].map((tick) => {
         const y = chartTop + chartHeight - (tick / max) * chartHeight;
 
         return (
           <React.Fragment key={tick}>
             <SvgText x={0} y={y + 4} fontSize="9" fill="#9CA3AF">
-              {tick === 0 ? "0" : tick / 1000 + "K"}
+              {tick === 0 ? "0" : `${Math.round(tick / 1000)}K`}
             </SvgText>
 
             <Line
@@ -44,13 +56,17 @@ const StepsChart = ({ width = 320, height = 170 }) => {
         );
       })}
 
-      {stepsData.map((item, index) => {
-        const x = 42 + index * (barWidth + gap);
+      {safeData.map((item, index) => {
+        const x =
+          safeData.length > 1
+            ? 42 + index * (barWidth + gap)
+            : width / 2 - barWidth / 2;
+
         const barHeight = (item.value / max) * chartHeight;
         const y = chartTop + chartHeight - barHeight;
 
         return (
-          <React.Fragment key={item.label}>
+          <React.Fragment key={`${item.label}-${index}`}>
             <Rect
               x={x}
               y={y}

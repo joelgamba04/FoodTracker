@@ -1,25 +1,31 @@
 import React from "react";
 import Svg, {
-    Circle,
-    Defs,
-    LinearGradient,
-    Path,
-    Stop,
-    Text as SvgText,
+  Circle,
+  Defs,
+  LinearGradient,
+  Path,
+  Stop,
+  Text as SvgText,
 } from "react-native-svg";
 
-const sleepQualityData = [
-  { label: "Mon", value: 78 },
-  { label: "Tue", value: 85 },
-  { label: "Wed", value: 73 },
-  { label: "Thu", value: 91 },
-  { label: "Fri", value: 80 },
-  { label: "Sat", value: 88 },
-  { label: "Sun", value: 84 },
-];
+export type ChartPoint = {
+  label: string;
+  value: number;
+};
 
-const SleepQualityChart = ({ width = 320, height = 170 }) => {
-  const max = 100;
+type SleepQualityChartProps = {
+  data: ChartPoint[];
+  width?: number;
+  height?: number;
+  maxValue?: number;
+};
+
+const SleepQualityChart = ({
+  data,
+  width = 320,
+  height = 170,
+  maxValue = 100,
+}: SleepQualityChartProps) => {
   const min = 0;
   const chartTop = 15;
   const chartBottom = 32;
@@ -27,10 +33,12 @@ const SleepQualityChart = ({ width = 320, height = 170 }) => {
   const chartLeft = 32;
   const chartWidth = width - chartLeft - 10;
 
-  const points = sleepQualityData.map((item, index) => {
-    const x = chartLeft + (index / (sleepQualityData.length - 1)) * chartWidth;
+  const points = data.map((item, index) => {
+    const x = chartLeft + (index / (data.length - 1)) * chartWidth;
     const y =
-      chartTop + chartHeight - ((item.value - min) / (max - min)) * chartHeight;
+      chartTop +
+      chartHeight -
+      ((item.value - min) / (maxValue - min)) * chartHeight;
 
     return { ...item, x, y };
   });
@@ -56,7 +64,7 @@ const SleepQualityChart = ({ width = 320, height = 170 }) => {
       </Defs>
 
       {[0, 25, 50, 75, 100].map((tick) => {
-        const y = chartTop + chartHeight - (tick / max) * chartHeight;
+        const y = chartTop + chartHeight - (tick / maxValue) * chartHeight;
 
         return (
           <React.Fragment key={tick}>
