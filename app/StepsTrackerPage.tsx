@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Image,
+  ImageBackground,
   InteractionManager,
   Platform,
   Pressable,
@@ -16,9 +17,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import AppHeader from "@/components/AppHeader";
-
 import { useHealth } from "@/hooks/useHealth";
+import {
+  getHealthConnected,
+  setHealthConnected,
+} from "@/services/health/healthCache";
 import {
   checkAndroidHealthConnectAvailability,
   openHealthConnectStorePage,
@@ -26,10 +29,8 @@ import {
 import { ensureStepsAccess } from "@/services/health/stepsService";
 
 import ProgressRing from "@/components/ProgressRing";
-import {
-  getHealthConnected,
-  setHealthConnected,
-} from "@/services/health/healthCache";
+import StepsChart from "@/components/StepsChart";
+
 import { COLORS } from "@/theme/color";
 
 const MetricItem = ({ icon, color, label, value, unit }: any) => (
@@ -73,8 +74,36 @@ const StepsTrackerPage = () => {
   const [error, setError] = useState<string | null>(null);
   const { refreshHealth, data, loading, error: healthError } = useHealth();
 
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
 
+  // screen size helpers
+  const isSmallPhone = width < 380;
+  const scale = Math.min(width / 390, height / 844);
+
+  const rf = (size: number, min = size * 0.82, max = size * 1.15) =>
+    Math.min(Math.max(size * scale, min), max);
+
+  const rs = (size: number, min = size * 0.85, max = size * 1.2) =>
+    Math.min(Math.max(size * scale, min), max);
+
+  const chartWidth = Math.min(width - rs(64, 44, 80), 680);
+
+  const stepsChartData = data?.steps?.last7Days?.length
+    ? data.steps.last7Days.map((item) => ({
+        label: new Date(item.date).toLocaleDateString("en-US", {
+          weekday: "short",
+        }),
+        value: item.count,
+      }))
+    : [
+        { label: "Mon", value: 8234 },
+        { label: "Tue", value: 6102 },
+        { label: "Wed", value: 9876 },
+        { label: "Thu", value: 7543 },
+        { label: "Fri", value: 5231 },
+        { label: "Sat", value: 10245 },
+        { label: "Sun", value: 4995 },
+      ];
   const stepsGoal = 10000;
   const todaySteps = data?.steps?.todaySteps ?? 0;
   const percent = Math.min(100, Math.round((todaySteps / stepsGoal) * 100));
@@ -82,8 +111,6 @@ const StepsTrackerPage = () => {
   const distanceKm = (todaySteps * 0.0007).toFixed(2);
   const caloriesBurned = Math.round(todaySteps * 0.049);
   const activeMinutes = Math.round(todaySteps / 104);
-
-  const chartWidth = Math.min(width - 64, 680);
 
   const waitForInteractions = () =>
     new Promise<void>((resolve) => {
@@ -185,258 +212,287 @@ const StepsTrackerPage = () => {
 
   console.log("StepsTrackerPage: data loaded", { data, state, error });
   return (
-    <SafeAreaView style={styles.screen}>
-      <AppHeader title="Steps" showBack onBackPress={() => router.back()} />
+    <ImageBackground
+      source={require("../assets/images/foodlogbg.png")}
+      style={styles.bg}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={styles.screen}>
+        <View style={styles.topBar}>
+          <Pressable style={styles.circleBtn} onPress={() => router.back()}>
+            <Ionicons
+              name="chevron-back"
+              size={28}
+              color={COLORS.textPrimary}
+            />
+          </Pressable>
+        </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {state === "checking_availability" ||
-        state === "requesting_permission" ||
-        state === "loading_data" ? (
-          <View style={styles.centerCard}>
-            <Text style={styles.title}>
-              {state === "checking_availability" && "Checking Health Connect"}
+        <ScrollView contentContainerStyle={styles.content}>
+          {state === "checking_availability" ||
+          state === "requesting_permission" ||
+          state === "loading_data" ? (
+            <View style={styles.centerCard}>
+              <Text style={styles.title}>
+                {state === "checking_availability" && "Checking Health Connect"}
 
-              {state === "requesting_permission" && "Requesting Permission"}
+                {state === "requesting_permission" && "Requesting Permission"}
 
-              {state === "loading_data" && "Loading Step Data"}
-            </Text>
-
-            <Text style={styles.infoText}>
-              {state === "checking_availability" &&
-                "Checking if Health Connect is available..."}
-
-              {state === "requesting_permission" &&
-                "Please allow access to your health data."}
-
-              {state === "loading_data" &&
-                "Checking your available step records..."}
-            </Text>
-          </View>
-        ) : null}
-
-        {state === "missing_provider" ? (
-          <View style={styles.centerCard}>
-            <Text style={styles.title}>Health Connect required</Text>
-            <Text style={styles.infoText}>
-              Install Health Connect on Android so the app can read your step
-              data.
-            </Text>
-
-            <Pressable
-              style={styles.primaryBtn}
-              onPress={openHealthConnectStorePage}
-            >
-              <Text style={styles.primaryBtnText}>Open Play Store</Text>
-            </Pressable>
-
-            <Pressable style={styles.secondaryBtn} onPress={load}>
-              <Text style={styles.secondaryBtnText}>
-                I already installed it
+                {state === "loading_data" && "Loading Step Data"}
               </Text>
-            </Pressable>
-          </View>
-        ) : null}
 
-        {state === "connect_prompt" ? (
-          <View style={styles.centerCard}>
-            <Text style={styles.title}>Connect Health Data</Text>
+              <Text style={styles.infoText}>
+                {state === "checking_availability" &&
+                  "Checking if Health Connect is available..."}
 
-            <Text style={styles.infoText}>
-              Connect Health Connect to read your steps and sleep data.
-            </Text>
+                {state === "requesting_permission" &&
+                  "Please allow access to your health data."}
 
-            <Pressable style={styles.primaryBtn} onPress={load}>
-              <Text style={styles.primaryBtnText}>Continue</Text>
-            </Pressable>
-          </View>
-        ) : null}
+                {state === "loading_data" &&
+                  "Checking your available step records..."}
+              </Text>
+            </View>
+          ) : null}
 
-        {state === "error" ? (
-          <View style={styles.centerCard}>
-            <Text style={styles.title}>Could not load steps</Text>
-            <Text style={styles.errorText}>{error}</Text>
+          {state === "missing_provider" ? (
+            <View style={styles.centerCard}>
+              <Text style={styles.title}>Health Connect required</Text>
+              <Text style={styles.infoText}>
+                Install Health Connect on Android so the app can read your step
+                data.
+              </Text>
 
-            <Pressable style={styles.primaryBtn} onPress={load}>
-              <Text style={styles.primaryBtnText}>Try again</Text>
-            </Pressable>
-          </View>
-        ) : null}
+              <Pressable
+                style={styles.primaryBtn}
+                onPress={openHealthConnectStorePage}
+              >
+                <Text style={styles.primaryBtnText}>Open Play Store</Text>
+              </Pressable>
 
-        {state === "no_data" ? (
-          <View style={styles.centerCard}>
-            <Text style={styles.title}>No step data yet</Text>
-
-            <Text style={styles.infoText}>
-              Your app is connected, but no steps are available.
-            </Text>
-
-            <Text style={styles.infoText}>
-              Make sure another app is writing data to Health Connect:
-              {"\n\n"}• Google Fit
-              {"\n"}• Samsung Health
-              {"\n"}• Fitbit
-              {"\n"}• Smartwatch apps
-            </Text>
-
-            <Pressable style={styles.primaryBtn} onPress={load}>
-              <Text style={styles.primaryBtnText}>Refresh</Text>
-            </Pressable>
-          </View>
-        ) : null}
-
-        {state === "ready" ? (
-          <>
-            <View style={styles.hero}>
-              <View style={styles.heroText}>
-                <Text style={styles.heroTitle}>
-                  <Text style={styles.blue}>Steps{"\n"}</Text>
-                  <Text style={styles.red}>Counter</Text>
+              <Pressable style={styles.secondaryBtn} onPress={load}>
+                <Text style={styles.secondaryBtnText}>
+                  I already installed it
                 </Text>
+              </Pressable>
+            </View>
+          ) : null}
 
-                <Text style={styles.heroSubText}>Every step counts!</Text>
+          {state === "connect_prompt" ? (
+            <View style={styles.centerCard}>
+              <Text style={styles.title}>Connect Health Data</Text>
 
-                <View style={styles.yellowLine} />
-              </View>
+              <Text style={styles.infoText}>
+                Connect Health Connect to read your steps and sleep data.
+              </Text>
 
-              <Image
-                source={require("../assets/images/steps/shoes.png")}
+              <Pressable style={styles.primaryBtn} onPress={load}>
+                <Text style={styles.primaryBtnText}>Continue</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {state === "error" ? (
+            <View style={styles.centerCard}>
+              <Text style={styles.title}>Could not load steps</Text>
+              <Text style={styles.errorText}>{error}</Text>
+
+              <Pressable style={styles.primaryBtn} onPress={load}>
+                <Text style={styles.primaryBtnText}>Try again</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {state === "no_data" ? (
+            <View style={styles.centerCard}>
+              <Text style={styles.title}>No step data yet</Text>
+
+              <Text style={styles.infoText}>
+                Your app is connected, but no steps are available.
+              </Text>
+
+              <Text style={styles.infoText}>
+                Make sure another app is writing data to Health Connect:
+                {"\n\n"}• Google Fit
+                {"\n"}• Samsung Health
+                {"\n"}• Fitbit
+                {"\n"}• Smartwatch apps
+              </Text>
+
+              <Pressable style={styles.primaryBtn} onPress={load}>
+                <Text style={styles.primaryBtnText}>Refresh</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {state === "ready" ? (
+            <>
+              <View
                 style={[
-                  styles.heroImage,
+                  styles.hero,
                   {
-                    width: width * 0.48,
-                    height: width * 0.32,
+                    minHeight: rs(210, 160, 230),
                   },
                 ]}
-                resizeMode="contain"
-              />
-            </View>
-
-            <View style={styles.progressCard}>
-              <View style={styles.progressLeft}>
-                <Text style={styles.cardTitle}>Today's Steps</Text>
-
-                <Text style={styles.stepsValue}>
-                  {todaySteps.toLocaleString()}
-                </Text>
-
-                <Text style={styles.goalText}>
-                  of {stepsGoal.toLocaleString()} steps goal
-                </Text>
-
-                <View style={styles.statusPill}>
-                  <Text style={styles.statusText}>
-                    🏆 You're {percent}% of the way there!
+              >
+                <View style={styles.heroText}>
+                  <Text
+                    style={[
+                      styles.heroTitle,
+                      {
+                        fontSize: rf(42, 30, 46),
+                        lineHeight: rf(46, 34, 50),
+                      },
+                    ]}
+                  >
+                    <Text style={styles.blue}>Steps{"\n"}</Text>
+                    <Text style={styles.red}>Counter</Text>
                   </Text>
+
+                  <Text style={styles.heroSubText}>Every step counts!</Text>
+                  <View style={styles.yellowLine} />
                 </View>
+
+                <Image
+                  source={require("../assets/images/steps/shoes.png")}
+                  style={[
+                    styles.shoesImage,
+                    {
+                      width: isSmallPhone ? width * 0.5 : width * 0.6,
+                      height: isSmallPhone ? width * 0.33 : width * 0.4,
+                      right: isSmallPhone ? -22 : -34,
+                      top: isSmallPhone ? 42 : 34,
+                    },
+                  ]}
+                  resizeMode="contain"
+                />
               </View>
 
-              <View style={styles.divider} />
+              <View style={[styles.progressCard, { padding: rs(18, 12, 20) }]}>
+                <View style={styles.progressLeft}>
+                  <Text
+                    style={[styles.cardTitle, { fontSize: rf(18, 14, 20) }]}
+                  >
+                    Today's Steps
+                  </Text>
 
-              <ProgressRing
-                percent={percent}
-                color={COLORS.taguigRed}
-                image={require("../assets/images/steps/walk.png")}
-                size={170}
-                imageScale={0.24}
-                label="Completed"
-              />
-            </View>
+                  <Text
+                    style={[styles.stepsValue, { fontSize: rf(48, 34, 52) }]}
+                  >
+                    {todaySteps.toLocaleString()}
+                  </Text>
 
-            <View style={styles.metricsCard}>
-              <MetricItem
-                icon="footsteps"
-                color={COLORS.taguigBlue}
-                label="Distance"
-                value={distanceKm}
-                unit="km"
-              />
+                  <Text style={styles.goalText}>
+                    of {stepsGoal.toLocaleString()} steps goal
+                  </Text>
 
-              <MetricItem
-                icon="flame"
-                color={COLORS.taguigYellow}
-                label="Calories Burned"
-                value={caloriesBurned}
-                unit="kcal"
-              />
+                  <View style={styles.statusPill}>
+                    <Text style={styles.statusText}>
+                      🏆 You're {percent}% of the way there!
+                    </Text>
+                  </View>
+                </View>
 
-              <MetricItem
-                icon="stopwatch"
-                color={COLORS.taguigRed}
-                label="Active Time"
-                value={activeMinutes}
-                unit="min"
-              />
-            </View>
+                <View style={styles.divider} />
 
-            <View style={styles.chartCard}>
-              <View style={styles.chartHeader}>
-                <Text style={styles.sectionTitle}>Steps Activity</Text>
-                <Text style={styles.viewWeek}>View Week ›</Text>
+                <ProgressRing
+                  percent={percent}
+                  color={COLORS.taguigRed}
+                  image={require("../assets/images/steps/walk.png")}
+                  imageScale={0.5}
+                  size={rs(128, 92, 138)}
+                  strokeWidth={isSmallPhone ? 8 : 10}
+                  label="Completed"
+                />
               </View>
 
-              {/* <StepsChart
-                data={stepsChartData}
-                width={chartWidth}
-                height={190}
-                maxValue={12000}
-                barColor={COLORS.taguigRed}
-                goal={10000}
-              /> */}
-            </View>
-
-            <View style={styles.achievementCard}>
-              <View style={styles.chartHeader}>
-                <Text style={styles.sectionTitle}>Achievements</Text>
-                <Text style={styles.viewWeek}>View All</Text>
-              </View>
-
-              <View style={styles.achievementRow}>
-                <Achievement
-                  title="10K Steps"
-                  subtitle="Step 10,000 steps in a day"
+              <View
+                style={[
+                  styles.metricsCard,
+                  {
+                    paddingVertical: rs(16, 10, 18),
+                  },
+                ]}
+              >
+                <MetricItem
+                  icon="footsteps"
                   color={COLORS.taguigBlue}
+                  label="Distance"
+                  value={distanceKm}
+                  unit="km"
                 />
-                <Achievement
-                  title="7 Day Streak"
-                  subtitle="Reach your goal 7 days in a row"
-                  color="#22C55E"
-                />
-                <Achievement
-                  title="First Steps"
-                  subtitle="Complete your first step goal"
+
+                <MetricItem
+                  icon="flame"
                   color={COLORS.taguigYellow}
+                  label="Calories Burned"
+                  value={caloriesBurned}
+                  unit="kcal"
+                />
+
+                <MetricItem
+                  icon="stopwatch"
+                  color={COLORS.taguigRed}
+                  label="Active Time"
+                  value={activeMinutes}
+                  unit="min"
                 />
               </View>
-            </View>
 
-            {/* <Image
-              source={require("../assets/images/steps/steps-banner.png")}
-              style={[
-                styles.banner,
-                {
-                  width: width * 0.92,
-                  height: width * 0.2,
-                },
-              ]}
-              resizeMode="contain"
-            /> */}
+              <View style={styles.chartCard}>
+                <View style={styles.chartHeader}>
+                  <Text style={styles.sectionTitle}>Steps Activity</Text>
+                  <Text style={styles.viewWeek}>View Week ›</Text>
+                </View>
 
-            <View style={{ height: 110 }} />
-          </>
-        ) : null}
-      </ScrollView>
-    </SafeAreaView>
+                <StepsChart
+                  data={stepsChartData}
+                  width={chartWidth}
+                  height={isSmallPhone ? 155 : 180}
+                  maxValue={12000}
+                  color={COLORS.taguigRed}
+                  goal={10000}
+                />
+              </View>
+
+              <View style={{ height: 110 }} />
+            </>
+          ) : null}
+        </ScrollView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  bg: {
+    flex: 1,
+  },
   screen: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
   content: {
-    paddingHorizontal: 28,
-    paddingTop: 18,
+    paddingHorizontal: 24,
+  },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  circleBtn: {
+    marginLeft: 18,
+    marginTop: 18,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   centerCard: {
     backgroundColor: COLORS.surfaceMuted,
@@ -531,7 +587,6 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
   hero: {
-    minHeight: 230,
     justifyContent: "center",
     position: "relative",
   },
@@ -541,9 +596,7 @@ const styles = StyleSheet.create({
   },
 
   heroTitle: {
-    fontSize: 44,
     fontWeight: "900",
-    lineHeight: 48,
   },
 
   blue: {
@@ -555,15 +608,15 @@ const styles = StyleSheet.create({
   },
 
   heroSubText: {
-    marginTop: 10,
-    fontSize: 18,
+    marginTop: 8,
+    fontSize: 16,
     fontWeight: "700",
     color: COLORS.textSecondary,
   },
 
   yellowLine: {
-    marginTop: 14,
-    width: 60,
+    marginTop: 12,
+    width: 54,
     height: 5,
     borderRadius: 99,
     backgroundColor: COLORS.taguigYellow,
@@ -575,10 +628,15 @@ const styles = StyleSheet.create({
     top: 40,
   },
 
+  shoesImage: {
+    position: "absolute",
+    zIndex: 2,
+  },
+
   progressCard: {
     borderRadius: 26,
     backgroundColor: "#FFFFFF",
-    padding: 22,
+    padding: 18,
     flexDirection: "row",
     alignItems: "center",
     shadowColor: "#000",
@@ -593,20 +651,18 @@ const styles = StyleSheet.create({
   },
 
   cardTitle: {
-    fontSize: 20,
     fontWeight: "900",
     color: COLORS.textPrimary,
   },
 
   stepsValue: {
-    marginTop: 16,
-    fontSize: 54,
+    marginTop: 12,
     fontWeight: "900",
     color: COLORS.taguigRed,
   },
 
   goalText: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: "700",
     color: COLORS.textSecondary,
   },
@@ -637,7 +693,6 @@ const styles = StyleSheet.create({
     marginTop: 18,
     borderRadius: 24,
     backgroundColor: "#FFFFFF",
-    paddingVertical: 18,
     flexDirection: "row",
     shadowColor: "#000",
     shadowOpacity: 0.06,
