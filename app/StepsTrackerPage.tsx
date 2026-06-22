@@ -441,7 +441,7 @@ const StepsTrackerPage = () => {
               <View style={styles.chartCard}>
                 <View style={styles.chartHeader}>
                   <Text style={styles.sectionTitle}>Steps Activity</Text>
-                  <Text style={styles.viewWeek}>View Week ›</Text>
+                  {/* <Text style={styles.viewWeek}>View Week ›</Text> */}
                 </View>
 
                 <StepsChart
@@ -450,6 +450,7 @@ const StepsTrackerPage = () => {
                   height={isSmallPhone ? 155 : 180}
                   maxValue={20000}
                   color={COLORS.taguigRed}
+                  fillColor={COLORS.taguigRed}
                   goal={10000}
                 />
               </View>
@@ -466,10 +467,11 @@ const StepsTrackerPage = () => {
 const styles = StyleSheet.create({
   bg: {
     flex: 1,
+    backgroundColor: "#FFFFFF",
   },
   screen: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: "transparent",
   },
   content: {
     paddingHorizontal: 24,
