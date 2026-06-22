@@ -448,7 +448,7 @@ const StepsTrackerPage = () => {
                   data={stepsChartData}
                   width={chartWidth}
                   height={isSmallPhone ? 155 : 180}
-                  maxValue={12000}
+                  maxValue={20000}
                   color={COLORS.taguigRed}
                   goal={10000}
                 />

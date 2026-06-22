@@ -32,16 +32,6 @@ import SleepQualityChart from "@/components/SleepChart";
 import SmallMetricCard from "@/components/SmallMetricCard";
 import StepsChart from "@/components/StepsChart";
 
-const sampleStepsData = [
-  { value: 11200, label: "Mon" },
-  { value: 8200, label: "Tue" },
-  { value: 10400, label: "Wed" },
-  { value: 7600, label: "Thu" },
-  { value: 6100, label: "Fri" },
-  { value: 10900, label: "Sat" },
-  { value: 8400, label: "Sun" },
-];
-
 const sampleSleepQuality = [
   { value: 78, label: "Mon" },
   { value: 85, label: "Tue" },
@@ -195,17 +185,22 @@ export const DashboardPage = () => {
     router.push("/AddFoodPage");
   };
 
-  const stepsValue = !healthConnected
-    ? "Setup"
-    : hasStepsData
-      ? todaySteps.toLocaleString()
-      : "No data";
-
-  const stepsSubtitle = !healthConnected
-    ? "Tap to connect"
-    : hasStepsData
-      ? "steps today"
-      : "Open steps page";
+  const stepsChartData = health?.steps?.last7Days?.length
+    ? health.steps.last7Days.map((item) => ({
+        label: new Date(item.date).toLocaleDateString("en-US", {
+          weekday: "short",
+        }),
+        value: item.count,
+      }))
+    : [
+        { label: "Mon", value: 8234 },
+        { label: "Tue", value: 6102 },
+        { label: "Wed", value: 9876 },
+        { label: "Thu", value: 7543 },
+        { label: "Fri", value: 5231 },
+        { label: "Sat", value: 10245 },
+        { label: "Sun", value: 4995 },
+      ];
 
   const sleepValue = !healthConnected
     ? "Setup"
@@ -445,10 +440,12 @@ export const DashboardPage = () => {
               </View>
 
               <StepsChart
-                data={sampleStepsData}
+                data={stepsChartData}
                 width={chartWidth}
-                height={170}
+                height={isSmallPhone ? 155 : 180}
                 maxValue={20000}
+                color={COLORS.taguigRed}
+                goal={10000}
               />
             </View>
           </Pressable>
