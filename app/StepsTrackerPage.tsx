@@ -337,6 +337,7 @@ const StepsTrackerPage = () => {
                 color={COLORS.taguigRed}
                 image={require("../assets/images/steps/walk.png")}
                 size={170}
+                imageScale={0.24}
                 label="Completed"
               />
             </View>

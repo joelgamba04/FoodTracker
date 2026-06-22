@@ -72,8 +72,7 @@ const ProgressRing = ({
             style={{
               width: size * imageScale,
               height: size * imageScale,
-              resizeMode: "contain",
-              marginBottom: -32,
+              marginBottom: 4,
             }}
           />
         )}

@@ -133,8 +133,6 @@ export const HydrationPage = () => {
             <ProgressRing
               percent={(totalMl / 2500) * 100}
               color={COLORS.taguigBlue}
-              image={require("../assets/images/water/water_drop.png")}
-              imageScale={0.5}
             />
           </View>
 
