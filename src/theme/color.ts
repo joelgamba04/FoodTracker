@@ -98,4 +98,5 @@ export const COLORS = {
   hydrationRing: "#2962FF",
   stepsRing: "#FF2D55",
   sleepRing: "#1D3EAE",
+  dashboardRing: "#2DBE45",
 };

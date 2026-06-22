@@ -27,6 +27,7 @@ import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
 
 import MetricLine from "@/components/MetricLine";
+import ProgressRing from "@/components/ProgressRing";
 import SleepQualityChart from "@/components/SleepChart";
 import SmallMetricCard from "@/components/SmallMetricCard";
 import StepsChart from "@/components/StepsChart";
@@ -185,21 +186,10 @@ export const DashboardPage = () => {
     return Math.max(0, calorieRDI - todaysCalories);
   }, [calorieRDI, todaysCalories]);
 
-  const grouped = useMemo(() => {
-    const map: Record<"Breakfast" | "Lunch" | "Dinner", typeof todaysFood> = {
-      Breakfast: [],
-      Lunch: [],
-      Dinner: [],
-    };
-
-    for (const e of todaysFood) {
-      const ts = getTimestampMs(e.timestamp);
-      const meal = getMealByTimestamp(ts);
-      map[meal].push(e);
-    }
-
-    return map;
-  }, [todaysFood]);
+  const caloriePercent = useMemo(() => {
+    if (!calorieRDI || calorieRDI <= 0) return 0;
+    return Math.min(100, Math.round((todaysCalories / calorieRDI) * 100));
+  }, [todaysCalories, calorieRDI]);
 
   const goToAddFood = () => {
     router.push("/AddFoodPage");
@@ -385,17 +375,17 @@ export const DashboardPage = () => {
               />
             </View>
 
-            <View
-              style={[
-                styles.progressCircle,
-                {
-                  width: rs(110, 82, 118),
-                  height: rs(110, 82, 118),
-                  borderRadius: rs(110, 82, 118) / 2,
-                },
-              ]}
-            >
-              <Text style={styles.progressEmoji}>🍎</Text>
+            <View style={styles.calorieRingWrap}>
+              <ProgressRing
+                percent={caloriePercent}
+                color={COLORS.dashboardRing}
+                image={require("../../assets/images/apple.png")}
+                imageScale={0.7}
+                size={rs(112, 92, 120)}
+                strokeWidth={9}
+                label=""
+                showPercent={false}
+              />
             </View>
           </Pressable>
 
@@ -566,17 +556,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  progressCircle: {
-    width: 82,
-    height: 82,
-    borderRadius: 41,
-    borderWidth: 8,
-    borderColor: "#2DBE45",
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-  },
-  progressEmoji: { fontSize: 42 },
 
   smallCardsRow: {
     flexDirection: "row",
@@ -605,6 +584,7 @@ const styles = StyleSheet.create({
 
   calorieCard: {
     flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
     padding: 14,
@@ -614,9 +594,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 4,
   },
-  calorieLeft: { flex: 1 },
+  calorieLeft: { flex: 0.9 },
   cardTitle: { fontSize: 15, fontWeight: "900", color: COLORS.textPrimary },
-  caloriesLeft: { fontSize: 42, fontWeight: "900", color: COLORS.taguigRed },
+  caloriesLeft: { fontSize: 46, fontWeight: "900", color: COLORS.taguigRed },
   smallMuted: { color: COLORS.textSecondary, fontWeight: "600" },
   goalPill: {
     marginTop: 12,
@@ -631,9 +611,15 @@ const styles = StyleSheet.create({
   goalText: { color: COLORS.taguigBlue, fontWeight: "800", fontSize: 12 },
 
   calorieMiddle: {
-    flex: 1,
+    flex: 1.05,
     justifyContent: "center",
-    gap: 12,
+    gap: 10,
+  },
+
+  calorieRingWrap: {
+    flex: 0.9,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   section: {

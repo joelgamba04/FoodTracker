@@ -20,6 +20,7 @@ type ProgressRingProps = {
   strokeWidth?: number;
   label?: string;
   imageScale?: number;
+  showPercent?: boolean;
 };
 
 const ProgressRing = ({
@@ -31,6 +32,7 @@ const ProgressRing = ({
   strokeWidth = 10,
   label = "Completed",
   imageScale = 0.42,
+  showPercent = true,
 }: ProgressRingProps) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -72,17 +74,21 @@ const ProgressRing = ({
             style={{
               width: size * imageScale,
               height: size * imageScale,
-              marginBottom: 4,
             }}
           />
         )}
-
-        <Text style={[styles.percentText, { fontSize: size * 0.2 }]}>
-          {progress}%
-        </Text>
-
-        <Text style={styles.completedText}>{label}</Text>
+        {showPercent && (
+          <Text style={[styles.percentText, { fontSize: size * 0.2 }]}>
+            {progress}%
+          </Text>
+        )}
       </View>
+
+      {!!label && (
+        <Text style={[styles.completedText, { fontSize: size * 0.12 }]}>
+          {label}
+        </Text>
+      )}
     </View>
   );
 };
@@ -91,6 +97,7 @@ const styles = StyleSheet.create({
   ringWrap: {
     alignItems: "center",
     justifyContent: "center",
+    marginTop: 16,
   },
 
   ringCenter: {
@@ -100,14 +107,11 @@ const styles = StyleSheet.create({
   },
 
   percentText: {
-    marginTop: 4,
     fontWeight: "900",
     color: COLORS.textPrimary,
   },
 
   completedText: {
-    marginTop: 2,
-    fontSize: 14,
     fontWeight: "700",
     color: COLORS.textSecondary,
   },
