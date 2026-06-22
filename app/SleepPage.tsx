@@ -1,24 +1,27 @@
 // app/SleepPage.tsx
 
+import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useState } from "react";
 import {
+  Image,
   InteractionManager,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import AppHeader from "@/components/AppHeader";
+import ProgressRing from "@/components/ProgressRing";
 import { useHealth } from "@/hooks/useHealth";
 import {
   checkAndroidHealthConnectAvailability,
   openHealthConnectStorePage,
 } from "@/services/health/healthConnectInstall";
-import { formatPrettyDate } from "@/utils/date";
 
 import {
   getHealthConnected,
@@ -38,11 +41,39 @@ type PageState =
   | "ready"
   | "error";
 
+const SleepMetric = ({ icon, color, title, value, status }: any) => (
+  <View style={styles.sleepMetric}>
+    <View style={[styles.metricIcon, { backgroundColor: color }]}>
+      <Ionicons name={icon} size={22} color="#FFFFFF" />
+    </View>
+
+    <Text style={styles.metricTitle}>{title}</Text>
+    <Text style={styles.metricValue}>{value}</Text>
+    <Text style={[styles.metricStatus, { color }]}>{status}</Text>
+  </View>
+);
+
 const SleepPage = () => {
+  const { width } = useWindowDimensions();
   const router = useRouter();
   const [state, setState] = useState<PageState>("connect_prompt");
   const [error, setError] = useState<string | null>(null);
   const { refreshHealth, data, loading, error: healthError } = useHealth();
+
+  const sleepGoal = 8;
+  const lastNightHours = data?.sleep?.lastNightHours ?? 0;
+  const sleepPercent = Math.min(
+    100,
+    Math.round((lastNightHours / sleepGoal) * 100),
+  );
+  const sleepScore = Math.min(
+    100,
+    Math.round((lastNightHours / sleepGoal) * 100),
+  );
+
+  const sleepText = `${Math.floor(lastNightHours)}h ${Math.round(
+    (lastNightHours % 1) * 60,
+  )}m`;
 
   const waitForInteractions = () =>
     new Promise<void>((resolve) => {
@@ -253,26 +284,168 @@ const SleepPage = () => {
 
         {state === "ready" ? (
           <>
-            <View style={styles.heroCard}>
-              <Text style={styles.heroLabel}>Last Night</Text>
-              <Text style={styles.heroValue}>
-                {data?.sleep?.lastNightHours?.toFixed(1) ?? "0"}
-              </Text>
-              <Text style={styles.heroSub}>hours</Text>
+            <View style={styles.hero}>
+              <View style={styles.heroText}>
+                <Text style={styles.heroTitle}>
+                  <Text style={styles.blue}>Sleep{"\n"}</Text>
+                  <Text style={styles.red}>Dashboard</Text>
+                </Text>
+
+                <Text style={styles.heroSubText}>Good sleep, better you.</Text>
+                <View style={styles.yellowLine} />
+              </View>
+
+              <Image
+                source={require("../assets/images/sleep/sleep.png")}
+                style={[
+                  styles.heroImage,
+                  {
+                    width: width * 0.55,
+                    height: width * 0.38,
+                  },
+                ]}
+                resizeMode="contain"
+              />
             </View>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Last 7 Days</Text>
+            <View style={styles.sleepSummaryCard}>
+              <View style={styles.scoreCol}>
+                <Text style={styles.cardTitle}>Sleep Score</Text>
+                <Text style={styles.scoreValue}>{sleepScore}</Text>
+                <Text style={styles.scoreStatus}>Good</Text>
+                <Text style={styles.scoreNote}>
+                  You slept better than 78% of users
+                </Text>
+              </View>
 
-              {(data?.sleep?.last7Days ?? []).map((item) => (
-                <View key={item.date} style={styles.row}>
-                  <Text style={styles.dayText}>
-                    {formatPrettyDate(item.date)}
-                  </Text>
-                  <Text style={styles.countText}>{item.hours.toFixed(1)}</Text>
-                </View>
-              ))}
+              <View style={styles.divider} />
+
+              <View style={styles.durationCol}>
+                <Text style={styles.cardTitle}>Sleep Duration</Text>
+                <Text style={styles.durationValue}>{sleepText}</Text>
+                <Text style={styles.goalText}>of 8h goal</Text>
+              </View>
+
+              <ProgressRing
+                percent={sleepPercent}
+                color={COLORS.taguigBlue}
+                image={require("../assets/images/sleep/moon.png")}
+                imageScale={0.28}
+                size={116}
+                strokeWidth={9}
+                label="of goal"
+              />
             </View>
+
+            <View style={styles.tipPill}>
+              <View style={styles.tipIcon}>
+                <Ionicons name="calendar" size={22} color="#FFFFFF" />
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={styles.tipTitle}>
+                  Maintain a consistent sleep schedule
+                </Text>
+                <Text style={styles.tipText}>
+                  Try to sleep and wake up at the same time every day.
+                </Text>
+              </View>
+
+              <Ionicons
+                name="chevron-forward"
+                size={22}
+                color={COLORS.taguigBlue}
+              />
+            </View>
+
+            <View style={styles.metricsCard}>
+              <SleepMetric
+                icon="moon"
+                color={COLORS.taguigBlue}
+                title="Time in Bed"
+                value="7h 45m"
+                status="Good"
+              />
+              <SleepMetric
+                icon="bed"
+                color={COLORS.taguigRed}
+                title="Deep Sleep"
+                value="2h 15m"
+                status="Good"
+              />
+              <SleepMetric
+                icon="cloudy-night"
+                color={COLORS.taguigYellow}
+                title="Light Sleep"
+                value="3h 45m"
+                status="Average"
+              />
+              <SleepMetric
+                icon="sunny"
+                color={COLORS.taguigBlue}
+                title="Awake"
+                value="45m"
+                status="Good"
+              />
+            </View>
+
+            {/* <View style={styles.chartCard}>
+              <View style={styles.chartHeader}>
+                <Text style={styles.sectionTitle}>Sleep Stages</Text>
+                <Text style={styles.learnMore}>ⓘ Learn more</Text>
+              </View>
+
+              <View style={styles.sleepStagePlaceholder}>
+                <Text style={styles.placeholderText}>
+                  Sleep stages chart placeholder
+                </Text>
+              </View>
+            </View> */}
+
+            {/* <View style={styles.bottomGrid}>
+              <View style={styles.smallCard}>
+                <Text style={styles.smallTitle}>Sleep Trend</Text>
+                <Text style={styles.smallSub}>7 Days Average</Text>
+                <Text style={styles.smallValue}>6h 24m</Text>
+                <Text style={styles.greenText}>▲ 12% from last week</Text>
+              </View>
+
+              <View style={styles.smallCard}>
+                <Text style={styles.smallTitle}>Best Sleep</Text>
+                <Text style={styles.smallSub}>Wednesday</Text>
+                <Text style={styles.smallValue}>7h 12m</Text>
+                <Text style={styles.smallSub}>May 6, 2025</Text>
+              </View>
+
+              <View style={styles.smallCard}>
+                <Text style={styles.smallTitle}>Sleep Goal</Text>
+                <Text style={styles.smallSub}>8h per night</Text>
+
+                <ProgressRing
+                  percent={sleepPercent}
+                  color={COLORS.taguigBlue}
+                  image={require("../assets/images/sleep/moon.png")}
+                  imageScale={0.25}
+                  size={82}
+                  strokeWidth={7}
+                  label="Keep it up!"
+                />
+              </View>
+            </View> */}
+
+            {/* <Image
+              source={require("../assets/images/sleep/sleep-banner.png")}
+              style={[
+                styles.banner,
+                {
+                  width: width * 0.92,
+                  height: width * 0.22,
+                },
+              ]}
+              resizeMode="contain"
+            /> */}
+
+            <View style={{ height: 110 }} />
           </>
         ) : null}
       </ScrollView>
@@ -286,8 +459,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   content: {
-    padding: 16,
-    gap: 16,
+    paddingHorizontal: 28,
+    paddingTop: 18,
   },
   centerCard: {
     backgroundColor: COLORS.surfaceMuted,
@@ -363,10 +536,9 @@ const styles = StyleSheet.create({
     borderColor: COLORS.surfaceBorder,
   },
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: "900",
     color: COLORS.textPrimary,
-    marginBottom: 8,
   },
   row: {
     paddingVertical: 14,
@@ -385,6 +557,294 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "900",
     color: COLORS.textPrimary,
+  },
+
+  hero: {
+    minHeight: 230,
+    justifyContent: "center",
+    position: "relative",
+  },
+
+  heroText: {
+    zIndex: 3,
+  },
+
+  heroTitle: {
+    fontSize: 42,
+    fontWeight: "900",
+    lineHeight: 46,
+  },
+
+  blue: {
+    color: COLORS.taguigBlue,
+  },
+
+  red: {
+    color: COLORS.taguigRed,
+  },
+
+  heroSubText: {
+    marginTop: 10,
+    fontSize: 17,
+    fontWeight: "700",
+    color: COLORS.textSecondary,
+  },
+
+  yellowLine: {
+    marginTop: 14,
+    width: 58,
+    height: 5,
+    borderRadius: 99,
+    backgroundColor: COLORS.taguigYellow,
+  },
+
+  heroImage: {
+    position: "absolute",
+    right: -28,
+    top: 36,
+    zIndex: 2,
+  },
+
+  sleepSummaryCard: {
+    borderRadius: 26,
+    backgroundColor: "#FFFFFF",
+    padding: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 5,
+  },
+
+  scoreCol: {
+    flex: 1,
+  },
+
+  durationCol: {
+    flex: 1,
+  },
+
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+
+  scoreValue: {
+    marginTop: 10,
+    fontSize: 48,
+    fontWeight: "900",
+    color: COLORS.taguigBlue,
+  },
+
+  scoreStatus: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: COLORS.taguigBlue,
+  },
+
+  scoreNote: {
+    marginTop: 12,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "700",
+    color: COLORS.textSecondary,
+  },
+
+  durationValue: {
+    marginTop: 10,
+    fontSize: 34,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+
+  goalText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: COLORS.textSecondary,
+  },
+
+  divider: {
+    width: 1,
+    height: 110,
+    backgroundColor: "#EEF1F7",
+    marginHorizontal: 16,
+  },
+
+  tipPill: {
+    marginTop: 14,
+    borderRadius: 14,
+    backgroundColor: "#EAF2FF",
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+
+  tipIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.taguigBlue,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  tipTitle: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+
+  tipText: {
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: "700",
+    color: COLORS.textSecondary,
+  },
+
+  metricsCard: {
+    marginTop: 18,
+    borderRadius: 24,
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 18,
+    flexDirection: "row",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 3,
+  },
+
+  sleepMetric: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 6,
+    borderRightWidth: 1,
+    borderRightColor: "#EEF1F7",
+  },
+
+  metricIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  metricTitle: {
+    marginTop: 8,
+    fontSize: 11,
+    fontWeight: "800",
+    color: COLORS.textPrimary,
+    textAlign: "center",
+  },
+
+  metricValue: {
+    marginTop: 4,
+    fontSize: 18,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+
+  metricStatus: {
+    marginTop: 3,
+    fontSize: 10,
+    fontWeight: "800",
+  },
+
+  chartCard: {
+    marginTop: 18,
+    borderRadius: 24,
+    backgroundColor: "#FFFFFF",
+    padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 3,
+  },
+
+  chartHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+
+  learnMore: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: COLORS.taguigBlue,
+  },
+
+  sleepStagePlaceholder: {
+    height: 150,
+    borderRadius: 16,
+    backgroundColor: "#F3F6FB",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  placeholderText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: COLORS.textSecondary,
+  },
+
+  bottomGrid: {
+    marginTop: 18,
+    flexDirection: "row",
+    gap: 10,
+  },
+
+  smallCard: {
+    flex: 1,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    padding: 12,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 3,
+  },
+
+  smallTitle: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+
+  smallSub: {
+    marginTop: 3,
+    fontSize: 10,
+    fontWeight: "700",
+    color: COLORS.textSecondary,
+    textAlign: "center",
+  },
+
+  smallValue: {
+    marginTop: 8,
+    fontSize: 22,
+    fontWeight: "900",
+    color: COLORS.taguigBlue,
+  },
+
+  greenText: {
+    marginTop: 4,
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#16A34A",
+    textAlign: "center",
+  },
+
+  banner: {
+    marginTop: 20,
+    alignSelf: "center",
   },
 });
 export default SleepPage;
