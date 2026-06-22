@@ -130,7 +130,12 @@ export const HydrationPage = () => {
 
             <View style={styles.divider} />
 
-            <ProgressRing percent={(totalMl / 2500) * 100} />
+            <ProgressRing
+              percent={(totalMl / 2500) * 100}
+              color={COLORS.taguigBlue}
+              image={require("../assets/images/water/water_drop.png")}
+              imageScale={0.5}
+            />
           </View>
 
           <Text style={styles.sectionTitle}>Quick Add</Text>

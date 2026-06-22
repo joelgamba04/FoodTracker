@@ -1,22 +1,47 @@
-import { Ionicons } from "@expo/vector-icons";
+// src/components/ProgressRing.tsx
+
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  ImageSourcePropType,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { COLORS } from "../theme/color";
 
-const ProgressRing = ({ percent }: { percent: number }) => {
-  const size = 138;
-  const strokeWidth = 10;
+type ProgressRingProps = {
+  percent: number;
+  image?: ImageSourcePropType;
+  color?: string;
+  trackColor?: string;
+  size?: number;
+  strokeWidth?: number;
+  label?: string;
+  imageScale?: number;
+};
+
+const ProgressRing = ({
+  percent,
+  image,
+  color = COLORS.taguigBlue,
+  trackColor = "#E5E7EB",
+  size = 138,
+  strokeWidth = 10,
+  label = "Completed",
+  imageScale = 0.42,
+}: ProgressRingProps) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = Math.min(100, Math.max(0, percent));
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
-    <View style={styles.ringWrap}>
+    <View style={[styles.ringWrap, { width: size, height: size }]}>
       <Svg width={size} height={size}>
         <Circle
-          stroke="#E5E7EB"
+          stroke={trackColor}
           fill="none"
           cx={size / 2}
           cy={size / 2}
@@ -25,7 +50,7 @@ const ProgressRing = ({ percent }: { percent: number }) => {
         />
 
         <Circle
-          stroke={COLORS.taguigBlue}
+          stroke={color}
           fill="none"
           cx={size / 2}
           cy={size / 2}
@@ -40,9 +65,23 @@ const ProgressRing = ({ percent }: { percent: number }) => {
       </Svg>
 
       <View style={styles.ringCenter}>
-        <Ionicons name="water" size={30} color={COLORS.taguigBlue} />
-        <Text style={styles.percentText}>{progress}%</Text>
-        <Text style={styles.completedText}>Completed</Text>
+        {image && (
+          <Image
+            source={image}
+            style={{
+              width: size * imageScale,
+              height: size * imageScale,
+              resizeMode: "contain",
+              marginBottom: -32,
+            }}
+          />
+        )}
+
+        <Text style={[styles.percentText, { fontSize: size * 0.2 }]}>
+          {progress}%
+        </Text>
+
+        <Text style={styles.completedText}>{label}</Text>
       </View>
     </View>
   );
@@ -50,8 +89,6 @@ const ProgressRing = ({ percent }: { percent: number }) => {
 
 const styles = StyleSheet.create({
   ringWrap: {
-    width: 138,
-    height: 138,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -64,7 +101,6 @@ const styles = StyleSheet.create({
 
   percentText: {
     marginTop: 4,
-    fontSize: 30,
     fontWeight: "900",
     color: COLORS.textPrimary,
   },
