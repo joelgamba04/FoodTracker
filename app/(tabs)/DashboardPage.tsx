@@ -108,7 +108,7 @@ const getTimestampMs = (timestamp: unknown): number => {
 
 // ---------- main screen ----------
 export const DashboardPage = () => {
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const router = useRouter();
   const { log } = useFoodLog();
   const { rdi } = useProfile();
@@ -128,6 +128,17 @@ export const DashboardPage = () => {
 
   const hasStepsData = typeof todaySteps === "number" && todaySteps > 0;
   const hasSleepData = typeof lastNightHours === "number" && lastNightHours > 0;
+
+  // helpers for screen size
+  const scale = Math.min(width / 390, height / 844);
+  const rf = (size: number, min = size * 0.82, max = size * 1.15) => {
+    return Math.min(Math.max(size * scale, min), max);
+  };
+
+  const rs = (size: number, min = size * 0.85, max = size * 1.2) => {
+    return Math.min(Math.max(size * scale, min), max);
+  };
+  const isSmallPhone = width < 370;
 
   const burnedCalories = useMemo(() => {
     if (todaySteps === null || todaySteps === undefined) return null;
@@ -274,17 +285,33 @@ export const DashboardPage = () => {
               />
             </View>
 
-            <Text style={styles.greeting}>
+            <Text
+              style={[
+                styles.greeting,
+                {
+                  fontSize: rf(34, 24, 38),
+                  marginTop: rs(15, 12, 24),
+                },
+              ]}
+            >
               <Text style={styles.redText}>Good </Text>
               <Text style={styles.blueText}>Morning!</Text> 👋
             </Text>
 
-            <Text style={styles.greetingSub}>
+            <Text
+              style={[
+                styles.greetingSub,
+                {
+                  fontSize: rf(16, 12, 18),
+                },
+              ]}
+            >
               Let's make today a healthy one.
             </Text>
           </View>
 
-          <View style={styles.dateRow}>
+          {/* TODO Date row */}
+          {/* <View style={styles.dateRow}>
             {[8, 9, 10, 11, 12, 13, 14].map((day) => {
               const active = day === 10;
 
@@ -308,17 +335,30 @@ export const DashboardPage = () => {
                 </View>
               );
             })}
-          </View>
+          </View> */}
 
-          <Pressable onPress={goToAddFood} style={styles.calorieCard}>
+          <Pressable
+            onPress={goToAddFood}
+            style={[
+              styles.calorieCard,
+              {
+                padding: rs(16, 12, 18),
+                gap: isSmallPhone ? 8 : 12,
+              },
+            ]}
+          >
             <View style={styles.calorieLeft}>
-              <Text style={styles.cardTitle}>Calories Left</Text>
-              <Text style={styles.caloriesLeft}>{caloriesLeft}</Text>
+              <Text style={[styles.cardTitle, { fontSize: rf(15, 12, 16) }]}>
+                Calories Left
+              </Text>
+              <Text style={[styles.caloriesLeft, { fontSize: rf(40, 28, 58) }]}>
+                {caloriesLeft}
+              </Text>
               <Text style={styles.smallMuted}>food left</Text>
 
               <View style={styles.goalPill}>
                 <Ionicons name="flame" size={14} color={COLORS.taguigBlue} />
-                <Text style={styles.goalText}>
+                <Text style={[styles.goalText, { fontSize: rf(12, 10, 13) }]}>
                   {calorieRDI.toLocaleString()} kcal goal
                 </Text>
               </View>
@@ -345,7 +385,16 @@ export const DashboardPage = () => {
               />
             </View>
 
-            <View style={styles.progressCircle}>
+            <View
+              style={[
+                styles.progressCircle,
+                {
+                  width: rs(110, 82, 118),
+                  height: rs(110, 82, 118),
+                  borderRadius: rs(110, 82, 118) / 2,
+                },
+              ]}
+            >
               <Text style={styles.progressEmoji}>🍎</Text>
             </View>
           </Pressable>
@@ -451,9 +500,10 @@ const styles = StyleSheet.create({
   content: { padding: 16 },
 
   hero: {
-    minHeight: 220,
+    minHeight: 150,
     marginHorizontal: -16,
     overflow: "hidden",
+    justifyContent: "center",
   },
 
   heroImages: {
@@ -480,15 +530,15 @@ const styles = StyleSheet.create({
   },
 
   greeting: {
-    marginTop: 65,
-    fontSize: 34,
+    marginTop: 52,
+    fontSize: 28,
     fontWeight: "900",
     textAlign: "center",
     zIndex: 2,
   },
   greetingSub: {
     marginTop: 4,
-    fontSize: 16,
+    fontSize: 13,
     color: COLORS.textSecondary,
     fontWeight: "600",
     textAlign: "center",
@@ -507,9 +557,9 @@ const styles = StyleSheet.create({
   dateWeek: { fontSize: 13, fontWeight: "800", color: COLORS.textPrimary },
   dateCircle: {
     marginTop: 8,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#E5E7EB",
@@ -517,10 +567,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   progressCircle: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    borderWidth: 9,
+    width: 82,
+    height: 82,
+    borderRadius: 41,
+    borderWidth: 8,
     borderColor: "#2DBE45",
     alignItems: "center",
     justifyContent: "center",
@@ -530,8 +580,8 @@ const styles = StyleSheet.create({
 
   smallCardsRow: {
     flexDirection: "row",
-    gap: 10,
-    marginTop: 16,
+    gap: 8,
+    marginTop: 12,
   },
 
   placeholderText: {
@@ -543,7 +593,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.taguigRed,
     borderColor: COLORS.taguigRed,
   },
-  dateNum: { fontSize: 18, fontWeight: "900", color: COLORS.textPrimary },
+  dateNum: { fontSize: 16, fontWeight: "900", color: COLORS.textPrimary },
   dateNumActive: { color: "#FFFFFF" },
   dateUnderline: {
     marginTop: 8,
@@ -557,7 +607,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
-    padding: 16,
+    padding: 14,
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 14,
@@ -566,7 +616,7 @@ const styles = StyleSheet.create({
   },
   calorieLeft: { flex: 1 },
   cardTitle: { fontSize: 15, fontWeight: "900", color: COLORS.textPrimary },
-  caloriesLeft: { fontSize: 54, fontWeight: "900", color: COLORS.taguigRed },
+  caloriesLeft: { fontSize: 42, fontWeight: "900", color: COLORS.taguigRed },
   smallMuted: { color: COLORS.textSecondary, fontWeight: "600" },
   goalPill: {
     marginTop: 12,
@@ -620,12 +670,12 @@ const styles = StyleSheet.create({
   foodMeta: { marginTop: 4, fontSize: 12, opacity: 0.65 },
 
   chartCard: {
-    marginTop: 14,
+    marginTop: 12,
     backgroundColor: "#FFFFFF",
     borderRadius: 22,
-    paddingTop: 14,
-    paddingHorizontal: 14,
-    paddingBottom: 10,
+    paddingTop: 12,
+    paddingHorizontal: 12,
+    paddingBottom: 8,
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 10,
