@@ -21,6 +21,7 @@ import {
 
 import ProgressRing from "@/components/ProgressRing";
 import { useHydration } from "@/context/hydrationContext";
+import { useProfile } from "@/context/ProfileContext";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
 
@@ -34,6 +35,19 @@ const glassMap = {
 export const HydrationPage = () => {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const { rdi } = useProfile();
+
+  // screen size helpers
+  const isSmallPhone = width < 380;
+  const scale = Math.min(width / 390, 1);
+  const rf = (size: number) => Math.round(size * scale);
+  const rs = (size: number) => Math.round(size * scale);
+
+  const waterRDI = useMemo(() => {
+    const amount = rdi?.Water?.amount;
+    return typeof amount === "number" && isFinite(amount) ? amount : 2530;
+  }, [rdi]);
+
   const [showCustomInput, setShowCustomInput] = useState(false);
   const { entries, addMl, removeEntry, isLoading } = useHydration();
 
@@ -90,13 +104,33 @@ export const HydrationPage = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.content}
         >
-          <View style={styles.hero}>
+          <View
+            style={[
+              styles.hero,
+              {
+                marginTop: isSmallPhone ? 18 : 30,
+                minHeight: isSmallPhone ? 120 : 160,
+              },
+            ]}
+          >
             <View style={styles.heroText}>
-              <Text style={styles.title}>
+              <Text
+                style={[
+                  styles.title,
+                  {
+                    fontSize: isSmallPhone ? 24 : 34,
+                    maxWidth: isSmallPhone ? "58%" : "65%",
+                  },
+                ]}
+              >
                 <Text style={styles.blue}>Water </Text>
                 <Text style={styles.red}>Intake</Text>
               </Text>
-              <Text style={styles.subtitle}>Stay hydrated, stay healthy!</Text>
+              <Text
+                style={[styles.subtitle, { fontSize: isSmallPhone ? 12 : 15 }]}
+              >
+                Stay hydrated, stay healthy!
+              </Text>
             </View>
 
             <Image
@@ -104,26 +138,32 @@ export const HydrationPage = () => {
               style={[
                 styles.waterImage,
                 {
-                  width: width * 0.42,
-                  height: width * 0.63,
-                  right: -width * 0.04,
-                  bottom: -width * 0.18,
+                  width: isSmallPhone ? width * 0.3 : width * 0.42,
+                  height: isSmallPhone ? width * 0.42 : width * 0.63,
+                  right: isSmallPhone ? 0 : -width * 0.04,
+                  bottom: isSmallPhone ? -10 : -width * 0.18,
                 },
               ]}
               resizeMode="contain"
             />
           </View>
 
-          <View style={styles.progressCard}>
+          <View
+            style={[styles.progressCard, { padding: isSmallPhone ? 14 : 22 }]}
+          >
             <View style={styles.progressLeft}>
               <Text style={styles.cardTitle}>Today's Progress</Text>
-              <Text style={styles.liters}>{(totalMl / 1000).toFixed(1)} L</Text>
+              <Text
+                style={[styles.liters, { fontSize: isSmallPhone ? 38 : 52 }]}
+              >
+                {(totalMl / 1000).toFixed(1)} L
+              </Text>
               <Text style={styles.goalText}>of 2.5 L goal</Text>
 
               <View style={styles.goalPill}>
                 <Ionicons name="water" size={15} color={COLORS.taguigBlue} />
                 <Text style={styles.goalPillText}>
-                  {Math.round((totalMl / 2500) * 100)}% of daily goal
+                  {Math.round((totalMl / waterRDI) * 100)}% of daily goal
                 </Text>
               </View>
             </View>
@@ -131,7 +171,7 @@ export const HydrationPage = () => {
             <View style={styles.divider} />
 
             <ProgressRing
-              percent={(totalMl / 2500) * 100}
+              percent={Math.round((totalMl / waterRDI) * 100)}
               color={COLORS.taguigBlue}
             />
           </View>
@@ -238,7 +278,7 @@ export const HydrationPage = () => {
             )}
           </View>
 
-          <Image
+          {/* <Image
             source={require("../assets/images/water/bottom_banner.png")}
             style={[
               styles.banner,
@@ -248,7 +288,7 @@ export const HydrationPage = () => {
               },
             ]}
             resizeMode="contain"
-          />
+          /> */}
 
           <View style={{ height: 110 }} />
         </ScrollView>
@@ -298,8 +338,6 @@ const styles = StyleSheet.create({
 
   hero: {
     width: "100%",
-    minHeight: 185,
-    marginTop: 34,
     justifyContent: "center",
     position: "relative",
     overflow: "visible",
@@ -311,13 +349,11 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 38,
     fontWeight: "900",
   },
 
   subtitle: {
     marginTop: 8,
-    fontSize: 17,
     fontWeight: "700",
     color: COLORS.textSecondary,
   },
@@ -339,7 +375,6 @@ const styles = StyleSheet.create({
     marginTop: -10,
     borderRadius: 26,
     backgroundColor: "#FFFFFF",
-    padding: 22,
     flexDirection: "row",
     alignItems: "center",
     shadowColor: "#000",
@@ -362,7 +397,6 @@ const styles = StyleSheet.create({
 
   liters: {
     marginTop: 20,
-    fontSize: 52,
     fontWeight: "900",
     color: COLORS.taguigBlue,
   },
