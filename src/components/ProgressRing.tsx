@@ -25,7 +25,7 @@ type ProgressRingProps = {
 const ProgressRing = ({
   percent,
   image,
-  color = COLORS.taguigBlue,
+  color = COLORS.hydrationRing,
   trackColor = "#E5E7EB",
   size = 138,
   strokeWidth = 10,
@@ -68,6 +68,7 @@ const ProgressRing = ({
         {image && (
           <Image
             source={image}
+            resizeMode="contain"
             style={{
               width: size * imageScale,
               height: size * imageScale,

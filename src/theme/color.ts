@@ -91,4 +91,11 @@ export const COLORS = {
    * Tab Bar Colors
    * ========================= */
   tabBarIconInactive: "#A0A7B8",
+
+  /* =========================
+   * Progress Ring
+   * ========================= */
+  hydrationRing: "#2962FF",
+  stepsRing: "#FF2D55",
+  sleepRing: "#1D3EAE",
 };
