@@ -6,6 +6,7 @@ import {
   Image,
   ImageBackground,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -111,7 +112,12 @@ export const DashboardPage = () => {
   const endMs = end.getTime();
   const insets = useSafeAreaInsets();
 
-  const { data: health, loadCachedHealth } = useHealth();
+  const {
+    data: health,
+    loadCachedHealth,
+    loading,
+    refreshHealth,
+  } = useHealth();
   const [healthConnected, setHealthConnected] = useState(false);
 
   const todaySteps = health?.steps?.todaySteps ?? null;
@@ -119,6 +125,9 @@ export const DashboardPage = () => {
 
   const hasStepsData = typeof todaySteps === "number" && todaySteps > 0;
   const hasSleepData = typeof lastNightHours === "number" && lastNightHours > 0;
+
+  // refresh
+  const [refreshing, setRefreshing] = useState(false);
 
   // helpers for screen size
   const scale = Math.min(width / 390, height / 844);
@@ -270,6 +279,17 @@ export const DashboardPage = () => {
     });
   }, [health?.sleep?.last7Days, healthConnected]);
 
+  const onRefresh = useCallback(async () => {
+    try {
+      console.log("Refreshing health data...");
+      setRefreshing(true);
+      await refreshHealth();
+    } finally {
+      console.log("Health data refreshed.");
+      setRefreshing(false);
+    }
+  }, [refreshHealth]);
+
   return (
     <ImageBackground
       source={require("../../assets/images/login_bg.png")}
@@ -284,6 +304,14 @@ export const DashboardPage = () => {
             styles.content,
             { paddingBottom: 110 + insets.bottom },
           ]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing || loading}
+              onRefresh={onRefresh}
+              tintColor={COLORS.taguigBlue}
+              colors={[COLORS.taguigBlue]}
+            />
+          }
         >
           <View style={styles.hero}>
             <View style={styles.heroImages}>
