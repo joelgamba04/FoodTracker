@@ -240,6 +240,36 @@ export const DashboardPage = () => {
 
   console.log("Health data on dashboard:", health);
 
+  const sleepChartData = useMemo(() => {
+    const weeklySleep = health?.sleep?.last7Days;
+
+    if (
+      !healthConnected ||
+      !Array.isArray(weeklySleep) ||
+      weeklySleep.length === 0
+    ) {
+      return sampleSleepQuality;
+    }
+
+    return weeklySleep.map((item: any) => {
+      const hours =
+        typeof item.hours === "number"
+          ? item.hours
+          : typeof item.durationHours === "number"
+            ? item.durationHours
+            : typeof item.totalHours === "number"
+              ? item.totalHours
+              : 0;
+
+      return {
+        label: new Date(item.date).toLocaleDateString("en-US", {
+          weekday: "short",
+        }),
+        value: Math.min(100, Math.round((hours / 8) * 100)),
+      };
+    });
+  }, [health?.sleep?.last7Days, healthConnected]);
+
   return (
     <ImageBackground
       source={require("../../assets/images/login_bg.png")}
@@ -461,10 +491,19 @@ export const DashboardPage = () => {
                   <Ionicons name="stats-chart" size={22} color="#FFFFFF" />
                 </View>
                 <Text style={styles.chartTitle}>Sleep Quality</Text>
-                <Text style={styles.chartPeriod}>7 Days</Text>
+                <Text style={styles.chartTitle}>Sleep Quality</Text>
+
+                <Text style={styles.chartPeriod}>
+                  {healthConnected && hasSleepData ? "7 Days" : "Sample Data"}
+                </Text>
               </View>
 
-              <SleepQualityChart data={sampleSleepQuality} width={chartWidth} />
+              <SleepQualityChart
+                data={sleepChartData}
+                width={chartWidth}
+                height={170}
+                maxValue={100}
+              />
             </View>
           </Pressable>
         </ScrollView>
