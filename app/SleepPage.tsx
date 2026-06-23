@@ -41,20 +41,31 @@ type PageState =
   | "ready"
   | "error";
 
-const SleepMetric = ({ icon, color, title, value, status }: any) => (
+const SleepMetric = ({ image, title, value, status }: any) => (
   <View style={styles.sleepMetric}>
-    <View style={[styles.metricIcon, { backgroundColor: color }]}>
-      <Ionicons name={icon} size={22} color="#FFFFFF" />
-    </View>
+    <Image source={image} style={styles.metricImage} resizeMode="contain" />
 
     <Text style={styles.metricTitle}>{title}</Text>
     <Text style={styles.metricValue}>{value}</Text>
-    <Text style={[styles.metricStatus, { color }]}>{status}</Text>
+    <Text style={styles.metricStatus}>{status}</Text>
   </View>
 );
 
 const SleepPage = () => {
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
+
+  const isSmallPhone = width < 380;
+  const scale = Math.min(width / 390, height / 844);
+
+  const rf = (size: number, min = size * 0.82, max = size * 1.15) =>
+    Math.min(Math.max(size * scale, min), max);
+
+  const rs = (size: number, min = size * 0.85, max = size * 1.2) =>
+    Math.min(Math.max(size * scale, min), max);
+
+  const sleepHeroWidth = isSmallPhone ? width * 0.5 : width * 0.58;
+  const sleepHeroHeight = sleepHeroWidth * 0.67;
+
   const router = useRouter();
   const [state, setState] = useState<PageState>("connect_prompt");
   const [error, setError] = useState<string | null>(null);
@@ -284,14 +295,27 @@ const SleepPage = () => {
 
         {state === "ready" ? (
           <>
-            <View style={styles.hero}>
+            <View style={[styles.hero, { minHeight: rs(215, 165, 240) }]}>
               <View style={styles.heroText}>
-                <Text style={styles.heroTitle}>
+                <Text
+                  style={[
+                    styles.heroTitle,
+                    {
+                      fontSize: rf(42, 30, 46),
+                      lineHeight: rf(46, 34, 50),
+                    },
+                  ]}
+                >
                   <Text style={styles.blue}>Sleep{"\n"}</Text>
                   <Text style={styles.red}>Dashboard</Text>
                 </Text>
 
-                <Text style={styles.heroSubText}>Good sleep, better you.</Text>
+                <Text
+                  style={[styles.heroSubText, { fontSize: rf(17, 12, 18) }]}
+                >
+                  Good sleep, better you.
+                </Text>
+
                 <View style={styles.yellowLine} />
               </View>
 
@@ -300,29 +324,52 @@ const SleepPage = () => {
                 style={[
                   styles.heroImage,
                   {
-                    width: width * 0.55,
-                    height: width * 0.38,
+                    width: sleepHeroWidth,
+                    height: sleepHeroHeight,
+                    right: isSmallPhone ? -30 : -42,
+                    top: isSmallPhone ? 46 : 34,
                   },
                 ]}
                 resizeMode="contain"
               />
             </View>
 
-            <View style={styles.sleepSummaryCard}>
+            <View style={[styles.summaryCard, { padding: rs(18, 12, 20) }]}>
               <View style={styles.scoreCol}>
-                <Text style={styles.cardTitle}>Sleep Score</Text>
-                <Text style={styles.scoreValue}>{sleepScore}</Text>
-                <Text style={styles.scoreStatus}>Good</Text>
-                <Text style={styles.scoreNote}>
-                  You slept better than 78% of users
+                <Text style={[styles.cardTitle, { fontSize: rf(16, 12, 18) }]}>
+                  Sleep Score
                 </Text>
+
+                <Text style={[styles.scoreValue, { fontSize: rf(48, 34, 52) }]}>
+                  {sleepScore}
+                </Text>
+
+                <Text
+                  style={[styles.scoreStatus, { fontSize: rf(20, 15, 22) }]}
+                >
+                  Good
+                </Text>
+
+                {!isSmallPhone && (
+                  <Text style={styles.scoreNote}>
+                    You slept better than 78% of users
+                  </Text>
+                )}
               </View>
 
               <View style={styles.divider} />
 
               <View style={styles.durationCol}>
-                <Text style={styles.cardTitle}>Sleep Duration</Text>
-                <Text style={styles.durationValue}>{sleepText}</Text>
+                <Text style={[styles.cardTitle, { fontSize: rf(16, 12, 18) }]}>
+                  Sleep Duration
+                </Text>
+
+                <Text
+                  style={[styles.durationValue, { fontSize: rf(34, 24, 38) }]}
+                >
+                  {sleepText}
+                </Text>
+
                 <Text style={styles.goalText}>of 8h goal</Text>
               </View>
 
@@ -330,17 +377,19 @@ const SleepPage = () => {
                 percent={sleepPercent}
                 color={COLORS.taguigBlue}
                 image={require("../assets/images/sleep/moon.png")}
-                imageScale={0.28}
-                size={116}
-                strokeWidth={9}
+                imageScale={0.32}
+                size={rs(112, 88, 120)}
+                strokeWidth={isSmallPhone ? 8 : 9}
                 label="of goal"
               />
             </View>
 
             <View style={styles.tipPill}>
-              <View style={styles.tipIcon}>
-                <Ionicons name="calendar" size={22} color="#FFFFFF" />
-              </View>
+              <Image
+                source={require("../assets/images/sleep/bed.png")}
+                style={styles.tipImage}
+                resizeMode="contain"
+              />
 
               <View style={{ flex: 1 }}>
                 <Text style={styles.tipTitle}>
@@ -360,36 +409,32 @@ const SleepPage = () => {
 
             <View style={styles.metricsCard}>
               <SleepMetric
-                icon="moon"
-                color={COLORS.taguigBlue}
+                image={require("../assets/images/sleep/moon.png")}
                 title="Time in Bed"
                 value="7h 45m"
                 status="Good"
               />
               <SleepMetric
-                icon="bed"
-                color={COLORS.taguigRed}
+                image={require("../assets/images/sleep/bed.png")}
                 title="Deep Sleep"
                 value="2h 15m"
                 status="Good"
               />
               <SleepMetric
-                icon="cloudy-night"
-                color={COLORS.taguigYellow}
+                image={require("../assets/images/sleep/zzz.png")}
                 title="Light Sleep"
                 value="3h 45m"
                 status="Average"
               />
               <SleepMetric
-                icon="sunny"
-                color={COLORS.taguigBlue}
+                image={require("../assets/images/sleep/sun.png")}
                 title="Awake"
                 value="45m"
                 status="Good"
               />
             </View>
 
-            {/* <View style={styles.chartCard}>
+            <View style={styles.chartCard}>
               <View style={styles.chartHeader}>
                 <Text style={styles.sectionTitle}>Sleep Stages</Text>
                 <Text style={styles.learnMore}>ⓘ Learn more</Text>
@@ -400,50 +445,7 @@ const SleepPage = () => {
                   Sleep stages chart placeholder
                 </Text>
               </View>
-            </View> */}
-
-            {/* <View style={styles.bottomGrid}>
-              <View style={styles.smallCard}>
-                <Text style={styles.smallTitle}>Sleep Trend</Text>
-                <Text style={styles.smallSub}>7 Days Average</Text>
-                <Text style={styles.smallValue}>6h 24m</Text>
-                <Text style={styles.greenText}>▲ 12% from last week</Text>
-              </View>
-
-              <View style={styles.smallCard}>
-                <Text style={styles.smallTitle}>Best Sleep</Text>
-                <Text style={styles.smallSub}>Wednesday</Text>
-                <Text style={styles.smallValue}>7h 12m</Text>
-                <Text style={styles.smallSub}>May 6, 2025</Text>
-              </View>
-
-              <View style={styles.smallCard}>
-                <Text style={styles.smallTitle}>Sleep Goal</Text>
-                <Text style={styles.smallSub}>8h per night</Text>
-
-                <ProgressRing
-                  percent={sleepPercent}
-                  color={COLORS.taguigBlue}
-                  image={require("../assets/images/sleep/moon.png")}
-                  imageScale={0.25}
-                  size={82}
-                  strokeWidth={7}
-                  label="Keep it up!"
-                />
-              </View>
-            </View> */}
-
-            {/* <Image
-              source={require("../assets/images/sleep/sleep-banner.png")}
-              style={[
-                styles.banner,
-                {
-                  width: width * 0.92,
-                  height: width * 0.22,
-                },
-              ]}
-              resizeMode="contain"
-            /> */}
+            </View>
 
             <View style={{ height: 110 }} />
           </>
@@ -459,8 +461,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   content: {
-    paddingHorizontal: 28,
-    paddingTop: 18,
+    paddingHorizontal: 22,
+    paddingTop: 14,
+    paddingBottom: 120,
+    gap: 14,
   },
   centerCard: {
     backgroundColor: COLORS.surfaceMuted,
@@ -535,11 +539,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.surfaceBorder,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: COLORS.textPrimary,
-  },
+
   row: {
     paddingVertical: 14,
     borderTopWidth: 1,
@@ -560,7 +560,6 @@ const styles = StyleSheet.create({
   },
 
   hero: {
-    minHeight: 230,
     justifyContent: "center",
     position: "relative",
   },
@@ -570,9 +569,7 @@ const styles = StyleSheet.create({
   },
 
   heroTitle: {
-    fontSize: 42,
     fontWeight: "900",
-    lineHeight: 46,
   },
 
   blue: {
@@ -584,15 +581,14 @@ const styles = StyleSheet.create({
   },
 
   heroSubText: {
-    marginTop: 10,
-    fontSize: 17,
+    marginTop: 8,
     fontWeight: "700",
     color: COLORS.textSecondary,
   },
 
   yellowLine: {
-    marginTop: 14,
-    width: 58,
+    marginTop: 12,
+    width: 54,
     height: 5,
     borderRadius: 99,
     backgroundColor: COLORS.taguigYellow,
@@ -600,15 +596,12 @@ const styles = StyleSheet.create({
 
   heroImage: {
     position: "absolute",
-    right: -28,
-    top: 36,
     zIndex: 2,
   },
 
-  sleepSummaryCard: {
+  summaryCard: {
     borderRadius: 26,
     backgroundColor: "#FFFFFF",
-    padding: 20,
     flexDirection: "row",
     alignItems: "center",
     shadowColor: "#000",
@@ -619,7 +612,7 @@ const styles = StyleSheet.create({
   },
 
   scoreCol: {
-    flex: 1,
+    flex: 0.9,
   },
 
   durationCol: {
@@ -627,60 +620,61 @@ const styles = StyleSheet.create({
   },
 
   cardTitle: {
-    fontSize: 16,
     fontWeight: "900",
     color: COLORS.textPrimary,
   },
 
   scoreValue: {
-    marginTop: 10,
-    fontSize: 48,
+    marginTop: 8,
     fontWeight: "900",
     color: COLORS.taguigBlue,
   },
 
   scoreStatus: {
-    fontSize: 20,
     fontWeight: "900",
     color: COLORS.taguigBlue,
   },
 
   scoreNote: {
-    marginTop: 12,
-    fontSize: 12,
-    lineHeight: 17,
+    marginTop: 8,
+    fontSize: 11,
+    lineHeight: 16,
     fontWeight: "700",
     color: COLORS.textSecondary,
   },
 
   durationValue: {
-    marginTop: 10,
-    fontSize: 34,
+    marginTop: 8,
     fontWeight: "900",
     color: COLORS.textPrimary,
   },
 
   goalText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "700",
     color: COLORS.textSecondary,
   },
 
   divider: {
     width: 1,
-    height: 110,
+    height: 100,
     backgroundColor: "#EEF1F7",
-    marginHorizontal: 16,
+    marginHorizontal: 12,
   },
 
   tipPill: {
     marginTop: 14,
     borderRadius: 14,
     backgroundColor: "#EAF2FF",
-    padding: 14,
+    padding: 12,
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
+  },
+
+  tipImage: {
+    width: 42,
+    height: 42,
   },
 
   tipIcon: {
@@ -700,16 +694,15 @@ const styles = StyleSheet.create({
 
   tipText: {
     marginTop: 2,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
     color: COLORS.textSecondary,
   },
 
   metricsCard: {
-    marginTop: 18,
     borderRadius: 24,
     backgroundColor: "#FFFFFF",
-    paddingVertical: 18,
+    paddingVertical: 14,
     flexDirection: "row",
     shadowColor: "#000",
     shadowOpacity: 0.06,
@@ -721,22 +714,19 @@ const styles = StyleSheet.create({
   sleepMetric: {
     flex: 1,
     alignItems: "center",
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     borderRightWidth: 1,
     borderRightColor: "#EEF1F7",
   },
 
-  metricIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    alignItems: "center",
-    justifyContent: "center",
+  metricImage: {
+    width: 42,
+    height: 42,
   },
 
   metricTitle: {
-    marginTop: 8,
-    fontSize: 11,
+    marginTop: 6,
+    fontSize: 10,
     fontWeight: "800",
     color: COLORS.textPrimary,
     textAlign: "center",
@@ -744,29 +734,27 @@ const styles = StyleSheet.create({
 
   metricValue: {
     marginTop: 4,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "900",
     color: COLORS.textPrimary,
   },
 
   metricStatus: {
-    marginTop: 3,
-    fontSize: 10,
+    marginTop: 2,
+    fontSize: 9,
     fontWeight: "800",
   },
 
   chartCard: {
-    marginTop: 18,
     borderRadius: 24,
     backgroundColor: "#FFFFFF",
-    padding: 16,
+    padding: 14,
     shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
     elevation: 3,
   },
-
   chartHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -774,14 +762,20 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+
   learnMore: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "900",
     color: COLORS.taguigBlue,
   },
 
   sleepStagePlaceholder: {
-    height: 150,
+    height: 135,
     borderRadius: 16,
     backgroundColor: "#F3F6FB",
     alignItems: "center",
