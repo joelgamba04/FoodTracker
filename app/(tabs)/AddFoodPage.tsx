@@ -59,7 +59,19 @@ const SearchBox = ({ search, setSearch, onSubmit, scan = false }: any) => (
 const MealCard = ({ item, index, onPress }: any) => {
   const colors = [COLORS.taguigRed, COLORS.taguigBlue, COLORS.taguigYellow];
 
-  // console.log("MealCard item:", item);
+  console.log("MealCard item:", item);
+
+  const getCalories = (food: Food | null) => {
+    if (!food) return 0;
+
+    const kcal = food.nutrients.find(
+      (n) =>
+        n.name.toLowerCase() === "calories" ||
+        n.name.toLowerCase() === "energy",
+    );
+
+    return kcal ? kcal.amount : 0;
+  };
 
   return (
     <Pressable style={styles.mealCard} onPress={onPress}>
@@ -80,7 +92,9 @@ const MealCard = ({ item, index, onPress }: any) => {
         </View>
 
         <View style={styles.mealMetaRow}>
-          <Text style={styles.mealMeta}>🔥 {item?.calories ?? 205} kcal</Text>
+          <Text style={styles.mealMeta}>
+            🔥 {getCalories(item) ?? 205} kcal
+          </Text>
           <Text style={styles.mealDivider}>|</Text>
           <Text style={styles.mealMeta}>⚖️ {item?.servingSize ?? "160 g"}</Text>
         </View>
