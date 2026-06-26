@@ -13,6 +13,7 @@ export interface Food {
   id: string;
   name: string;
   brand?: string;
+  category?: string;
   servingSize: string; // e.g., "100g", "1 cup"
   nutrients: Nutrient[];
   englishName?: string; // Optional Filipino name for the food

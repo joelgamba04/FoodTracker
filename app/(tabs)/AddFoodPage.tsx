@@ -57,13 +57,9 @@ const SearchBox = ({ search, setSearch, onSubmit, scan = false }: any) => (
 );
 
 const MealCard = ({ item, index, onPress }: any) => {
-  const colors = [
-    COLORS.taguigRed,
-    COLORS.taguigBlue,
-    COLORS.taguigYellow,
-    COLORS.taguigRed,
-  ];
-  const categories = ["Carbohydrate", "Protein", "Vegetable", "Fruit"];
+  const colors = [COLORS.taguigRed, COLORS.taguigBlue, COLORS.taguigYellow];
+
+  // console.log("MealCard item:", item);
 
   return (
     <Pressable style={styles.mealCard} onPress={onPress}>
@@ -76,14 +72,11 @@ const MealCard = ({ item, index, onPress }: any) => {
 
       <View style={styles.mealInfo}>
         <Text style={styles.mealTitle} numberOfLines={1}>
-          <Text style={{ color: colors[index % colors.length] }}>1 cup </Text>
           {item?.name ?? "Food"}
         </Text>
 
         <View style={styles.mealPill}>
-          <Text style={styles.mealPillText}>
-            {categories[index % categories.length]}
-          </Text>
+          <Text style={styles.mealPillText}>{item?.category ?? "New"}</Text>
         </View>
 
         <View style={styles.mealMetaRow}>
@@ -422,7 +415,7 @@ export const AddFoodPage = () => {
               <>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>Recent Meals</Text>
-                  <Text style={styles.viewAll}>View All ›</Text>
+                  {/* <Text style={styles.viewAll}>View All ›</Text> */}
                 </View>
 
                 {search.trim().length === 0 ? (

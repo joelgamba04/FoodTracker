@@ -16,6 +16,7 @@ export const mapFoodDetailToFood = (item: FoodDetail): Food => {
     name: item.filipino_name || item.english_name || "Unknown food",
     englishName: item.english_name || "",
     servingSize,
+    category: item.category_name,
     nutrients: [
       { name: "Calories", unit: "kcal", amount: Number(item.energy_kcal ?? 0) },
       {
