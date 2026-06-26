@@ -63,13 +63,12 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
   const heightInRef = useRef<TextInput>(null);
   const weightRef = useRef<TextInput>(null);
 
-  const ageY = useRef(0);
-  const heightY = useRef(0);
-  const weightY = useRef(0);
-
   const { reloadLocalProfile } = useProfile();
 
   const scrollRef = useRef<ScrollView>(null);
+  const activeField = useRef<string | null>(null);
+  let scrollTimeout: any = null;
+  const fieldY = useRef<Record<string, number>>({});
 
   const { width, height } = useWindowDimensions();
 
@@ -167,26 +166,35 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
     }
   };
 
-  const toggleGender = () => {
-    // simple toggle; replace with picker later if you want
-    const next = form.sex === "Male" ? "Female" : "Male";
-    handleChange("sex", next);
-  };
+  const focusField = (key: string) => {
+    activeField.current = key;
 
-  const scrollToInput = (y: number) => {
-    setTimeout(() => {
+    if (scrollTimeout) clearTimeout(scrollTimeout);
+
+    scrollTimeout = setTimeout(() => {
+      const y = fieldY.current[key];
+
+      if (y == null) return;
+
       scrollRef.current?.scrollTo({
-        y: Math.max(y - 120, 0),
+        y: Math.max(0, y - 120), // offset for keyboard/header
         animated: true,
       });
-    }, 250);
+    }, 80);
   };
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.screen, styles.center]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-      </SafeAreaView>
+      <ImageBackground
+        source={require("../../assets/images/login_bg.png")}
+        style={styles.bg}
+        imageStyle={styles.bgImage}
+        resizeMode="stretch"
+      >
+        <SafeAreaView style={[styles.screen, styles.center]}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </SafeAreaView>
+      </ImageBackground>
     );
   }
 
@@ -215,7 +223,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
               Platform.OS === "ios" ? "interactive" : "on-drag"
             }
             automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
-            showsVerticalScrollIndicator={true}
+            showsVerticalScrollIndicator={false}
           >
             <View pointerEvents="none" style={styles.decorLayer}>
               <Image
@@ -341,16 +349,48 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
                 <View style={styles.fieldContent}>
                   <Text style={styles.unitTitle}>Sex</Text>
 
-                  <TouchableOpacity style={styles.input}>
-                    <Text>Male</Text>
-                  </TouchableOpacity>
+                  <View style={styles.genderRow}>
+                    <TouchableOpacity
+                      onPress={() => handleChange("sex", "Male")}
+                      style={[
+                        styles.genderBtn,
+                        form.sex === "Male" && styles.genderBtnActive,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.genderText,
+                          form.sex === "Male" && styles.genderTextActive,
+                        ]}
+                      >
+                        Male
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => handleChange("sex", "Female")}
+                      style={[
+                        styles.genderBtn,
+                        form.sex === "Female" && styles.genderBtnActive,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.genderText,
+                          form.sex === "Female" && styles.genderTextActive,
+                        ]}
+                      >
+                        Female
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
 
               {/* Age */}
               <View
                 onLayout={(e) => {
-                  ageY.current = e.nativeEvent.layout.y;
+                  fieldY.current.age = e.nativeEvent.layout.y;
                 }}
                 style={styles.fieldRow}
               >
@@ -369,7 +409,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
                     unit="yrs"
                     keyboardType="numeric"
                     returnKeyType="next"
-                    onFocus={() => scrollToInput(ageY.current)}
+                    onFocus={() => focusField("age")}
                     onSubmitEditing={() => {
                       if (useImperial) heightFtRef.current?.focus();
                       else heightRef.current?.focus();
@@ -378,6 +418,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
                   />
                 </View>
               </View>
+
               {/* Units toggle */}
               <View style={styles.unitRow}>
                 <Text style={styles.unitTitle}>Units</Text>
@@ -431,7 +472,9 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
 
               {/* Height */}
               <View
-                onLayout={(e) => (heightY.current = e.nativeEvent.layout.y)}
+                onLayout={(e) => {
+                  fieldY.current.age = e.nativeEvent.layout.y;
+                }}
                 style={styles.fieldRow}
               >
                 <View style={styles.fieldIconWrap}>
@@ -453,7 +496,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
                           unit="ft"
                           keyboardType="number-pad"
                           returnKeyType="next"
-                          onFocus={() => scrollToInput(heightY.current)}
+                          onFocus={() => focusField("age")}
                           onSubmitEditing={() => heightInRef.current?.focus()}
                           onChangeText={(v) => {
                             const clean = v.replace(/[^0-9]/g, "");
@@ -476,7 +519,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
                           unit="in"
                           keyboardType="number-pad"
                           returnKeyType="next"
-                          onFocus={() => scrollToInput(heightY.current)}
+                          onFocus={() => focusField("age")}
                           onSubmitEditing={() => weightRef.current?.focus()}
                           onChangeText={(v) => {
                             const clean = v.replace(/[^0-9]/g, "");
@@ -499,7 +542,7 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
                       unit="cm"
                       keyboardType="decimal-pad"
                       returnKeyType="next"
-                      onFocus={() => scrollToInput(heightY.current)}
+                      onFocus={() => focusField("age")}
                       onSubmitEditing={() => weightRef.current?.focus()}
                       onChangeText={(v) =>
                         handleChange("height", v.replace(/[^0-9.]/g, ""))
@@ -511,7 +554,9 @@ const InitialProfileScreen: React.FC<InitialProfileScreenProps> = ({
 
               {/* Weight */}
               <View
-                onLayout={(e) => (weightY.current = e.nativeEvent.layout.y)}
+                onLayout={(e) => {
+                  fieldY.current.age = e.nativeEvent.layout.y;
+                }}
                 style={styles.fieldRow}
               >
                 <View style={styles.fieldIconWrap}>
@@ -772,6 +817,38 @@ const styles = StyleSheet.create({
 
   unitLabelActive: {
     color: COLORS.taguigBlue,
+  },
+
+  genderRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+
+  genderBtn: {
+    flex: 1,
+    minHeight: 58,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.inputBorder,
+    backgroundColor: COLORS.inputBackground,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  genderBtnActive: {
+    borderColor: COLORS.taguigBlue,
+    backgroundColor: "#EAF2FF",
+  },
+
+  genderText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+  },
+
+  genderTextActive: {
+    color: COLORS.taguigBlue,
+    fontWeight: "900",
   },
 
   input: {
