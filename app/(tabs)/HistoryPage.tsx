@@ -33,22 +33,10 @@ const sumBy = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
 const dayTotals = (entries: FoodLogEntry[]) => {
   return {
-    kcal: sumBy(
-      entries.map(
-        (entry) => (entry.food?.calories ?? 0) * (entry.quantity ?? 1),
-      ),
-    ),
-    protein: sumBy(
-      entries.map(
-        (entry) => (entry.food?.protein ?? 0) * (entry.quantity ?? 1),
-      ),
-    ),
-    carbs: sumBy(
-      entries.map((entry) => (entry.food?.carbs ?? 0) * (entry.quantity ?? 1)),
-    ),
-    fat: sumBy(
-      entries.map((entry) => (entry.food?.fat ?? 0) * (entry.quantity ?? 1)),
-    ),
+    kcal: sumBy(entries.map((entry) => entry.nutrientSummary?.calories ?? 0)),
+    protein: sumBy(entries.map((entry) => entry.nutrientSummary?.protein ?? 0)),
+    carbs: sumBy(entries.map((entry) => entry.nutrientSummary?.carbs ?? 0)),
+    fat: sumBy(entries.map((entry) => entry.nutrientSummary?.fat ?? 0)),
   };
 };
 

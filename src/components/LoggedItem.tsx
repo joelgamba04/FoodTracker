@@ -49,11 +49,12 @@ export const LoggedItem: React.FC<LoggedItemProps> = ({
 
         <View style={styles.center}>
           <Text style={styles.title} numberOfLines={1}>
-            {item.quantity} {item.food.name}
+            {item.food.name}
           </Text>
 
           <Text style={styles.sub} numberOfLines={1}>
-            {item.food.serving.label || "Serving"} • {Math.round(calories)} kcal
+            {item.useGrams ? `${item.grams}g` : `${item.quantity} serving`} •{" "}
+            {Math.round(calories)} kcal
           </Text>
         </View>
         {!disableActions && (
