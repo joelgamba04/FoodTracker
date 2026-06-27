@@ -55,6 +55,15 @@ export interface FoodLogEntry {
   serverMealId?: number | null;
   serverFoodEntryId?: number | null;
   mealType?: 1 | 2 | 3;
+
+  useGrams: boolean;
+  grams: number;
+  nutrientSummary: {
+    calories: number;
+    protein: number;
+    fat: number;
+    carbs: number;
+  };
 }
 
 export interface UserProfile {

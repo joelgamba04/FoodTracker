@@ -55,7 +55,7 @@ export const NutritionPage = () => {
   }, [todayWaterLog]);
 
   const nutrientsPerEntry = todayFoodLog.map((entry) =>
-    useNutrition(entry.food, entry.quantity, false, 0),
+    useNutrition(entry.food, entry.quantity, entry.useGrams, entry.grams),
   );
 
   const totals = nutrientsPerEntry.reduce(

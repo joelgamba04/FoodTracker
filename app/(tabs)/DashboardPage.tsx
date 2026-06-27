@@ -126,7 +126,7 @@ export const DashboardPage = () => {
   }, [log, startMs, endMs]);
 
   const nutrientsPerEntry = todaysFood.map((entry) =>
-    useNutrition(entry.food, entry.quantity, false, 0),
+    useNutrition(entry.food, entry.quantity, entry.useGrams, entry.grams),
   );
 
   const todaysTotals = nutrientsPerEntry.reduce(
@@ -375,7 +375,7 @@ export const DashboardPage = () => {
                 icon="flame"
                 color={COLORS.taguigYellow}
                 label="Remaining"
-                value={`${Math.max(0, calorieRDI - todaysTotals.calories + burnedCalories)} kcal`}
+                value={`${Math.max(0, calorieRDI - kmj.calories + burnedCalories)} kcal`}
               /> */}
             </View>
 

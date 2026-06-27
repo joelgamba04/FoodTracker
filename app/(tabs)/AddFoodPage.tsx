@@ -106,12 +106,14 @@ export const AddFoodPage = () => {
   const searchSequence = useRef(0); // to track latest search
   const [pauseAutoSearch, setPauseAutoSearch] = useState(false); // to pause auto-search when error is encountered
 
-  const canLog = !!selected && qty > 0;
   const hasQuery = search.trim().length > 0;
   const compactMode = hasQuery || !!selected;
 
   const [useGrams, setUseGrams] = useState(false);
-  const [grams, setGrams] = useState(100);
+  const [grams, setGrams] = useState<number>(0);
+
+  const canLog = !!selected && (qty > 0 || (useGrams && grams > 0));
+  const [isFocused, setIsFocused] = useState(false);
 
   const formatServing = (value: number) => {
     if (value === 0.5) return "½";
@@ -148,6 +150,9 @@ export const AddFoodPage = () => {
         syncStatus: "pending",
         lastSyncError: null,
         mealType: 1, // TODO: add a picker for mealType later (Breakfast/Lunch/Dinner)
+        useGrams,
+        grams,
+        nutrientSummary,
       });
 
       setSelected(null);
@@ -275,6 +280,24 @@ export const AddFoodPage = () => {
         setSearchLoading(false);
       }
     }
+  };
+
+  // TODO: move to utils
+  // helper to remove non-digit characters and non-negative numbers
+  const handleTextInputChange = (text: string) => {
+    // Remove any non-digit characters
+    let sanitized = text.replace(/[^0-9.]/g, "");
+
+    // Prevent multiple dots
+    const parts = sanitized.split(".");
+    if (parts.length > 2) {
+      sanitized = parts[0] + "." + parts[1];
+    }
+
+    // Prevent negative
+    if (sanitized.startsWith("-")) sanitized = sanitized.slice(1);
+
+    setGrams(Number(sanitized) || 0);
   };
 
   return (
@@ -433,38 +456,79 @@ export const AddFoodPage = () => {
                     </Text>
                   </Text>
 
-                  <Text style={styles.fieldLabel}>Serving Size</Text>
+                  <View style={{ flexDirection: "row", marginVertical: 12 }}>
+                    <Pressable onPress={() => setUseGrams(false)}>
+                      <Text
+                        style={{
+                          fontWeight: !useGrams ? "bold" : "normal",
+                          color: !useGrams
+                            ? COLORS.taguigBlue
+                            : COLORS.textSecondaryDark,
+                        }}
+                      >
+                        Per Serving
+                      </Text>
+                    </Pressable>
 
-                  <View style={styles.sliderRow}>
-                    <Text style={styles.sliderEdge}>½</Text>
-
-                    <Slider
-                      style={styles.slider}
-                      minimumValue={0.5}
-                      maximumValue={10}
-                      step={0.5}
-                      value={qty}
-                      minimumTrackTintColor={COLORS.taguigBlue}
-                      maximumTrackTintColor="#E5E7EB"
-                      thumbTintColor={COLORS.taguigRed}
-                      onValueChange={setQty}
-                    />
-
-                    <Text style={styles.sliderEdge}>10</Text>
+                    <Pressable
+                      onPress={() => setUseGrams(true)}
+                      style={{ marginLeft: 20 }}
+                    >
+                      <Text
+                        style={{
+                          fontWeight: useGrams ? "bold" : "normal",
+                          color: useGrams
+                            ? COLORS.taguigBlue
+                            : COLORS.textSecondaryDark,
+                        }}
+                      >
+                        By Grams
+                      </Text>
+                    </Pressable>
                   </View>
 
-                  <View style={styles.servingBadge}>
-                    <Ionicons
-                      name="fast-food-outline"
-                      size={28}
-                      color="#FFFFFF"
+                  {useGrams ? (
+                    <TextInput
+                      value={String(grams)}
+                      keyboardType="numeric"
+                      onChangeText={handleTextInputChange}
+                      style={[styles.input, isFocused && styles.inputFocused]}
+                      onFocus={() => setIsFocused(true)}
+                      onBlur={() => setIsFocused(false)}
                     />
-                    <Text style={styles.servingBadgeText}>
-                      {" "}
-                      {formatServing(qty)} SERVING
-                    </Text>
-                  </View>
+                  ) : (
+                    <>
+                      <View style={styles.sliderRow}>
+                        <Text style={styles.sliderEdge}>½</Text>
 
+                        <Slider
+                          style={styles.slider}
+                          minimumValue={0.5}
+                          maximumValue={10}
+                          step={0.5}
+                          value={qty}
+                          minimumTrackTintColor={COLORS.taguigBlue}
+                          maximumTrackTintColor="#E5E7EB"
+                          thumbTintColor={COLORS.taguigRed}
+                          onValueChange={setQty}
+                        />
+
+                        <Text style={styles.sliderEdge}>10</Text>
+                      </View>
+
+                      <View style={styles.servingBadge}>
+                        <Ionicons
+                          name="fast-food-outline"
+                          size={28}
+                          color="#FFFFFF"
+                        />
+                        <Text style={styles.servingBadgeText}>
+                          {" "}
+                          {formatServing(qty)} SERVING
+                        </Text>
+                      </View>
+                    </>
+                  )}
                   <View style={styles.summaryBox}>
                     <Text style={styles.summaryTitle}>This will add</Text>
 
@@ -822,6 +886,20 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: COLORS.textPrimary,
     marginBottom: 12,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#CED4DA",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    backgroundColor: "#F8F9FA",
+  },
+  inputFocused: {
+    borderColor: COLORS.taguigBlue, // Blue border on focus
+    backgroundColor: "#FFFFFF", // White background when focused
   },
   sliderRow: {
     flexDirection: "row",

@@ -15,6 +15,9 @@ const rowToEntry = (row: any): FoodLogEntry => {
     lastSyncError: row.last_sync_error ?? null,
     serverMealId: row.server_meal_id ?? null,
     serverFoodEntryId: row.server_food_entry_id ?? null,
+    useGrams: row.use_grams ?? false,
+    grams: row.grams ?? 0,
+    nutrientSummary: row.nutrient_summary ?? null,
   };
 };
 

@@ -19,8 +19,8 @@ type LoggedItemProps = {
 };
 
 const getCalories = (entry: FoodLogEntry) => {
-  const cals = entry.food.calories;
-  return cals * (entry.quantity ?? 1);
+  const cals = entry.nutrientSummary?.calories ?? 0;
+  return cals;
 };
 
 export const LoggedItem: React.FC<LoggedItemProps> = ({
