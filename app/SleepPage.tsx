@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Image,
+  ImageBackground,
   InteractionManager,
   Platform,
   Pressable,
@@ -15,7 +16,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import AppHeader from "@/components/AppHeader";
 import ProgressRing from "@/components/ProgressRing";
 import { useHealth } from "@/hooks/useHealth";
 import {
@@ -187,278 +187,322 @@ const SleepPage = () => {
 
   console.log("SleepPage: data loaded", { data, state, error });
   return (
-    <SafeAreaView style={styles.screen}>
-      {/* header */}
-      <AppHeader title="Sleep" showBack onBackPress={() => router.back()} />
+    <ImageBackground
+      source={require("../assets/images/foodlogbg.png")}
+      style={styles.bg}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={styles.screen}>
+        {/* header */}
+        <View style={styles.topBar}>
+          <Pressable style={styles.circleBtn} onPress={() => router.back()}>
+            <Ionicons
+              name="chevron-back"
+              size={28}
+              color={COLORS.textPrimary}
+            />
+          </Pressable>
+        </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {state === "checking_availability" ? (
-          <View style={styles.centerCard}>
-            <Text style={styles.title}>Connect Health Data</Text>
+        <ScrollView contentContainerStyle={styles.content}>
+          {state === "checking_availability" ? (
+            <View style={styles.centerCard}>
+              <Text style={styles.title}>Connect Health Data</Text>
 
-            <Text style={styles.infoText}>
-              Connect Health Connect to read your steps and sleep data.
-            </Text>
-
-            <Pressable style={styles.primaryBtn} onPress={load}>
-              <Text style={styles.primaryBtnText}>Continue</Text>
-            </Pressable>
-          </View>
-        ) : null}
-
-        {state === "requesting_permission" || state === "loading_data" ? (
-          <View style={styles.centerCard}>
-            <Text style={styles.title}>
-              {state === "requesting_permission"
-                ? "Requesting Permission"
-                : "Loading Sleep Data"}
-            </Text>
-
-            <Text style={styles.infoText}>
-              {state === "requesting_permission"
-                ? "Please allow access to your health data."
-                : "Checking your available sleep records..."}
-            </Text>
-          </View>
-        ) : null}
-
-        {state === "missing_provider" ? (
-          <View style={styles.centerCard}>
-            <Text style={styles.title}>Health Connect required</Text>
-            <Text style={styles.infoText}>
-              Install Health Connect on Android so the app can read your sleep
-              data.
-            </Text>
-
-            <Pressable
-              style={styles.primaryBtn}
-              onPress={openHealthConnectStorePage}
-            >
-              <Text style={styles.primaryBtnText}>Open Play Store</Text>
-            </Pressable>
-
-            <Pressable style={styles.secondaryBtn} onPress={load}>
-              <Text style={styles.secondaryBtnText}>
-                I already installed it
+              <Text style={styles.infoText}>
+                Connect Health Connect to read your steps and sleep data.
               </Text>
-            </Pressable>
-          </View>
-        ) : null}
 
-        {state === "connect_prompt" ? (
-          <View style={styles.centerCard}>
-            <Text style={styles.title}>Connect Health Data</Text>
-            <Text style={styles.infoText}>
-              Connect Health Connect to display your sleep data from supported
-              health apps and devices.
-            </Text>
+              <Pressable style={styles.primaryBtn} onPress={load}>
+                <Text style={styles.primaryBtnText}>Continue</Text>
+              </Pressable>
+            </View>
+          ) : null}
 
-            <Pressable style={styles.primaryBtn} onPress={load}>
-              <Text style={styles.primaryBtnText}>Continue</Text>
-            </Pressable>
-          </View>
-        ) : null}
+          {state === "requesting_permission" || state === "loading_data" ? (
+            <View style={styles.centerCard}>
+              <Text style={styles.title}>
+                {state === "requesting_permission"
+                  ? "Requesting Permission"
+                  : "Loading Sleep Data"}
+              </Text>
 
-        {state === "error" ? (
-          <View style={styles.centerCard}>
-            <Text style={styles.title}>Could not load sleep data</Text>
-            <Text style={styles.errorText}>
-              {error ?? "Something went wrong while loading sleep data."}
-            </Text>
+              <Text style={styles.infoText}>
+                {state === "requesting_permission"
+                  ? "Please allow access to your health data."
+                  : "Checking your available sleep records..."}
+              </Text>
+            </View>
+          ) : null}
 
-            <Pressable style={styles.primaryBtn} onPress={load}>
-              <Text style={styles.primaryBtnText}>Try again</Text>
-            </Pressable>
-          </View>
-        ) : null}
+          {state === "missing_provider" ? (
+            <View style={styles.centerCard}>
+              <Text style={styles.title}>Health Connect required</Text>
+              <Text style={styles.infoText}>
+                Install Health Connect on Android so the app can read your sleep
+                data.
+              </Text>
 
-        {state === "no_data" ? (
-          <View style={styles.centerCard}>
-            <Text style={styles.title}>No sleep data found</Text>
-            <Text style={styles.infoText}>
-              We couldn't find any sleep data for the past 7 days. Make sure
-              your device is tracking sleep and that you've granted permission
-              to smart watch or health app to write sleep data to Health
-              Connect. Sleep data should start appearing here within 24 hours
-              after you get it set up.
-            </Text>
+              <Pressable
+                style={styles.primaryBtn}
+                onPress={openHealthConnectStorePage}
+              >
+                <Text style={styles.primaryBtnText}>Open Play Store</Text>
+              </Pressable>
 
-            <Text style={styles.infoText}>
-              Make sure another app is writing data to Health Connect:
-              {"\n\n"}• Google Fit
-              {"\n"}• Samsung Health
-              {"\n"}• Fitbit
-              {"\n"}• Smartwatch apps
-            </Text>
-          </View>
-        ) : null}
+              <Pressable style={styles.secondaryBtn} onPress={load}>
+                <Text style={styles.secondaryBtnText}>
+                  I already installed it
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
 
-        {state === "ready" ? (
-          <>
-            <View style={[styles.hero, { minHeight: rs(215, 165, 240) }]}>
-              <View style={styles.heroText}>
-                <Text
+          {state === "connect_prompt" ? (
+            <View style={styles.centerCard}>
+              <Text style={styles.title}>Connect Health Data</Text>
+              <Text style={styles.infoText}>
+                Connect Health Connect to display your sleep data from supported
+                health apps and devices.
+              </Text>
+
+              <Pressable style={styles.primaryBtn} onPress={load}>
+                <Text style={styles.primaryBtnText}>Continue</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {state === "error" ? (
+            <View style={styles.centerCard}>
+              <Text style={styles.title}>Could not load sleep data</Text>
+              <Text style={styles.errorText}>
+                {error ?? "Something went wrong while loading sleep data."}
+              </Text>
+
+              <Pressable style={styles.primaryBtn} onPress={load}>
+                <Text style={styles.primaryBtnText}>Try again</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {state === "no_data" ? (
+            <View style={styles.centerCard}>
+              <Text style={styles.title}>No sleep data found</Text>
+              <Text style={styles.infoText}>
+                We couldn't find any sleep data for the past 7 days. Make sure
+                your device is tracking sleep and that you've granted permission
+                to smart watch or health app to write sleep data to Health
+                Connect. Sleep data should start appearing here within 24 hours
+                after you get it set up.
+              </Text>
+
+              <Text style={styles.infoText}>
+                Make sure another app is writing data to Health Connect:
+                {"\n\n"}• Google Fit
+                {"\n"}• Samsung Health
+                {"\n"}• Fitbit
+                {"\n"}• Smartwatch apps
+              </Text>
+            </View>
+          ) : null}
+
+          {state === "ready" ? (
+            <>
+              <View style={[styles.hero, { minHeight: rs(215, 165, 240) }]}>
+                <View style={styles.heroText}>
+                  <Text
+                    style={[
+                      styles.heroTitle,
+                      {
+                        fontSize: rf(42, 30, 46),
+                        lineHeight: rf(46, 34, 50),
+                      },
+                    ]}
+                  >
+                    <Text style={styles.blue}>Sleep{"\n"}</Text>
+                    <Text style={styles.red}>Dashboard</Text>
+                  </Text>
+
+                  <Text
+                    style={[styles.heroSubText, { fontSize: rf(17, 12, 18) }]}
+                  >
+                    Good sleep, better you.
+                  </Text>
+
+                  <View style={styles.yellowLine} />
+                </View>
+
+                <Image
+                  source={require("../assets/images/sleep/sleep.png")}
                   style={[
-                    styles.heroTitle,
+                    styles.heroImage,
                     {
-                      fontSize: rf(42, 30, 46),
-                      lineHeight: rf(46, 34, 50),
+                      width: sleepHeroWidth,
+                      height: sleepHeroHeight,
+                      right: isSmallPhone ? -30 : -42,
+                      top: isSmallPhone ? 46 : 34,
                     },
                   ]}
-                >
-                  <Text style={styles.blue}>Sleep{"\n"}</Text>
-                  <Text style={styles.red}>Dashboard</Text>
-                </Text>
-
-                <Text
-                  style={[styles.heroSubText, { fontSize: rf(17, 12, 18) }]}
-                >
-                  Good sleep, better you.
-                </Text>
-
-                <View style={styles.yellowLine} />
+                  resizeMode="contain"
+                />
               </View>
 
-              <Image
-                source={require("../assets/images/sleep/sleep.png")}
-                style={[
-                  styles.heroImage,
-                  {
-                    width: sleepHeroWidth,
-                    height: sleepHeroHeight,
-                    right: isSmallPhone ? -30 : -42,
-                    top: isSmallPhone ? 46 : 34,
-                  },
-                ]}
-                resizeMode="contain"
-              />
-            </View>
-
-            <View style={[styles.summaryCard, { padding: rs(18, 12, 20) }]}>
-              <View style={styles.scoreCol}>
-                <Text style={[styles.cardTitle, { fontSize: rf(16, 12, 18) }]}>
-                  Sleep Score
-                </Text>
-
-                <Text style={[styles.scoreValue, { fontSize: rf(48, 34, 52) }]}>
-                  {sleepScore}
-                </Text>
-
-                <Text
-                  style={[styles.scoreStatus, { fontSize: rf(20, 15, 22) }]}
-                >
-                  Good
-                </Text>
-
-                {!isSmallPhone && (
-                  <Text style={styles.scoreNote}>
-                    You slept better than 78% of users
+              <View style={[styles.summaryCard, { padding: rs(18, 12, 20) }]}>
+                <View style={styles.scoreCol}>
+                  <Text
+                    style={[styles.cardTitle, { fontSize: rf(16, 12, 18) }]}
+                  >
+                    Sleep Score
                   </Text>
-                )}
+
+                  <Text
+                    style={[styles.scoreValue, { fontSize: rf(48, 34, 52) }]}
+                  >
+                    {sleepScore}
+                  </Text>
+
+                  <Text
+                    style={[styles.scoreStatus, { fontSize: rf(20, 15, 22) }]}
+                  >
+                    Good
+                  </Text>
+
+                  {!isSmallPhone && (
+                    <Text style={styles.scoreNote}>
+                      You slept better than 78% of users
+                    </Text>
+                  )}
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.durationCol}>
+                  <Text
+                    style={[styles.cardTitle, { fontSize: rf(16, 12, 18) }]}
+                  >
+                    Sleep Duration
+                  </Text>
+
+                  <Text
+                    style={[styles.durationValue, { fontSize: rf(34, 24, 38) }]}
+                  >
+                    {sleepText}
+                  </Text>
+
+                  <Text style={styles.goalText}>of 8h goal</Text>
+                </View>
+
+                <ProgressRing
+                  percent={sleepPercent}
+                  color={COLORS.taguigBlue}
+                  image={require("../assets/images/sleep/moon.png")}
+                  imageScale={0.32}
+                  size={rs(112, 88, 120)}
+                  strokeWidth={isSmallPhone ? 8 : 9}
+                  label="of goal"
+                />
               </View>
 
-              <View style={styles.divider} />
+              <View style={styles.tipPill}>
+                <Image
+                  source={require("../assets/images/sleep/bed.png")}
+                  style={styles.tipImage}
+                  resizeMode="contain"
+                />
 
-              <View style={styles.durationCol}>
-                <Text style={[styles.cardTitle, { fontSize: rf(16, 12, 18) }]}>
-                  Sleep Duration
-                </Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.tipTitle}>
+                    Maintain a consistent sleep schedule
+                  </Text>
+                  <Text style={styles.tipText}>
+                    Try to sleep and wake up at the same time every day.
+                  </Text>
+                </View>
 
-                <Text
-                  style={[styles.durationValue, { fontSize: rf(34, 24, 38) }]}
-                >
-                  {sleepText}
-                </Text>
-
-                <Text style={styles.goalText}>of 8h goal</Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={22}
+                  color={COLORS.taguigBlue}
+                />
               </View>
 
-              <ProgressRing
-                percent={sleepPercent}
-                color={COLORS.taguigBlue}
-                image={require("../assets/images/sleep/moon.png")}
-                imageScale={0.32}
-                size={rs(112, 88, 120)}
-                strokeWidth={isSmallPhone ? 8 : 9}
-                label="of goal"
-              />
-            </View>
-
-            <View style={styles.tipPill}>
-              <Image
-                source={require("../assets/images/sleep/bed.png")}
-                style={styles.tipImage}
-                resizeMode="contain"
-              />
-
-              <View style={{ flex: 1 }}>
-                <Text style={styles.tipTitle}>
-                  Maintain a consistent sleep schedule
-                </Text>
-                <Text style={styles.tipText}>
-                  Try to sleep and wake up at the same time every day.
-                </Text>
+              <View style={styles.metricsCard}>
+                <SleepMetric
+                  image={require("../assets/images/sleep/moon.png")}
+                  title="Time in Bed"
+                  value="7h 45m"
+                  status="Good"
+                />
+                <SleepMetric
+                  image={require("../assets/images/sleep/bed.png")}
+                  title="Deep Sleep"
+                  value="2h 15m"
+                  status="Good"
+                />
+                <SleepMetric
+                  image={require("../assets/images/sleep/zzz.png")}
+                  title="Light Sleep"
+                  value="3h 45m"
+                  status="Average"
+                />
+                <SleepMetric
+                  image={require("../assets/images/sleep/sun.png")}
+                  title="Awake"
+                  value="45m"
+                  status="Good"
+                />
               </View>
 
-              <Ionicons
-                name="chevron-forward"
-                size={22}
-                color={COLORS.taguigBlue}
-              />
-            </View>
+              <View style={styles.chartCard}>
+                <View style={styles.chartHeader}>
+                  <Text style={styles.sectionTitle}>Sleep Stages</Text>
+                  <Text style={styles.learnMore}>ⓘ Learn more</Text>
+                </View>
 
-            <View style={styles.metricsCard}>
-              <SleepMetric
-                image={require("../assets/images/sleep/moon.png")}
-                title="Time in Bed"
-                value="7h 45m"
-                status="Good"
-              />
-              <SleepMetric
-                image={require("../assets/images/sleep/bed.png")}
-                title="Deep Sleep"
-                value="2h 15m"
-                status="Good"
-              />
-              <SleepMetric
-                image={require("../assets/images/sleep/zzz.png")}
-                title="Light Sleep"
-                value="3h 45m"
-                status="Average"
-              />
-              <SleepMetric
-                image={require("../assets/images/sleep/sun.png")}
-                title="Awake"
-                value="45m"
-                status="Good"
-              />
-            </View>
-
-            <View style={styles.chartCard}>
-              <View style={styles.chartHeader}>
-                <Text style={styles.sectionTitle}>Sleep Stages</Text>
-                <Text style={styles.learnMore}>ⓘ Learn more</Text>
+                <View style={styles.sleepStagePlaceholder}>
+                  <Text style={styles.placeholderText}>
+                    Sleep stages chart placeholder
+                  </Text>
+                </View>
               </View>
 
-              <View style={styles.sleepStagePlaceholder}>
-                <Text style={styles.placeholderText}>
-                  Sleep stages chart placeholder
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ height: 110 }} />
-          </>
-        ) : null}
-      </ScrollView>
-    </SafeAreaView>
+              <View style={{ height: 110 }} />
+            </>
+          ) : null}
+        </ScrollView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  bg: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
   screen: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: "transparent",
+  },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  circleBtn: {
+    marginLeft: 18,
+    marginTop: 18,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   content: {
     paddingHorizontal: 22,

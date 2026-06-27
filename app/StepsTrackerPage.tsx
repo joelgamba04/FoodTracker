@@ -96,13 +96,13 @@ const StepsTrackerPage = () => {
         value: item.count,
       }))
     : [
-        { label: "Mon", value: 8234 },
-        { label: "Tue", value: 6102 },
-        { label: "Wed", value: 9876 },
-        { label: "Thu", value: 7543 },
-        { label: "Fri", value: 5231 },
-        { label: "Sat", value: 10245 },
-        { label: "Sun", value: 4995 },
+        { label: "Mon", value: 0 },
+        { label: "Tue", value: 0 },
+        { label: "Wed", value: 0 },
+        { label: "Thu", value: 0 },
+        { label: "Fri", value: 0 },
+        { label: "Sat", value: 0 },
+        { label: "Sun", value: 0 },
       ];
   const stepsGoal = 10000;
   const todaySteps = data?.steps?.todaySteps ?? 0;
