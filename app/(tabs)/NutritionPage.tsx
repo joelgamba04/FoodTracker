@@ -1,12 +1,5 @@
 // app/(tabs)/NutritionPage.tsx
 
-import AppHeader from "@/components/AppHeader";
-import NutrientCard from "@/components/NutrientCard";
-import { useFoodLog } from "@/context/FoodLogContext";
-import { useHydration } from "@/context/hydrationContext";
-import { useProfile } from "@/context/ProfileContext";
-import { COLORS } from "@/theme/color";
-import { getTodayWindow } from "@/utils/date";
 import React, { useMemo } from "react";
 import {
   ImageBackground,
@@ -20,39 +13,15 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
-// --- Helper Methods ---
-const calculateTotals = (log: any[]) => {
-  let calories = 0;
-  let protein = 0;
-  let fat = 0;
-  let carbs = 0;
+import AppHeader from "@/components/AppHeader";
+import NutrientCard from "@/components/NutrientCard";
 
-  log.forEach((entry) => {
-    const food = entry.food;
-    if (!food) return;
-
-    const qty = entry.quantity ?? 1;
-    const useGrams = entry.useGrams ?? false;
-
-    const baseGrams = food.serving?.grams ?? 100;
-
-    const totalGrams = useGrams ? (entry.grams ?? 0) : qty * baseGrams;
-
-    const factor = baseGrams ? totalGrams / baseGrams : qty;
-
-    calories += food.calories * factor;
-    protein += food.protein * factor;
-    fat += food.fat * factor;
-    carbs += food.carbs * factor;
-  });
-
-  return {
-    calories: Math.round(calories),
-    protein: Math.round(protein),
-    fat: Math.round(fat),
-    carbs: Math.round(carbs),
-  };
-};
+import { useFoodLog } from "@/context/FoodLogContext";
+import { useHydration } from "@/context/hydrationContext";
+import { useProfile } from "@/context/ProfileContext";
+import { useNutrition } from "@/hooks/useNutrition";
+import { COLORS } from "@/theme/color";
+import { getTodayWindow } from "@/utils/date";
 
 // --- Main Screen Component ---
 export const NutritionPage = () => {
@@ -85,7 +54,19 @@ export const NutritionPage = () => {
     return todayWaterLog.reduce((sum, e) => sum + (e.amount_ml ?? 0), 0);
   }, [todayWaterLog]);
 
-  const totals = useMemo(() => calculateTotals(todayFoodLog), [todayFoodLog]);
+  const nutrientsPerEntry = todayFoodLog.map((entry) =>
+    useNutrition(entry.food, entry.quantity, false, 0),
+  );
+
+  const totals = nutrientsPerEntry.reduce(
+    (acc, nutrients) => ({
+      calories: acc.calories + nutrients.calories,
+      protein: acc.protein + nutrients.protein,
+      fat: acc.fat + nutrients.fat,
+      carbs: acc.carbs + nutrients.carbs,
+    }),
+    { calories: 0, protein: 0, fat: 0, carbs: 0 },
+  );
 
   const hasFood = todayFoodLog.length > 0;
   const hasWater = totalWaterMl > 0;
@@ -119,18 +100,9 @@ export const NutritionPage = () => {
   };
 
   const macroNutrients = [
-    {
-      key: "Carbohydrate",
-      value: totals.carbs,
-    },
-    {
-      key: "Protein",
-      value: totals.protein,
-    },
-    {
-      key: "Fat",
-      value: totals.fat,
-    },
+    { key: "Carbohydrate", value: totals.carbs },
+    { key: "Protein", value: totals.protein },
+    { key: "Fat", value: totals.fat },
   ];
 
   return (

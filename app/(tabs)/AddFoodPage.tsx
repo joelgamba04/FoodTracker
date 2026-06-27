@@ -3,7 +3,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import { router } from "expo-router";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Image,
   ImageBackground,
@@ -22,6 +22,7 @@ import {
 } from "react-native-safe-area-context";
 
 import { useFoodLog } from "@/context/FoodLogContext";
+import { useNutrition } from "@/hooks/useNutrition";
 import { isApiError } from "@/lib/apiClient";
 import { mapFoodDetailToFoodItem } from "@/mappers/foodMapper";
 import { FoodItem } from "@/models/models";
@@ -61,14 +62,6 @@ const MealCard = ({ item, index, onPress }: any) => {
 
   console.log("MealCard item:", item);
 
-  const getCalories = (food: FoodItem | null) => {
-    if (!food) return 0;
-
-    const kcal = food.calories;
-
-    return kcal ? kcal : 0;
-  };
-
   return (
     <Pressable style={styles.mealCard} onPress={onPress}>
       <View
@@ -88,9 +81,7 @@ const MealCard = ({ item, index, onPress }: any) => {
         </View>
 
         <View style={styles.mealMetaRow}>
-          <Text style={styles.mealMeta}>
-            🔥 {getCalories(item) ?? 100} kcal
-          </Text>
+          <Text style={styles.mealMeta}>🔥 {item.calories ?? 100} kcal</Text>
           <Text style={styles.mealDivider}>|</Text>
           <Text style={styles.mealMeta}>⚖️ {item?.servingSize ?? "160 g"}</Text>
         </View>
@@ -100,8 +91,6 @@ const MealCard = ({ item, index, onPress }: any) => {
     </Pressable>
   );
 };
-
-const getServingGrams = (food: any) => Number(food?.serving?.grams ?? 100);
 
 export const AddFoodPage = () => {
   const { addEntry } = useFoodLog();
@@ -129,25 +118,7 @@ export const AddFoodPage = () => {
     return Number.isInteger(value) ? String(value) : value.toFixed(1);
   };
 
-  const nutrientSummary = useMemo(() => {
-    if (!selected) {
-      return { calories: 0, protein: 0, fat: 0, carbs: 0 };
-    }
-
-    const baseGrams = getServingGrams(selected);
-
-    const totalGrams = useGrams ? grams : qty * baseGrams;
-
-    const factor = baseGrams ? totalGrams / baseGrams : 1;
-
-    return {
-      calories: Math.round(selected.calories * factor),
-      protein: Math.round(selected.protein * factor),
-      fat: Math.round(selected.fat * factor),
-      carbs: Math.round(selected.carbs * factor),
-    };
-  }, [selected, qty, grams, useGrams]);
-
+  const nutrientSummary = useNutrition(selected, qty, useGrams, grams);
   useEffect(() => {
     if (pauseAutoSearch) return;
 

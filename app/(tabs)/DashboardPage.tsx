@@ -22,10 +22,10 @@ import { useFoodLog } from "@/context/FoodLogContext";
 import { useProfile } from "@/context/ProfileContext";
 import { useHydrationToday } from "@/hooks/hydrationHooks";
 import { useHealth } from "@/hooks/useHealth";
+import { useNutrition } from "@/hooks/useNutrition";
 import { getHealthConnected } from "@/services/health/healthCache";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
-import { calculateNutrition } from "@/utils/nutritionCalculator";
 
 import MetricLine from "@/components/MetricLine";
 import ProgressRing from "@/components/ProgressRing";
@@ -53,16 +53,6 @@ const sampleSteps = [
   { label: "Sat", value: 10245 },
   { label: "Sun", value: 4995 },
 ];
-
-const getCalories = (food: any, qty: number) => {
-  if (!food) return 0;
-
-  const baseGrams = food?.serving?.grams || 100;
-
-  const factor = (qty * baseGrams) / 100;
-
-  return Math.round((food.calories ?? 0) * factor);
-};
 
 const getTimestampMs = (timestamp: unknown): number => {
   if (typeof timestamp === "number") return timestamp;
@@ -135,30 +125,19 @@ export const DashboardPage = () => {
     });
   }, [log, startMs, endMs]);
 
-  const todaysTotals = useMemo(() => {
-    return todaysFood.reduce(
-      (acc, entry) => {
-        const food = entry.food;
-        const qty = entry.quantity ?? 1;
+  const nutrientsPerEntry = todaysFood.map((entry) =>
+    useNutrition(entry.food, entry.quantity, false, 0),
+  );
 
-        const nutrients = calculateNutrition(
-          food,
-          qty,
-          false, // useGrams
-        );
-
-        console.log(nutrients);
-
-        acc.calories += nutrients.calories;
-        acc.protein += nutrients.protein;
-        acc.fat += nutrients.fat;
-        acc.carbs += nutrients.carbs;
-
-        return acc;
-      },
-      { calories: 0, protein: 0, fat: 0, carbs: 0 },
-    );
-  }, [todaysFood]);
+  const todaysTotals = nutrientsPerEntry.reduce(
+    (acc, nutrients) => ({
+      calories: acc.calories + nutrients.calories,
+      protein: acc.protein + nutrients.protein,
+      fat: acc.fat + nutrients.fat,
+      carbs: acc.carbs + nutrients.carbs,
+    }),
+    { calories: 0, protein: 0, fat: 0, carbs: 0 },
+  );
 
   const calorieRDI = useMemo(() => {
     const amount = rdi?.Calories?.amount;
