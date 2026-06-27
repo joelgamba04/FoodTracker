@@ -33,6 +33,7 @@ import SleepQualityChart from "@/components/SleepChart";
 import SmallMetricCard from "@/components/SmallMetricCard";
 import StepsChart from "@/components/StepsChart";
 
+// Sample data for testing UI
 const sampleSleepQuality = [
   { value: 78, label: "Mon" },
   { value: 85, label: "Tue" },
@@ -41,6 +42,16 @@ const sampleSleepQuality = [
   { value: 80, label: "Fri" },
   { value: 88, label: "Sat" },
   { value: 84, label: "Sun" },
+];
+
+const sampleSteps = [
+  { label: "Mon", value: 8234 },
+  { label: "Tue", value: 6102 },
+  { label: "Wed", value: 9876 },
+  { label: "Thu", value: 7543 },
+  { label: "Fri", value: 5231 },
+  { label: "Sat", value: 10245 },
+  { label: "Sun", value: 4995 },
 ];
 
 const getCalories = (food: any, qty: number) => {
@@ -182,15 +193,7 @@ export const DashboardPage = () => {
         }),
         value: item.count,
       }))
-    : [
-        { label: "Mon", value: 8234 },
-        { label: "Tue", value: 6102 },
-        { label: "Wed", value: 9876 },
-        { label: "Thu", value: 7543 },
-        { label: "Fri", value: 5231 },
-        { label: "Sat", value: 10245 },
-        { label: "Sun", value: 4995 },
-      ];
+    : [];
 
   useFocusEffect(
     useCallback(() => {
@@ -226,7 +229,7 @@ export const DashboardPage = () => {
       !Array.isArray(weeklySleep) ||
       weeklySleep.length === 0
     ) {
-      return sampleSleepQuality;
+      return [];
     }
 
     return weeklySleep.map((item: any) => {
@@ -389,12 +392,12 @@ export const DashboardPage = () => {
                 label="Burned"
                 value={burnedCaloriesDisplay}
               />
-              <MetricLine
+              {/* <MetricLine
                 icon="flame"
                 color={COLORS.taguigYellow}
                 label="Remaining"
                 value={`${Math.max(0, calorieRDI - todaysTotals.calories + burnedCalories)} kcal`}
-              />
+              /> */}
             </View>
 
             <View style={styles.calorieRingWrap}>
@@ -466,14 +469,20 @@ export const DashboardPage = () => {
                 <Text style={styles.chartPeriod}>7 Days</Text>
               </View>
 
-              <StepsChart
-                data={stepsChartData}
-                width={chartWidth}
-                height={isSmallPhone ? 155 : 180}
-                maxValue={20000}
-                color={COLORS.taguigRed}
-                goal={10000}
-              />
+              {stepsChartData.length === 0 ? (
+                <View style={styles.chartPlaceholder}>
+                  <Text style={styles.placeholderText}>No Steps Data</Text>
+                </View>
+              ) : (
+                <StepsChart
+                  data={stepsChartData}
+                  width={chartWidth}
+                  height={isSmallPhone ? 155 : 180}
+                  maxValue={20000}
+                  color={COLORS.taguigRed}
+                  goal={10000}
+                />
+              )}
             </View>
           </Pressable>
           <Pressable onPress={() => router.push("/SleepPage")}>
@@ -495,12 +504,18 @@ export const DashboardPage = () => {
                 </Text>
               </View>
 
-              <SleepQualityChart
-                data={sleepChartData}
-                width={chartWidth}
-                height={170}
-                maxValue={100}
-              />
+              {sleepChartData.length === 0 ? (
+                <View style={styles.chartPlaceholder}>
+                  <Text style={styles.placeholderText}>No Sleep Data</Text>
+                </View>
+              ) : (
+                <SleepQualityChart
+                  data={sleepChartData}
+                  width={chartWidth}
+                  height={170}
+                  maxValue={100}
+                />
+              )}
             </View>
           </Pressable>
         </ScrollView>
@@ -596,6 +611,12 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
 
+  chartPlaceholder: {
+    height: 180,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   placeholderText: {
     color: COLORS.textMuted,
     fontSize: 12,
@@ -637,7 +658,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 6,
     backgroundColor: "#EAF2FF",
-    paddingHorizontal: 10,
+    paddingHorizontal: 5,
     paddingVertical: 6,
     borderRadius: 8,
   },
