@@ -8,7 +8,13 @@ import { useProfile } from "@/context/ProfileContext";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
 import React, { useMemo } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ImageBackground,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -128,58 +134,67 @@ export const NutritionPage = () => {
   ];
 
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        backgroundColor: COLORS.background,
-        paddingBottom: insets.bottom,
-      }}
+    <ImageBackground
+      source={require("../../assets/images/foodlogbg.png")}
+      style={styles.bg}
+      resizeMode="cover"
     >
-      {/* Page header */}
-      <AppHeader title="Today’s Logs" subtitle="Food + Water (today only)" />
+      <SafeAreaView
+        style={{
+          flex: 1,
+          paddingBottom: insets.bottom,
+        }}
+      >
+        {/* Page header */}
+        <AppHeader title="Today’s Logs" subtitle="Food + Water (today only)" />
 
-      <ScrollView style={styles.container}>
-        {/* --- DAILY TOTALS / PROGRESS --- */}
-        <Text style={styles.sectionTitle}>Calories Goal</Text>
-        <NutrientCard
-          name={calorieData.name}
-          consumed={calorieData.amount}
-          recommended={rdi.Calories.amount}
-          unit={rdi.Calories.unit}
-        />
+        <ScrollView style={styles.container}>
+          {/* --- DAILY TOTALS / PROGRESS --- */}
+          <Text style={styles.sectionTitle}>Calories Goal</Text>
+          <NutrientCard
+            name={calorieData.name}
+            consumed={calorieData.amount}
+            recommended={rdi.Calories.amount}
+            unit={rdi.Calories.unit}
+          />
 
-        <Text style={styles.sectionTitle}>Hydration Goal</Text>
-        <NutrientCard
-          name="Water"
-          consumed={totalWaterMl}
-          recommended={rdi.Water.amount}
-          unit="ml"
-        />
+          <Text style={styles.sectionTitle}>Hydration Goal</Text>
+          <NutrientCard
+            name="Water"
+            consumed={totalWaterMl}
+            recommended={rdi.Water.amount}
+            unit="ml"
+          />
 
-        <Text style={styles.sectionTitle}>Macronutrients</Text>
-        <View>
-          {macroNutrients.map((item) => (
-            <NutrientCard
-              key={item.key}
-              name={item.key}
-              consumed={item.value}
-              recommended={rdi[item.key].amount}
-              unit={rdi[item.key].unit}
-              isMacro
-            />
-          ))}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          <Text style={styles.sectionTitle}>Macronutrients</Text>
+          <View>
+            {macroNutrients.map((item) => (
+              <NutrientCard
+                key={item.key}
+                name={item.key}
+                consumed={item.value}
+                recommended={rdi[item.key].amount}
+                unit={rdi[item.key].unit}
+                isMacro
+              />
+            ))}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
 // --- Styles ---
 const styles = StyleSheet.create({
+  bg: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
   container: {
     flex: 1,
     paddingHorizontal: 18,
-    backgroundColor: COLORS.background,
+    backgroundColor: "transparent",
   },
 
   sectionTitle: {

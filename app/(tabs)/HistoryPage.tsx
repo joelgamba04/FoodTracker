@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  ImageBackground,
   SectionList,
   StyleSheet,
   Text,
@@ -135,85 +136,95 @@ export const HistoryPage = () => {
   }
 
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        backgroundColor: COLORS.background,
-        paddingBottom: insets.bottom,
-      }}
+    <ImageBackground
+      source={require("../../assets/images/foodlogbg.png")}
+      style={styles.bg}
+      resizeMode="cover"
     >
-      {/* Header */}
-      <AppHeader title="History" />
+      <SafeAreaView
+        style={{
+          flex: 1,
+          backgroundColor: "transparent",
+          paddingBottom: insets.bottom,
+        }}
+      >
+        {/* Header */}
+        <AppHeader title="History" />
 
-      {/* Controls */}
-      <View style={styles.controls}>
-        {/* Search pill (same look as log page) */}
-        <View style={styles.searchPill}>
-          <Ionicons name="search" size={18} color={COLORS.textMuted} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Placeholder"
-            placeholderTextColor={COLORS.textMuted}
-            style={styles.searchInput}
-            returnKeyType="search"
-          />
-          <TouchableOpacity
-            onPress={() => {}}
-            style={styles.searchRightIcon}
-            hitSlop={10}
-          >
-            <Ionicons name="chevron-down" size={18} color={COLORS.textMuted} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Range buttons */}
-        <View style={styles.rangeWrap}>
-          <RangeButton
-            label="ALL"
-            active={range === "all"}
-            onPress={() => setRange("all")}
-          />
-          <RangeButton
-            label="7D"
-            active={range === "7"}
-            onPress={() => setRange("7")}
-          />
-          <RangeButton
-            label="30D"
-            active={range === "30"}
-            onPress={() => setRange("30")}
-          />
-        </View>
-      </View>
-
-      <SectionList
-        sections={filteredSections}
-        keyExtractor={(item: FoodLogEntry) => item.localId}
-        contentContainerStyle={styles.listPad}
-        showsVerticalScrollIndicator={false}
-        renderSectionHeader={({ section }) => (
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionHeaderTop}>
-              <Text style={styles.sectionTitle}>{section.title}</Text>
-              <Text style={styles.sectionKcal}>{section.kcal} kcal</Text>
-            </View>
-            <Text style={styles.sectionSubtitle}>{section.subtitle}</Text>
-            <View style={styles.sectionDivider} />
+        {/* Controls */}
+        <View style={styles.controls}>
+          {/* Search pill (same look as log page) */}
+          <View style={styles.searchPill}>
+            <Ionicons name="search" size={18} color={COLORS.textMuted} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search"
+              placeholderTextColor={COLORS.textMuted}
+              style={styles.searchInput}
+              returnKeyType="search"
+            />
+            <TouchableOpacity
+              onPress={() => {}}
+              style={styles.searchRightIcon}
+              hitSlop={10}
+            >
+              <Ionicons
+                name="chevron-down"
+                size={18}
+                color={COLORS.textMuted}
+              />
+            </TouchableOpacity>
           </View>
-        )}
-        renderItem={({ item }) => (
-          <LoggedItem
-            item={item}
-            // History is read-only for now:
-            onEdit={() => {}}
-            onStartRemove={() => {}}
-            disableActions={true}
-          />
-        )}
-        SectionSeparatorComponent={() => <View style={{ height: 10 }} />}
-      />
-    </SafeAreaView>
+
+          {/* Range buttons */}
+          <View style={styles.rangeWrap}>
+            <RangeButton
+              label="ALL"
+              active={range === "all"}
+              onPress={() => setRange("all")}
+            />
+            <RangeButton
+              label="7D"
+              active={range === "7"}
+              onPress={() => setRange("7")}
+            />
+            <RangeButton
+              label="30D"
+              active={range === "30"}
+              onPress={() => setRange("30")}
+            />
+          </View>
+        </View>
+
+        <SectionList
+          sections={filteredSections}
+          keyExtractor={(item: FoodLogEntry) => item.localId}
+          contentContainerStyle={styles.listPad}
+          showsVerticalScrollIndicator={false}
+          renderSectionHeader={({ section }) => (
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionHeaderTop}>
+                <Text style={styles.sectionTitle}>{section.title}</Text>
+                <Text style={styles.sectionKcal}>{section.kcal} kcal</Text>
+              </View>
+              <Text style={styles.sectionSubtitle}>{section.subtitle}</Text>
+              <View style={styles.sectionDivider} />
+            </View>
+          )}
+          renderItem={({ item }) => (
+            <LoggedItem
+              item={item}
+              // History is read-only for now:
+              onEdit={() => {}}
+              onStartRemove={() => {}}
+              disableActions={true}
+            />
+          )}
+          SectionSeparatorComponent={() => <View style={{ height: 10 }} />}
+        />
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
@@ -240,6 +251,10 @@ const RangeButton = ({
 };
 
 const styles = StyleSheet.create({
+  bg: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
   center: {
     flex: 1,
     alignItems: "center",

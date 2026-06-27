@@ -11,6 +11,7 @@ import { COLORS } from "@/theme/color";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -354,234 +355,248 @@ export const SettingsPage = () => {
   }, [form, profile]);
 
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        backgroundColor: COLORS.background,
-        paddingBottom: insets.bottom,
-      }}
+    <ImageBackground
+      source={require("../../assets/images/foodlogbg.png")}
+      style={styles.bg}
+      resizeMode="cover"
     >
-      {/* Page header */}
-      <AppHeader
-        title="Settings"
-        subtitle="Update your details and review your daily goals."
-      />
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
+      <SafeAreaView
+        style={{
+          flex: 1,
+          paddingBottom: insets.bottom,
+        }}
       >
-        <ScrollView
-          style={styles.container}
-          contentContainerStyle={styles.content}
-          automaticallyAdjustKeyboardInsets
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode={
-            Platform.OS === "ios" ? "interactive" : "on-drag"
-          }
+        {/* Page header */}
+        <AppHeader
+          title="Settings"
+          subtitle="Update your details and review your daily goals."
+        />
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
         >
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Basic Information</Text>
+          <ScrollView
+            style={styles.container}
+            contentContainerStyle={styles.content}
+            automaticallyAdjustKeyboardInsets
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={
+              Platform.OS === "ios" ? "interactive" : "on-drag"
+            }
+          >
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Basic Information</Text>
 
-            <Text style={styles.label}>Gender</Text>
-            <View style={styles.pillsRow}>
-              {(["Male", "Female"] as const).map((s) => {
-                const active = form.sex === s;
+              <Text style={styles.label}>Gender</Text>
+              <View style={styles.pillsRow}>
+                {(["Male", "Female"] as const).map((s) => {
+                  const active = form.sex === s;
 
-                return (
-                  <TouchableOpacity
-                    key={s}
+                  return (
+                    <TouchableOpacity
+                      key={s}
+                      style={[
+                        styles.pill,
+                        active ? styles.pillActive : styles.pillInactive,
+                      ]}
+                      onPress={() => handleProfileChange("sex", s)}
+                      activeOpacity={0.85}
+                    >
+                      <Text
+                        style={[
+                          styles.pillText,
+                          active
+                            ? styles.pillTextActive
+                            : styles.pillTextInactive,
+                        ]}
+                      >
+                        {s}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <FormInput
+                label="Age"
+                unit="yrs"
+                keyboardType="numeric"
+                value={form.age}
+                onChangeText={(val) =>
+                  handleProfileChange("age", val.replace(/[^0-9]/g, ""))
+                }
+              />
+
+              <FormInput
+                label="Height"
+                unit="cm"
+                keyboardType="numeric"
+                value={form.height}
+                onChangeText={(val) =>
+                  handleProfileChange("height", val.replace(/[^0-9.]/g, ""))
+                }
+              />
+
+              <FormInput
+                label="Weight"
+                unit="kg"
+                keyboardType="numeric"
+                value={form.weight}
+                onChangeText={(val) =>
+                  handleProfileChange("weight", val.replace(/[^0-9.]/g, ""))
+                }
+              />
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Wellness Band</Text>
+
+              {!weightStatus ? (
+                <Text style={styles.bodyText}>
+                  Add your age, sex, and weight to see a gentle overview. This
+                  is a guide only — not a diagnosis.
+                </Text>
+              ) : (
+                <>
+                  <View
                     style={[
-                      styles.pill,
-                      active ? styles.pillActive : styles.pillInactive,
+                      styles.statusTag,
+                      { borderColor: weightStatus.color },
                     ]}
-                    onPress={() => handleProfileChange("sex", s)}
-                    activeOpacity={0.85}
                   >
                     <Text
                       style={[
-                        styles.pillText,
-                        active
-                          ? styles.pillTextActive
-                          : styles.pillTextInactive,
+                        styles.statusTagText,
+                        { color: weightStatus.color },
                       ]}
                     >
-                      {s}
+                      {weightStatus.label}
                     </Text>
-                  </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.band}>
+                    <View
+                      style={[
+                        styles.bandSeg,
+                        { backgroundColor: COLORS.softBlue },
+                      ]}
+                    />
+                    <View
+                      style={[
+                        styles.bandSeg,
+                        { backgroundColor: COLORS.accentGreen },
+                      ]}
+                    />
+                    <View
+                      style={[
+                        styles.bandSeg,
+                        { backgroundColor: COLORS.softOrange },
+                      ]}
+                    />
+
+                    <View
+                      style={[
+                        styles.bandDot,
+                        { backgroundColor: weightStatus.color },
+                        weightStatus.dotPosition === "left" &&
+                          styles.bandDotLeft,
+                        weightStatus.dotPosition === "center" &&
+                          styles.bandDotCenter,
+                        weightStatus.dotPosition === "right" &&
+                          styles.bandDotRight,
+                      ]}
+                    />
+                  </View>
+
+                  <Text style={styles.bodyText}>{weightStatus.message}</Text>
+                </>
+              )}
+            </View>
+
+            {isGuest ? <GuestModeDataNoticeCard /> : null}
+            {/* Goals */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Daily Goals</Text>
+              <Text style={styles.sectionHint}>Based on profile</Text>
+            </View>
+
+            <View style={styles.card}>
+              {macros.map((key, idx) => {
+                const amount =
+                  safeRdi?.[key]?.amount !== undefined
+                    ? String(safeRdi[key].amount)
+                    : "—";
+                const unit = safeRdi?.[key]?.unit ?? "";
+
+                return (
+                  <GoalRow
+                    key={key}
+                    label={key}
+                    value={amount}
+                    unit={unit}
+                    highlight={key === "Calories" || key === "Protein"}
+                    isLast={idx === macros.length - 1}
+                  />
                 );
               })}
             </View>
 
-            <FormInput
-              label="Age"
-              unit="yrs"
-              keyboardType="numeric"
-              value={form.age}
-              onChangeText={(val) =>
-                handleProfileChange("age", val.replace(/[^0-9]/g, ""))
-              }
-            />
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => setPrivacyVisible(true)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.settingLabel}>Privacy Policy</Text>
+            </TouchableOpacity>
 
-            <FormInput
-              label="Height"
-              unit="cm"
-              keyboardType="numeric"
-              value={form.height}
-              onChangeText={(val) =>
-                handleProfileChange("height", val.replace(/[^0-9.]/g, ""))
-              }
-            />
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-            <FormInput
-              label="Weight"
-              unit="kg"
-              keyboardType="numeric"
-              value={form.weight}
-              onChangeText={(val) =>
-                handleProfileChange("weight", val.replace(/[^0-9.]/g, ""))
-              }
-            />
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Wellness Band</Text>
-
-            {!weightStatus ? (
-              <Text style={styles.bodyText}>
-                Add your age, sex, and weight to see a gentle overview. This is
-                a guide only — not a diagnosis.
+            <TouchableOpacity
+              style={[
+                styles.primaryBtn,
+                (saving || !hasChanges) && styles.primaryBtnDisabled,
+              ]}
+              onPress={handleSave}
+              disabled={saving || !hasChanges}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.primaryBtnText}>
+                {saving
+                  ? "Saving…"
+                  : hasChanges
+                    ? "Save changes"
+                    : "No changes"}
               </Text>
-            ) : (
-              <>
-                <View
-                  style={[
-                    styles.statusTag,
-                    { borderColor: weightStatus.color },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.statusTagText,
-                      { color: weightStatus.color },
-                    ]}
-                  >
-                    {weightStatus.label}
-                  </Text>
-                </View>
+            </TouchableOpacity>
 
-                <View style={styles.band}>
-                  <View
-                    style={[
-                      styles.bandSeg,
-                      { backgroundColor: COLORS.softBlue },
-                    ]}
-                  />
-                  <View
-                    style={[
-                      styles.bandSeg,
-                      { backgroundColor: COLORS.accentGreen },
-                    ]}
-                  />
-                  <View
-                    style={[
-                      styles.bandSeg,
-                      { backgroundColor: COLORS.softOrange },
-                    ]}
-                  />
+            <TouchableOpacity
+              onPress={handleLogout}
+              style={styles.logoutBtn}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.logoutText}>Log out</Text>
+            </TouchableOpacity>
 
-                  <View
-                    style={[
-                      styles.bandDot,
-                      { backgroundColor: weightStatus.color },
-                      weightStatus.dotPosition === "left" && styles.bandDotLeft,
-                      weightStatus.dotPosition === "center" &&
-                        styles.bandDotCenter,
-                      weightStatus.dotPosition === "right" &&
-                        styles.bandDotRight,
-                    ]}
-                  />
-                </View>
+            <View style={{ height: 24 }} />
+          </ScrollView>
+        </KeyboardAvoidingView>
 
-                <Text style={styles.bodyText}>{weightStatus.message}</Text>
-              </>
-            )}
-          </View>
-
-          {isGuest ? <GuestModeDataNoticeCard /> : null}
-          {/* Goals */}
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Daily Goals</Text>
-            <Text style={styles.sectionHint}>Based on profile</Text>
-          </View>
-
-          <View style={styles.card}>
-            {macros.map((key, idx) => {
-              const amount =
-                safeRdi?.[key]?.amount !== undefined
-                  ? String(safeRdi[key].amount)
-                  : "—";
-              const unit = safeRdi?.[key]?.unit ?? "";
-
-              return (
-                <GoalRow
-                  key={key}
-                  label={key}
-                  value={amount}
-                  unit={unit}
-                  highlight={key === "Calories" || key === "Protein"}
-                  isLast={idx === macros.length - 1}
-                />
-              );
-            })}
-          </View>
-
-          <TouchableOpacity
-            style={styles.settingRow}
-            onPress={() => setPrivacyVisible(true)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.settingLabel}>Privacy Policy</Text>
-          </TouchableOpacity>
-
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-          <TouchableOpacity
-            style={[
-              styles.primaryBtn,
-              (saving || !hasChanges) && styles.primaryBtnDisabled,
-            ]}
-            onPress={handleSave}
-            disabled={saving || !hasChanges}
-            activeOpacity={0.9}
-          >
-            <Text style={styles.primaryBtnText}>
-              {saving ? "Saving…" : hasChanges ? "Save changes" : "No changes"}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={handleLogout}
-            style={styles.logoutBtn}
-            activeOpacity={0.9}
-          >
-            <Text style={styles.logoutText}>Log out</Text>
-          </TouchableOpacity>
-
-          <View style={{ height: 24 }} />
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      <PrivacyPolicyModal
-        visible={privacyVisible}
-        onClose={() => setPrivacyVisible(false)}
-      />
-    </SafeAreaView>
+        <PrivacyPolicyModal
+          visible={privacyVisible}
+          onClose={() => setPrivacyVisible(false)}
+        />
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  bg: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
   container: { flex: 1, backgroundColor: COLORS.background },
   content: {
     paddingHorizontal: 18,
