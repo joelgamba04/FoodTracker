@@ -30,28 +30,24 @@ const formatDate = (date: Date) =>
 
 const sumBy = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
-const getCalories = (entry: FoodLogEntry) => {
-  const list = entry.food?.nutrients ?? [];
-  const cal =
-    list.find((nutrient) => nutrient.name === "Calories")?.amount ?? 0;
-  return cal * (entry.quantity ?? 1);
-};
-
 const dayTotals = (entries: FoodLogEntry[]) => {
-  const pick = (name: string) =>
-    sumBy(
-      entries.map((entry) => {
-        const unit =
-          entry.food?.nutrients?.find((nutrient) => nutrient.name === name)
-            ?.amount ?? 0;
-        return unit * (entry.quantity ?? 1);
-      }),
-    );
   return {
-    kcal: sumBy(entries.map(getCalories)),
-    protein: pick("Protein"),
-    carbs: pick("Carbohydrate"),
-    fat: pick("Fat"),
+    kcal: sumBy(
+      entries.map(
+        (entry) => (entry.food?.calories ?? 0) * (entry.quantity ?? 1),
+      ),
+    ),
+    protein: sumBy(
+      entries.map(
+        (entry) => (entry.food?.protein ?? 0) * (entry.quantity ?? 1),
+      ),
+    ),
+    carbs: sumBy(
+      entries.map((entry) => (entry.food?.carbs ?? 0) * (entry.quantity ?? 1)),
+    ),
+    fat: sumBy(
+      entries.map((entry) => (entry.food?.fat ?? 0) * (entry.quantity ?? 1)),
+    ),
   };
 };
 
@@ -114,7 +110,7 @@ export const HistoryPage = () => {
 
       if (!lower) return true;
       const name = entry.food?.name?.toLowerCase() ?? "";
-      const english = entry.food?.englishName?.toLowerCase() ?? "";
+      const english = entry.food?.english_name?.toLowerCase() ?? "";
       return name.includes(lower) || english.includes(lower);
     });
 

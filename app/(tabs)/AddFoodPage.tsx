@@ -3,7 +3,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import { router } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Image,
   ImageBackground,
@@ -23,8 +23,8 @@ import {
 
 import { useFoodLog } from "@/context/FoodLogContext";
 import { isApiError } from "@/lib/apiClient";
-import { mapFoodDetailToFood } from "@/mappers/foodMapper";
-import { Food } from "@/models/models";
+import { mapFoodDetailToFoodItem } from "@/mappers/foodMapper";
+import { FoodItem } from "@/models/models";
 import { searchFoods } from "@/services/foodSearchService";
 import { COLORS } from "@/theme/color";
 
@@ -61,16 +61,12 @@ const MealCard = ({ item, index, onPress }: any) => {
 
   console.log("MealCard item:", item);
 
-  const getCalories = (food: Food | null) => {
+  const getCalories = (food: FoodItem | null) => {
     if (!food) return 0;
 
-    const kcal = food.nutrients.find(
-      (n) =>
-        n.name.toLowerCase() === "calories" ||
-        n.name.toLowerCase() === "energy",
-    );
+    const kcal = food.calories;
 
-    return kcal ? kcal.amount : 0;
+    return kcal ? kcal : 0;
   };
 
   return (
@@ -93,7 +89,7 @@ const MealCard = ({ item, index, onPress }: any) => {
 
         <View style={styles.mealMetaRow}>
           <Text style={styles.mealMeta}>
-            🔥 {getCalories(item) ?? 205} kcal
+            🔥 {getCalories(item) ?? 100} kcal
           </Text>
           <Text style={styles.mealDivider}>|</Text>
           <Text style={styles.mealMeta}>⚖️ {item?.servingSize ?? "160 g"}</Text>
@@ -105,14 +101,16 @@ const MealCard = ({ item, index, onPress }: any) => {
   );
 };
 
+const getServingGrams = (food: any) => Number(food?.serving?.grams ?? 100);
+
 export const AddFoodPage = () => {
   const { addEntry } = useFoodLog();
 
-  const [selected, setSelected] = useState<Food | null>(null);
+  const [selected, setSelected] = useState<FoodItem | null>(null);
   const [qty, setQty] = useState(1);
   const insets = useSafeAreaInsets();
 
-  const [results, setResults] = useState<Food[]>([]);
+  const [results, setResults] = useState<FoodItem[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -123,54 +121,32 @@ export const AddFoodPage = () => {
   const hasQuery = search.trim().length > 0;
   const compactMode = hasQuery || !!selected;
 
+  const [useGrams, setUseGrams] = useState(false);
+  const [grams, setGrams] = useState(100);
+
   const formatServing = (value: number) => {
     if (value === 0.5) return "½";
     return Number.isInteger(value) ? String(value) : value.toFixed(1);
   };
 
-  const getNutrientAmount = (food: Food | null, names: string[]) => {
-    if (!food) return 0;
+  const nutrientSummary = useMemo(() => {
+    if (!selected) {
+      return { calories: 0, protein: 0, fat: 0, carbs: 0 };
+    }
 
-    const nutrient = food.nutrients.find((n) =>
-      names.some((name) => n.name.toLowerCase().includes(name.toLowerCase())),
-    );
+    const baseGrams = getServingGrams(selected);
 
-    return nutrient?.amount ?? 0;
-  };
+    const totalGrams = useGrams ? grams : qty * baseGrams;
 
-  const getNutrientUnit = (
-    food: Food | null,
-    names: string[],
-    fallback = "g",
-  ) => {
-    if (!food) return fallback;
+    const factor = baseGrams ? totalGrams / baseGrams : 1;
 
-    const nutrient = food.nutrients.find((n) =>
-      names.some((name) => n.name.toLowerCase().includes(name.toLowerCase())),
-    );
-
-    return nutrient?.unit ?? fallback;
-  };
-
-  const caloriesPerServing = getNutrientAmount(selected, ["calorie", "energy"]);
-  const carbsPerServing = getNutrientAmount(selected, [
-    "carbohydrate",
-    "carbs",
-  ]);
-  const proteinPerServing = getNutrientAmount(selected, ["protein"]);
-  const fatPerServing = getNutrientAmount(selected, ["fat"]);
-
-  const calorieUnit = getNutrientUnit(selected, ["calorie", "energy"], "kcal");
-  const carbsUnit = getNutrientUnit(selected, ["carbohydrate", "carbs"], "g");
-  const proteinUnit = getNutrientUnit(selected, ["protein"], "g");
-  const fatUnit = getNutrientUnit(selected, ["fat"], "g");
-
-  const nutrientSummary = {
-    calories: Math.round(caloriesPerServing * qty),
-    carbs: +(carbsPerServing * qty).toFixed(1),
-    protein: +(proteinPerServing * qty).toFixed(1),
-    fat: +(fatPerServing * qty).toFixed(1),
-  };
+    return {
+      calories: Math.round(selected.calories * factor),
+      protein: Math.round(selected.protein * factor),
+      fat: Math.round(selected.fat * factor),
+      carbs: Math.round(selected.carbs * factor),
+    };
+  }, [selected, qty, grams, useGrams]);
 
   useEffect(() => {
     if (pauseAutoSearch) return;
@@ -247,7 +223,7 @@ export const AddFoodPage = () => {
         return;
       }
 
-      const foods = (res.data ?? []).map(mapFoodDetailToFood);
+      const foods = (res.data ?? []).map(mapFoodDetailToFoodItem);
       setResults(foods);
       setPauseAutoSearch(false); // reset pause on successful search
     } catch (err: unknown) {
@@ -526,29 +502,26 @@ export const AddFoodPage = () => {
                         <Text style={styles.summaryValue}>
                           {nutrientSummary.calories}
                         </Text>
-                        <Text style={styles.summaryLabel}>{calorieUnit}</Text>
+                        <Text style={styles.summaryLabel}>kcal</Text>
                       </View>
 
                       <View style={styles.summaryItem}>
                         <Text style={styles.summaryValue}>
-                          {nutrientSummary.carbs}
-                          {carbsUnit}
+                          {nutrientSummary.carbs}g
                         </Text>
                         <Text style={styles.summaryLabel}>Carbs</Text>
                       </View>
 
                       <View style={styles.summaryItem}>
                         <Text style={styles.summaryValue}>
-                          {nutrientSummary.protein}
-                          {proteinUnit}
+                          {nutrientSummary.protein}g
                         </Text>
                         <Text style={styles.summaryLabel}>Protein</Text>
                       </View>
 
                       <View style={styles.summaryItem}>
                         <Text style={styles.summaryValue}>
-                          {nutrientSummary.fat}
-                          {fatUnit}
+                          {nutrientSummary.fat}g
                         </Text>
                         <Text style={styles.summaryLabel}>Fat</Text>
                       </View>

@@ -19,8 +19,7 @@ type LoggedItemProps = {
 };
 
 const getCalories = (entry: FoodLogEntry) => {
-  const cals =
-    entry.food.nutrients?.find((n) => n.name === "Calories")?.amount ?? 0;
+  const cals = entry.food.calories;
   return cals * (entry.quantity ?? 1);
 };
 
@@ -54,7 +53,7 @@ export const LoggedItem: React.FC<LoggedItemProps> = ({
           </Text>
 
           <Text style={styles.sub} numberOfLines={1}>
-            {item.food.servingSize || "Serving"} • {Math.round(calories)} kcal
+            {item.food.serving.label || "Serving"} • {Math.round(calories)} kcal
           </Text>
         </View>
         {!disableActions && (

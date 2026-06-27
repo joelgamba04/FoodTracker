@@ -22,10 +22,10 @@ import { useFoodLog } from "@/context/FoodLogContext";
 import { useProfile } from "@/context/ProfileContext";
 import { useHydrationToday } from "@/hooks/hydrationHooks";
 import { useHealth } from "@/hooks/useHealth";
-import { Food } from "@/models/models";
 import { getHealthConnected } from "@/services/health/healthCache";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
+import { calculateNutrition } from "@/utils/nutritionCalculator";
 
 import MetricLine from "@/components/MetricLine";
 import ProgressRing from "@/components/ProgressRing";
@@ -42,49 +42,15 @@ const sampleSleepQuality = [
   { value: 88, label: "Sat" },
   { value: 84, label: "Sun" },
 ];
-// ---------- helpers ----------
-const formatDate = (d: Date) => {
-  return d.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-};
 
-const getKcalFromFood = (food: Food): number => {
+const getCalories = (food: any, qty: number) => {
   if (!food) return 0;
 
-  const nutrients = Array.isArray(food.nutrients) ? food.nutrients : [];
-  const energy = nutrients.find((n: any) => {
-    const name = String(n?.name ?? "").toLowerCase();
-    const unit = String(n?.unit ?? "").toLowerCase();
-    return (
-      name.includes("energy") ||
-      name.includes("calorie") ||
-      name.includes("kcal") ||
-      unit === "kcal"
-    );
-  });
+  const baseGrams = food?.serving?.grams || 100;
 
-  const amt = energy?.amount;
-  return typeof amt === "number" && isFinite(amt) ? amt : 0;
-};
+  const factor = (qty * baseGrams) / 100;
 
-const getFoodTitle = (food: any): string => {
-  return (
-    food?.name ?? food?.title ?? food?.food_name ?? food?.label ?? "Food item"
-  );
-};
-
-const getMealByTimestamp = (
-  timestamp: number,
-): "Breakfast" | "Lunch" | "Dinner" => {
-  const date = new Date(timestamp);
-  const hour = date.getHours(); // 0–23
-
-  if (hour < 11) return "Breakfast"; // 12:00am–10:59am
-  if (hour < 16) return "Lunch"; // 11:00am–3:59pm
-  return "Dinner"; // 4:00pm–11:59pm
+  return Math.round((food.calories ?? 0) * factor);
 };
 
 const getTimestampMs = (timestamp: unknown): number => {
@@ -141,7 +107,7 @@ export const DashboardPage = () => {
   const isSmallPhone = width < 370;
 
   const burnedCalories = useMemo(() => {
-    if (todaySteps === null || todaySteps === undefined) return null;
+    if (todaySteps === null || todaySteps === undefined) return 0;
     const caloriesPerStep = 0.04; // estimated kcal burned per step
     return Math.round(todaySteps * caloriesPerStep);
   }, [todaySteps]);
@@ -150,7 +116,6 @@ export const DashboardPage = () => {
     burnedCalories === null ? "Unavailable" : `${burnedCalories} kcal`;
 
   const chartWidth = Math.min(width - 58, 680);
-  const barSpacing = Math.max(16, chartWidth / 13);
 
   const todaysFood = useMemo(() => {
     return (log ?? []).filter((e) => {
@@ -159,17 +124,30 @@ export const DashboardPage = () => {
     });
   }, [log, startMs, endMs]);
 
-  const todaysFoodCalories = useMemo(() => {
-    return todaysFood.reduce((total, entry) => {
-      console.log("Calculating calories for entry:", entry);
-      const kcalPerServing = getKcalFromFood(entry.food);
-      const quantity = typeof entry.quantity === "number" ? entry.quantity : 1;
+  const todaysTotals = useMemo(() => {
+    return todaysFood.reduce(
+      (acc, entry) => {
+        const food = entry.food;
+        const qty = entry.quantity ?? 1;
 
-      return total + kcalPerServing * quantity;
-    }, 0);
+        const nutrients = calculateNutrition(
+          food,
+          qty,
+          false, // useGrams
+        );
+
+        console.log(nutrients);
+
+        acc.calories += nutrients.calories;
+        acc.protein += nutrients.protein;
+        acc.fat += nutrients.fat;
+        acc.carbs += nutrients.carbs;
+
+        return acc;
+      },
+      { calories: 0, protein: 0, fat: 0, carbs: 0 },
+    );
   }, [todaysFood]);
-
-  const todaysCalories = Math.round(todaysFoodCalories);
 
   const calorieRDI = useMemo(() => {
     const amount = rdi?.Calories?.amount;
@@ -182,13 +160,16 @@ export const DashboardPage = () => {
   }, [rdi, goalMl]);
 
   const caloriesLeft = useMemo(() => {
-    return Math.max(0, calorieRDI - todaysCalories);
-  }, [calorieRDI, todaysCalories]);
+    return Math.max(0, calorieRDI - todaysTotals.calories);
+  }, [calorieRDI, todaysTotals]);
 
   const caloriePercent = useMemo(() => {
     if (!calorieRDI || calorieRDI <= 0) return 0;
-    return Math.min(100, Math.round((todaysCalories / calorieRDI) * 100));
-  }, [todaysCalories, calorieRDI]);
+    return Math.min(
+      100,
+      Math.round((todaysTotals.calories / calorieRDI) * 100),
+    );
+  }, [todaysTotals, calorieRDI]);
 
   const goToAddFood = () => {
     router.push("/AddFoodPage");
@@ -210,18 +191,6 @@ export const DashboardPage = () => {
         { label: "Sat", value: 10245 },
         { label: "Sun", value: 4995 },
       ];
-
-  const sleepValue = !healthConnected
-    ? "Setup"
-    : hasSleepData
-      ? lastNightHours.toFixed(1)
-      : "No data";
-
-  const sleepSubtitle = !healthConnected
-    ? "Tap to connect"
-    : hasSleepData
-      ? "hrs last night"
-      : "Open sleep page";
 
   useFocusEffect(
     useCallback(() => {
@@ -412,7 +381,7 @@ export const DashboardPage = () => {
                 icon="disc-outline"
                 color={COLORS.taguigRed}
                 label="Food"
-                value={`${todaysCalories} kcal`}
+                value={`${todaysTotals.calories} kcal`}
               />
               <MetricLine
                 icon="water"
@@ -424,7 +393,7 @@ export const DashboardPage = () => {
                 icon="flame"
                 color={COLORS.taguigYellow}
                 label="Remaining"
-                value={`${caloriesLeft} kcal`}
+                value={`${Math.max(0, calorieRDI - todaysTotals.calories + burnedCalories)} kcal`}
               />
             </View>
 

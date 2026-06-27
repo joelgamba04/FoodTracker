@@ -4,8 +4,7 @@ import AppHeader from "@/components/AppHeader";
 import NutrientCard from "@/components/NutrientCard";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { useHydration } from "@/context/hydrationContext";
-import { NutrientKey, useProfile } from "@/context/ProfileContext";
-import { Nutrient } from "@/models/models";
+import { useProfile } from "@/context/ProfileContext";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
 import React, { useMemo } from "react";
@@ -16,19 +15,37 @@ import {
 } from "react-native-safe-area-context";
 
 // --- Helper Methods ---
-const calculateTotals = (log: any[]): Nutrient[] => {
-  const totals: { [key: string]: Nutrient } = {};
+const calculateTotals = (log: any[]) => {
+  let calories = 0;
+  let protein = 0;
+  let fat = 0;
+  let carbs = 0;
+
   log.forEach((entry) => {
-    if (entry.food && entry.food.nutrients) {
-      entry.food.nutrients.forEach((nutrient: Nutrient) => {
-        if (!totals[nutrient.name]) {
-          totals[nutrient.name] = { ...nutrient, amount: 0 };
-        }
-        totals[nutrient.name].amount += nutrient.amount * (entry.quantity ?? 1);
-      });
-    }
+    const food = entry.food;
+    if (!food) return;
+
+    const qty = entry.quantity ?? 1;
+    const useGrams = entry.useGrams ?? false;
+
+    const baseGrams = food.serving?.grams ?? 100;
+
+    const totalGrams = useGrams ? (entry.grams ?? 0) : qty * baseGrams;
+
+    const factor = baseGrams ? totalGrams / baseGrams : qty;
+
+    calories += food.calories * factor;
+    protein += food.protein * factor;
+    fat += food.fat * factor;
+    carbs += food.carbs * factor;
   });
-  return Object.values(totals);
+
+  return {
+    calories: Math.round(calories),
+    protein: Math.round(protein),
+    fat: Math.round(fat),
+    carbs: Math.round(carbs),
+  };
 };
 
 // --- Main Screen Component ---
@@ -89,13 +106,26 @@ export const NutritionPage = () => {
     );
   }
 
-  const calorieData = totals.find((n) => n.name === "Calories") || {
+  const calorieData = {
     name: "Calories",
-    amount: 0,
+    amount: totals.calories,
     unit: rdi.Calories.unit,
   };
 
-  const macroNutrients: NutrientKey[] = ["Carbohydrate", "Protein", "Fat"];
+  const macroNutrients = [
+    {
+      key: "Carbohydrate",
+      value: totals.carbs,
+    },
+    {
+      key: "Protein",
+      value: totals.protein,
+    },
+    {
+      key: "Fat",
+      value: totals.fat,
+    },
+  ];
 
   return (
     <SafeAreaView
@@ -128,22 +158,16 @@ export const NutritionPage = () => {
 
         <Text style={styles.sectionTitle}>Macronutrients</Text>
         <View>
-          {macroNutrients.map((key) => {
-            const nutrientTotal =
-              totals.find((n) => n.name === key)?.amount || 0;
-            const goal = rdi[key];
-
-            return (
-              <NutrientCard
-                key={key}
-                name={key}
-                consumed={nutrientTotal}
-                recommended={goal.amount}
-                unit={goal.unit}
-                isMacro
-              />
-            );
-          })}
+          {macroNutrients.map((item) => (
+            <NutrientCard
+              key={item.key}
+              name={item.key}
+              consumed={item.value}
+              recommended={rdi[item.key].amount}
+              unit={rdi[item.key].unit}
+              isMacro
+            />
+          ))}
         </View>
       </ScrollView>
     </SafeAreaView>

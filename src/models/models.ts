@@ -1,6 +1,6 @@
-// Food, Nutrient, and DailyLog models for FoodTracker
+// Internal models for FoodTracker
 // src/models/models.ts
-
+import { FoodMeasure } from "./foodModels";
 export type SyncStatus = "pending" | "synced" | "failed";
 
 export interface Nutrient {
@@ -16,15 +16,38 @@ export interface Food {
   category?: string;
   servingSize: string; // e.g., "100g", "1 cup"
   nutrients: Nutrient[];
-  englishName?: string; // Optional Filipino name for the food
+  englishName?: string; // Optional English name for the food
+  measures: FoodMeasure[];
 }
 
+export interface FoodServing {
+  label?: string;
+  grams: number;
+  dimension?: string;
+}
+
+export interface FoodItem {
+  id: number;
+  name: string;
+  english_name?: string;
+  category?: string;
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  serving: {
+    label?: string;
+    grams: number;
+    dimension?: string;
+    isDefault: boolean;
+  };
+}
 export interface FoodLogEntry {
   localId: string;
   serverId?: number | null; // Optional server ID for syncing
 
   timestamp: number; // Unix timestamp in milliseconds
-  food: Food;
+  food: FoodItem;
   quantity: number; // number of servings
 
   syncStatus: SyncStatus;
