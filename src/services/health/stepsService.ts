@@ -10,12 +10,12 @@ import { ensureIosStepsAccess, readIosStepsSummary } from "./stepsIOSService";
 
 export const ensureStepsAccess = async () => {
   if (Platform.OS === "android") {
-    console.log("Checking Android steps access...");
+    // console.log("Checking Android steps access...");
     return ensureAndroidStepsAccess();
   }
 
   if (Platform.OS === "ios") {
-    console.log("Checking iOS steps access...");
+    // console.log("Checking iOS steps access...");
     return ensureIosStepsAccess();
   }
 

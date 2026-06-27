@@ -10,12 +10,12 @@ import { ensureIosSleepAccess, readIOSSleep } from "./sleepiOSService";
 
 export const ensureSleepAccess = async () => {
   if (Platform.OS === "android") {
-    console.log("Checking Android sleep access...");
+    // console.log("Checking Android sleep access...");
     return ensureAndroidSleepAccess();
   }
 
   if (Platform.OS === "ios") {
-    console.log("Checking iOS sleep access...");
+    // console.log("Checking iOS sleep access...");
     return ensureIosSleepAccess();
   }
 

@@ -16,9 +16,9 @@ export const PostLoginSync = () => {
   const didRunRef = useRef(false);
 
   useEffect(() => {
-    console.log("PostLoginSync useEffect triggered with authMode:", authMode);
+    // console.log("PostLoginSync useEffect triggered with authMode:", authMode);
     if (authMode === GUEST_AUTH_MODE) {
-      console.log("Logged in as guest; skipping server profile sync.");
+      // console.log("Logged in as guest; skipping server profile sync.");
       return;
     }
 
@@ -38,7 +38,7 @@ export const PostLoginSync = () => {
         // If your refreshProfile() already calls GET /user/profile, remove the first refresh.
         // For now, leave as one refresh (depends on your ProfileContext implementation).
 
-        console.log("PostLoginSync result:", result);
+        // console.log("PostLoginSync result:", result);
       } catch (e) {
         console.warn("PostLoginSync failed:", e);
         // still try to load whatever is cached
@@ -47,7 +47,7 @@ export const PostLoginSync = () => {
         } catch {}
       }
     })();
-  }, [authMode, refreshProfile]);
+  };, [authMode, refreshProfile]);
 
   return null;
 };

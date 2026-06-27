@@ -12,7 +12,7 @@ import {
 
 export const ensureAndroidStepsAccess = async () => {
   const status = await getSdkStatus();
-  console.log("Health Connect SDK status:", status);
+  // console.log("Health Connect SDK status:", status);
 
   if (status !== SdkAvailabilityStatus.SDK_AVAILABLE) {
     console.warn("Health Connect SDK is not available:", status);
@@ -31,7 +31,7 @@ export const ensureAndroidStepsAccess = async () => {
     },
   ]);
 
-  console.log("Permission result:", permissionResult);
+  // console.log("Permission result:", permissionResult);
 
   return { ok: true as const };
 };
@@ -45,7 +45,7 @@ export const readAndroidStepsSummary = async (): Promise<StepsSummary> => {
     const start = startOfDay(day).toISOString();
     const end = endOfDay(day).toISOString();
 
-    console.log(`Reading steps for ${toYmd(day)} from ${start} to ${end}...`);
+    // console.log(`Reading steps for ${toYmd(day)} from ${start} to ${end}...`);
 
     const { records } = await readRecords("Steps", {
       timeRangeFilter: {
@@ -55,7 +55,7 @@ export const readAndroidStepsSummary = async (): Promise<StepsSummary> => {
       },
     });
 
-    console.log(`Records for ${toYmd(day)}:`, records);
+    // console.log(`Records for ${toYmd(day)}:`, records);
 
     const total = (records ?? []).reduce((sum, record: any) => {
       return sum + Number(record?.count ?? 0);

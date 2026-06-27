@@ -34,16 +34,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Track auth mode changes for debugging
   useEffect(() => {
-    console.log("Auth mode changed:", authState.mode);
+    // console.log("Auth mode changed:", authState.mode);
   }, [authState.mode]);
 
   useEffect(() => {
-    console.log("AuthContext initializing, checking stored user...");
+    // console.log("AuthContext initializing, checking stored user...");
     (async () => {
       try {
         const mode =
           (await AsyncStorage.getItem(AUTH_MODE_KEY)) || SIGNED_OUT_AUTH_MODE;
-        console.log("AuthContext found stored auth mode:", mode);
+        // console.log("AuthContext found stored auth mode:", mode);
         if (mode === GUEST_AUTH_MODE) {
           setAuthState({
             mode: GUEST_AUTH_MODE,
@@ -53,12 +53,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         const stored = await getStoredUser();
-        console.log(
-          "AuthContext found stored user:",
-          stored,
-          "authState.mode:",
-          authState.mode,
-        );
+        // console.log(
+        // "AuthContext found stored user:",
+        // stored,
+        // "authState.mode:",
+        // authState.mode,
+        // );
         if (stored && mode === AUTHENTICATED_AUTH_MODE) {
           setAuthState({
             mode: AUTHENTICATED_AUTH_MODE,
@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    console.log("AuthContext, Attempting login for email:", email);
+    // console.log("AuthContext, Attempting login for email:", email);
     const u = await doLogin(email, password);
 
     setAuthState({

@@ -60,7 +60,7 @@ export const syncDraftIfServerEmpty = async (): Promise<{
 
   const empty = !server?.success || isServerProfileEmpty(server.data);
   if (!empty) {
-    console.log("Server profile not empty; no sync needed.");
+    // console.log("Server profile not empty; no sync needed.");
     return { didPromoteDraft: false, didUpdateServer: false };
   }
 

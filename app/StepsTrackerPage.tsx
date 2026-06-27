@@ -124,7 +124,7 @@ const StepsTrackerPage = () => {
       setError(null);
 
       if (Platform.OS === "android") {
-        console.log("Checking Android Health Connect availability...");
+        // console.log("Checking Android Health Connect availability...");
         setState("checking_availability");
 
         const availability = await checkAndroidHealthConnectAvailability();
@@ -210,7 +210,7 @@ const StepsTrackerPage = () => {
     };
   }, [load]);
 
-  console.log("StepsTrackerPage: data loaded", { data, state, error });
+  // console.log("StepsTrackerPage: data loaded", { data, state, error });
   return (
     <ImageBackground
       source={require("../assets/images/foodlogbg.png")}

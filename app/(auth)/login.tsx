@@ -267,7 +267,7 @@ export const LoginScreen = () => {
                     <Text
                       style={styles.privacyLink}
                       onPress={() => {
-                        console.log("Opening privacy modal");
+                        // console.log("Opening privacy modal");
                         setPrivacyVisible(true);
                       }}
                     >

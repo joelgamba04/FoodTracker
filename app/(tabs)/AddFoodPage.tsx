@@ -60,7 +60,7 @@ const SearchBox = ({ search, setSearch, onSubmit, scan = false }: any) => (
 const MealCard = ({ item, index, onPress }: any) => {
   const colors = [COLORS.taguigRed, COLORS.taguigBlue, COLORS.taguigYellow];
 
-  console.log("MealCard item:", item);
+  // console.log("MealCard item:", item);
 
   return (
     <Pressable style={styles.mealCard} onPress={onPress}>
@@ -186,7 +186,7 @@ export const AddFoodPage = () => {
 
     try {
       const res = await searchFoods(query);
-      console.log("Search response:", res);
+      // console.log("Search response:", res);
 
       if (seq !== searchSequence.current) {
         // A newer search has started, ignore this result

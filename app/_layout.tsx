@@ -92,11 +92,11 @@ const AuthGate = () => {
   const router = useRouter();
 
   useEffect(() => {
-    console.log("AuthGate", {
-      authMode,
-      isAuthLoading,
-      segments,
-    });
+    // console.log("AuthGate", {
+    //   authMode,
+    //   isAuthLoading,
+    //   segments,
+    // });
     if (isAuthLoading) return;
 
     const currentRoot = segments?.[0];
@@ -150,11 +150,11 @@ const AppBootstrap = () => {
 
   const showDisclaimer = disclaimerStep < DISCLAIMERS.length;
 
-  console.log("AppBootstrap", {
-    disclaimerStep,
-    showDisclaimer,
-    profileStatus,
-  });
+  // console.log("AppBootstrap", {
+  //   disclaimerStep,
+  //   showDisclaimer,
+  //   profileStatus,
+  // });
 
   // load local cached profile once
   useEffect(() => {
@@ -222,9 +222,9 @@ const AppBootstrap = () => {
 const RootLayout = () => {
   const colorScheme = useColorScheme();
 
-  console.log("RootLayout render", {
-    colorScheme,
-  });
+  // console.log("RootLayout render", {
+  //   colorScheme,
+  // });
   return (
     <SafeAreaProvider>
       <AppErrorBoundary>

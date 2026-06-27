@@ -14,7 +14,7 @@ export const ensureAndroidSleepAccess = async () => {
   // (otherwise we get "Permission denied" error when trying to read sleep)
 
   const status = await getSdkStatus();
-  console.log("Health Connect SDK status:", status);
+  // console.log("Health Connect SDK status:", status);
 
   if (status !== SdkAvailabilityStatus.SDK_AVAILABLE) {
     return {
@@ -32,7 +32,7 @@ export const ensureAndroidSleepAccess = async () => {
     },
   ]);
 
-  console.log("Permission result:", permissionResult);
+  // console.log("Permission result:", permissionResult);
 
   return { ok: true as const };
 };
@@ -46,7 +46,7 @@ export const readAndroidSleep = async (): Promise<SleepSummary> => {
     const start = startOfDay(day).toISOString();
     const end = endOfDay(day).toISOString();
 
-    console.log(`Reading sleep for ${toYmd(day)} from ${start} to ${end}...`);
+    // console.log(`Reading sleep for ${toYmd(day)} from ${start} to ${end}...`);
 
     const { records } = await readRecords("SleepSession", {
       timeRangeFilter: {
@@ -56,7 +56,7 @@ export const readAndroidSleep = async (): Promise<SleepSummary> => {
       },
     });
 
-    console.log(`Records for ${toYmd(day)}:`, records);
+    // console.log(`Records for ${toYmd(day)}:`, records);
 
     const total = (records ?? []).reduce((sum, record: any) => {
       return sum + Number(record?.duration ?? 0);

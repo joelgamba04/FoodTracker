@@ -98,12 +98,12 @@ const SleepPage = () => {
       setError(null);
 
       if (Platform.OS === "android") {
-        console.log("Checking Android Health Connect availability...");
+        // console.log("Checking Android Health Connect availability...");
         setState("checking_availability");
 
         const availability = await checkAndroidHealthConnectAvailability();
 
-        console.log("Health Connect availability:", availability);
+        // console.log("Health Connect availability:", availability);
 
         if (availability.needsInstall) {
           setState("missing_provider");
@@ -185,7 +185,7 @@ const SleepPage = () => {
     };
   }, [load]);
 
-  console.log("SleepPage: data loaded", { data, state, error });
+  // console.log("SleepPage: data loaded", { data, state, error });
   return (
     <ImageBackground
       source={require("../assets/images/foodlogbg.png")}

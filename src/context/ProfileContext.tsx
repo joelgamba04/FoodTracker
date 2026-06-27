@@ -127,7 +127,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
     (async () => {
       try {
         const cached = await loadJSON<UserProfile>(USER_PROFILE_KEY);
-        console.log("ProfileProvider: loaded cached profile", cached);
+        // console.log("ProfileProvider: loaded cached profile", cached);
         if (cached) setProfile(cached);
       } catch (e) {
         console.warn("ProfileProvider: failed to load cached profile", e);

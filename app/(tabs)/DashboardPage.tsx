@@ -198,7 +198,7 @@ export const DashboardPage = () => {
     }, [loadCachedHealth]),
   );
 
-  console.log("Health data on dashboard:", health);
+  // console.log("Health data on dashboard:", health);
 
   const sleepChartData = useMemo(() => {
     const weeklySleep = health?.sleep?.last7Days;
@@ -232,11 +232,11 @@ export const DashboardPage = () => {
 
   const onRefresh = useCallback(async () => {
     try {
-      console.log("Refreshing health data...");
+      // console.log("Refreshing health data...");
       setRefreshing(true);
       await refreshHealth();
     } finally {
-      console.log("Health data refreshed.");
+      // console.log("Health data refreshed.");
       setRefreshing(false);
     }
   }, [refreshHealth]);
@@ -501,7 +501,7 @@ export const DashboardPage = () => {
       </SafeAreaView>
     </ImageBackground>
   );
-};
+};;
 
 const styles = StyleSheet.create({
   bg: {
