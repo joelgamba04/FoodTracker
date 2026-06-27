@@ -47,7 +47,7 @@ export const PostLoginSync = () => {
         } catch {}
       }
     })();
-  };, [authMode, refreshProfile]);
+  }, [authMode, refreshProfile]);
 
   return null;
 };
