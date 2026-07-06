@@ -397,10 +397,10 @@ export const AddFoodPage = () => {
           >
             {!selected && (
               <>
-                <View style={styles.sectionHeader}>
+                {/* <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>Recent Meals</Text>
-                  {/* <Text style={styles.viewAll}>View All ›</Text> */}
-                </View>
+                   <Text style={styles.viewAll}>View All ›</Text> 
+                </View> */}
 
                 {search.trim().length === 0 ? (
                   <View style={styles.emptyCard}>
