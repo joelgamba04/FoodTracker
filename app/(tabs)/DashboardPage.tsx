@@ -478,9 +478,7 @@ export const DashboardPage = () => {
                 <Text style={styles.chartTitle}>Sleep Quality</Text>
                 <Text style={styles.chartTitle}>Sleep Quality</Text>
 
-                <Text style={styles.chartPeriod}>
-                  {healthConnected && hasSleepData ? "7 Days" : "Sample Data"}
-                </Text>
+                <Text style={styles.chartPeriod}>7 Days</Text>
               </View>
 
               {sleepChartData.length === 0 ? (
@@ -501,7 +499,7 @@ export const DashboardPage = () => {
       </SafeAreaView>
     </ImageBackground>
   );
-};;
+};
 
 const styles = StyleSheet.create({
   bg: {
