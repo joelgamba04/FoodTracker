@@ -74,11 +74,12 @@ const ProgressRing = ({
             style={{
               width: size * imageScale,
               height: size * imageScale,
+              marginBottom: size * 0.03,
             }}
           />
         )}
         {showPercent && (
-          <Text style={[styles.percentText, { fontSize: size * 0.2 }]}>
+          <Text style={[styles.percentText, { fontSize: size * 0.15 }]}>
             {progress}%
           </Text>
         )}
@@ -109,9 +110,11 @@ const styles = StyleSheet.create({
   percentText: {
     fontWeight: "900",
     color: COLORS.textPrimary,
+    marginTop: -18,
   },
 
   completedText: {
+    marginTop: 8,
     fontWeight: "700",
     color: COLORS.textSecondary,
   },
