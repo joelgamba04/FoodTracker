@@ -22,7 +22,7 @@ import { useFoodLog } from "@/context/FoodLogContext";
 import { useProfile } from "@/context/ProfileContext";
 import { useHydrationToday } from "@/hooks/hydrationHooks";
 import { useHealth } from "@/hooks/useHealth";
-import { useNutrition } from "@/hooks/useNutrition";
+import { calculateNutrition } from "@/hooks/useNutrition";
 import { getHealthConnected } from "@/services/health/healthCache";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
@@ -128,19 +128,26 @@ export const DashboardPage = () => {
     });
   }, [log, startMs, endMs]);
 
-  const nutrientsPerEntry = todaysFood.map((entry) =>
-    useNutrition(entry.food, entry.quantity, entry.useGrams, entry.grams),
-  );
+  const todaysTotals = useMemo(() => {
+    return todaysFood.reduce(
+      (acc, entry) => {
+        const nutrients = calculateNutrition(
+          entry.food,
+          entry.quantity,
+          entry.useGrams,
+          entry.grams,
+        );
 
-  const todaysTotals = nutrientsPerEntry.reduce(
-    (acc, nutrients) => ({
-      calories: acc.calories + nutrients.calories,
-      protein: acc.protein + nutrients.protein,
-      fat: acc.fat + nutrients.fat,
-      carbs: acc.carbs + nutrients.carbs,
-    }),
-    { calories: 0, protein: 0, fat: 0, carbs: 0 },
-  );
+        return {
+          calories: acc.calories + nutrients.calories,
+          protein: acc.protein + nutrients.protein,
+          fat: acc.fat + nutrients.fat,
+          carbs: acc.carbs + nutrients.carbs,
+        };
+      },
+      { calories: 0, protein: 0, fat: 0, carbs: 0 },
+    );
+  }, [todaysFood]);
 
   const calorieRDI = useMemo(() => {
     const amount = rdi?.Calories?.amount;

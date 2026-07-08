@@ -19,7 +19,7 @@ import NutrientCard from "@/components/NutrientCard";
 import { useFoodLog } from "@/context/FoodLogContext";
 import { useHydration } from "@/context/hydrationContext";
 import { useProfile } from "@/context/ProfileContext";
-import { useNutrition } from "@/hooks/useNutrition";
+import { calculateNutrition } from "@/hooks/useNutrition";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
 
@@ -54,19 +54,26 @@ export const NutritionPage = () => {
     return todayWaterLog.reduce((sum, e) => sum + (e.amount_ml ?? 0), 0);
   }, [todayWaterLog]);
 
-  const nutrientsPerEntry = todayFoodLog.map((entry) =>
-    useNutrition(entry.food, entry.quantity, entry.useGrams, entry.grams),
-  );
+  const totals = useMemo(() => {
+    return todayFoodLog.reduce(
+      (acc, entry) => {
+        const nutrients = calculateNutrition(
+          entry.food,
+          entry.quantity,
+          entry.useGrams,
+          entry.grams,
+        );
 
-  const totals = nutrientsPerEntry.reduce(
-    (acc, nutrients) => ({
-      calories: acc.calories + nutrients.calories,
-      protein: acc.protein + nutrients.protein,
-      fat: acc.fat + nutrients.fat,
-      carbs: acc.carbs + nutrients.carbs,
-    }),
-    { calories: 0, protein: 0, fat: 0, carbs: 0 },
-  );
+        return {
+          calories: acc.calories + nutrients.calories,
+          protein: acc.protein + nutrients.protein,
+          fat: acc.fat + nutrients.fat,
+          carbs: acc.carbs + nutrients.carbs,
+        };
+      },
+      { calories: 0, protein: 0, fat: 0, carbs: 0 },
+    );
+  }, [todayFoodLog]);
 
   const hasFood = todayFoodLog.length > 0;
   const hasWater = totalWaterMl > 0;
