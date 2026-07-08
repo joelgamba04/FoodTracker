@@ -345,7 +345,7 @@ export const DashboardPage = () => {
               <Text style={[styles.cardTitle, { fontSize: rf(15, 12, 16) }]}>
                 Calories Left
               </Text>
-              <Text style={[styles.caloriesLeft, { fontSize: rf(40, 28, 58) }]}>
+              <Text style={[styles.caloriesLeft, { fontSize: rf(35, 28, 58) }]}>
                 {caloriesLeft}
               </Text>
               <Text style={styles.smallMuted}>food left</Text>
@@ -546,14 +546,12 @@ const styles = StyleSheet.create({
 
   greeting: {
     marginTop: 52,
-    fontSize: 28,
     fontWeight: "900",
     textAlign: "center",
     zIndex: 2,
   },
   greetingSub: {
     marginTop: 4,
-    fontSize: 13,
     color: COLORS.textSecondary,
     fontWeight: "600",
     textAlign: "center",
@@ -626,8 +624,8 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   calorieLeft: { flex: 0.9 },
-  cardTitle: { fontSize: 15, fontWeight: "900", color: COLORS.textPrimary },
-  caloriesLeft: { fontSize: 46, fontWeight: "900", color: COLORS.taguigRed },
+  cardTitle: { fontWeight: "900", color: COLORS.textPrimary },
+  caloriesLeft: { fontWeight: "900", color: COLORS.taguigRed },
   smallMuted: { color: COLORS.textSecondary, fontWeight: "600" },
   goalPill: {
     marginTop: 12,
