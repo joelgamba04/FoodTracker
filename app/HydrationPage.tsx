@@ -3,10 +3,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Image,
   ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -33,28 +35,46 @@ const glassMap = {
   1000: require("../assets/images/water/bottle.png"),
 };
 
+const QUICK_ADD_AMOUNTS = [250, 500, 750, 1000] as const;
+
+const clamp = (value: number, min: number, max: number) => {
+  return Math.min(Math.max(value, min), max);
+};
+
+const formatLiters = (ml: number) => {
+  return (ml / 1000).toFixed(1);
+};
+
 export const HydrationPage = () => {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const { rdi } = useProfile();
+  const { entries, addMl, removeEntry, isLoading } = useHydration();
 
-  // screen size helpers
-  const isSmallPhone = width < 380;
-  const scale = Math.min(width / 390, 1);
-  const rf = (size: number) => Math.round(size * scale);
-  const rs = (size: number) => Math.round(size * scale);
+  const screenPadding = width < 360 ? 16 : 22;
+  const contentMaxWidth = 430;
+  const contentWidth = Math.min(width - screenPadding * 2, contentMaxWidth);
+
+  const isSmallPhone = width < 380 || height < 700;
+  const isVerySmallPhone = width < 340;
+  const isWideScreen = width >= 768;
+
+  const quickCardGap = isSmallPhone ? 10 : 12;
+  const quickCardColumns = isWideScreen ? 5 : isVerySmallPhone ? 2 : 3;
+  const quickCardWidth =
+    (contentWidth - quickCardGap * (quickCardColumns - 1)) / quickCardColumns;
 
   const waterRDI = useMemo(() => {
     const amount = rdi?.Water?.amount;
-    return typeof amount === "number" && isFinite(amount) ? amount : 2530;
+    return typeof amount === "number" && Number.isFinite(amount) && amount > 0
+      ? amount
+      : 2530;
   }, [rdi]);
 
   const [showCustomInput, setShowCustomInput] = useState(false);
-  const { entries, addMl, removeEntry, isLoading } = useHydration();
-
   const [customMl, setCustomMl] = useState("");
 
-  const { start, end } = getTodayWindow();
+  const { start, end } = useMemo(() => getTodayWindow(), []);
   const startMs = start.getTime();
   const endMs = end.getTime();
 
@@ -66,6 +86,12 @@ export const HydrationPage = () => {
     return todayEntries.reduce((sum, e) => sum + (e.amount_ml ?? 0), 0);
   }, [todayEntries]);
 
+  const progressPercent = useMemo(() => {
+    return Math.round((totalMl / waterRDI) * 100);
+  }, [totalMl, waterRDI]);
+
+  const ringPercent = clamp(progressPercent, 0, 100);
+
   const parsedCustomMl = useMemo(() => {
     // allow "250" / "250.5" but store integer ml
     const n = Number(customMl.replace(",", "."));
@@ -75,15 +101,23 @@ export const HydrationPage = () => {
 
   const canAddCustom = parsedCustomMl !== null && parsedCustomMl > 0;
 
-  const handleAddCustom = async () => {
+  const handleAddQuick = useCallback(
+    async (ml: number) => {
+      await addMl(ml);
+    },
+    [addMl],
+  );
+
+  const handleAddCustom = useCallback(async () => {
     if (!canAddCustom || parsedCustomMl === null) return;
 
-    // guardrail (optional)
+    // Prevent accidental entries like 50000 ml.
     if (parsedCustomMl > 5000) return;
 
     await addMl(parsedCustomMl);
     setCustomMl("");
-  };
+    setShowCustomInput(false);
+  }, [addMl, canAddCustom, parsedCustomMl]);
 
   return (
     <ImageBackground
@@ -91,203 +125,305 @@ export const HydrationPage = () => {
       style={styles.bg}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.screen, { paddingBottom: insets.bottom }]}>
-        <View style={styles.topBar}>
-          <Pressable style={styles.circleBtn} onPress={() => router.back()}>
-            <Ionicons
-              name="chevron-back"
-              size={28}
-              color={COLORS.textPrimary}
-            />
-          </Pressable>
-        </View>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.content}
+      <SafeAreaView
+        style={[styles.screen, { paddingBottom: insets.bottom }]}
+        edges={["top", "left", "right"]}
+      >
+        <KeyboardAvoidingView
+          style={styles.keyboardView}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          <View
-            style={[
-              styles.hero,
+          <View style={styles.topBar}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.circleBtn,
+                pressed && styles.pressed,
+              ]}
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              hitSlop={8}
+            >
+              <Ionicons
+                name="chevron-back"
+                size={26}
+                color={COLORS.textPrimary}
+              />
+            </Pressable>
+          </View>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={[
+              styles.content,
               {
-                marginTop: isSmallPhone ? 18 : 30,
-                minHeight: isSmallPhone ? 120 : 160,
+                paddingHorizontal: screenPadding,
+                paddingBottom: 120 + insets.bottom,
               },
             ]}
           >
-            <View style={styles.heroText}>
-              <Text
+            <View style={[styles.contentInner, { maxWidth: contentMaxWidth }]}>
+              <View
                 style={[
-                  styles.title,
+                  styles.hero,
                   {
-                    fontSize: isSmallPhone ? 24 : 34,
-                    maxWidth: isSmallPhone ? "58%" : "65%",
+                    minHeight: isSmallPhone ? 126 : 168,
+                    marginTop: isSmallPhone ? 8 : 18,
                   },
                 ]}
               >
-                <Text style={styles.blue}>Water </Text>
-                <Text style={styles.red}>Intake</Text>
-              </Text>
-              <Text
-                style={[styles.subtitle, { fontSize: isSmallPhone ? 12 : 15 }]}
-              >
-                Stay hydrated, stay healthy!
-              </Text>
-            </View>
-
-            <Image
-              source={require("../assets/images/water/real_glass.png")}
-              style={[
-                styles.waterImage,
-                {
-                  width: isSmallPhone ? width * 0.3 : width * 0.42,
-                  height: isSmallPhone ? width * 0.42 : width * 0.63,
-                  right: isSmallPhone ? 0 : -width * 0.04,
-                  bottom: isSmallPhone ? -10 : -width * 0.18,
-                },
-              ]}
-              resizeMode="contain"
-            />
-          </View>
-
-          <View
-            style={[styles.progressCard, { padding: isSmallPhone ? 14 : 22 }]}
-          >
-            <View style={styles.progressLeft}>
-              <Text style={styles.cardTitle}>Today's Progress</Text>
-              <Text
-                style={[styles.liters, { fontSize: isSmallPhone ? 35 : 52 }]}
-              >
-                {(totalMl / 1000).toFixed(1)} L
-              </Text>
-              <Text style={styles.goalText}>of 2.5 L goal</Text>
-
-              <View style={styles.goalPill}>
-                <Ionicons name="water" size={15} color={COLORS.taguigBlue} />
-                <Text style={styles.goalPillText}>
-                  {Math.round((totalMl / waterRDI) * 100)}% of daily goal
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.divider} />
-
-            <ProgressRing
-              percent={Math.round((totalMl / waterRDI) * 100)}
-              color={COLORS.taguigBlue}
-            />
-          </View>
-
-          <Text style={styles.sectionTitle}>Quick Add</Text>
-
-          <View style={styles.quickRow}>
-            {[250, 500, 750, 1000].map((ml) => (
-              <Pressable
-                key={ml}
-                style={styles.quickCard}
-                onPress={() => addMl(ml)}
-              >
-                <Image
-                  source={glassMap[ml as keyof typeof glassMap]}
-                  style={styles.glassImage}
-                  resizeMode="contain"
-                />
-
-                <Text style={styles.quickText}>
-                  {ml === 1000 ? "1 L" : `${ml} ml`}
-                </Text>
-              </Pressable>
-            ))}
-
-            <Pressable
-              style={[
-                styles.quickCard,
-                showCustomInput && styles.quickCardActive,
-              ]}
-              onPress={() => setShowCustomInput((prev) => !prev)}
-            >
-              <Ionicons
-                name="create-outline"
-                size={32}
-                color={COLORS.taguigBlue}
-              />
-              <Text style={styles.quickText}>Custom</Text>
-            </Pressable>
-          </View>
-
-          {showCustomInput && (
-            <View style={styles.customRow}>
-              <TextInput
-                value={customMl}
-                onChangeText={setCustomMl}
-                placeholder="Enter amount in ml"
-                keyboardType="numeric"
-                style={styles.customInput}
-              />
-
-              <Pressable
-                style={[styles.addBtn, !canAddCustom && { opacity: 0.4 }]}
-                disabled={!canAddCustom}
-                onPress={handleAddCustom}
-              >
-                <Text style={styles.addBtnText}>Add</Text>
-              </Pressable>
-            </View>
-          )}
-
-          <View style={styles.logHeader}>
-            <Text style={styles.sectionTitle}>Today's Log</Text>
-          </View>
-
-          <View style={styles.logCard}>
-            {isLoading ? (
-              <Text style={styles.muted}>Loading...</Text>
-            ) : todayEntries.length === 0 ? (
-              <Text style={styles.muted}>No water entries yet today.</Text>
-            ) : (
-              todayEntries.map((e) => (
-                <View key={e.id} style={styles.logRow}>
-                  <View style={styles.logIcon}>
-                    <Ionicons
-                      name="water"
-                      size={22}
-                      color={COLORS.taguigBlue}
-                    />
-                  </View>
-
-                  <Text style={styles.logTime}>
-                    {new Date(e.timestamp).toLocaleTimeString([], {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
+                <View
+                  style={[
+                    styles.heroText,
+                    { maxWidth: isSmallPhone ? "62%" : "66%" },
+                  ]}
+                >
+                  <Text
+                    style={[styles.title, { fontSize: isSmallPhone ? 26 : 34 }]}
+                    numberOfLines={2}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.82}
+                  >
+                    <Text style={styles.blue}>Water </Text>
+                    <Text style={styles.red}>Intake</Text>
                   </Text>
 
-                  <Text style={styles.logAmount}>{e.amount_ml} ml</Text>
+                  <Text
+                    style={[
+                      styles.subtitle,
+                      { fontSize: isSmallPhone ? 12 : 15 },
+                    ]}
+                    numberOfLines={2}
+                  >
+                    Stay hydrated, stay healthy!
+                  </Text>
+                </View>
+
+                <Image
+                  source={require("../assets/images/water/real_glass.png")}
+                  style={[
+                    styles.waterImage,
+                    {
+                      width: isSmallPhone
+                        ? contentWidth * 0.34
+                        : contentWidth * 0.42,
+                      height: isSmallPhone
+                        ? contentWidth * 0.48
+                        : contentWidth * 0.62,
+                      right: isSmallPhone ? -4 : -18,
+                      bottom: isSmallPhone ? -8 : -42,
+                    },
+                  ]}
+                  resizeMode="contain"
+                />
+              </View>
+
+              <View
+                style={[
+                  styles.progressCard,
+                  {
+                    padding: isSmallPhone ? 16 : 22,
+                    flexDirection: isVerySmallPhone ? "column" : "row",
+                    alignItems: isVerySmallPhone ? "stretch" : "center",
+                  },
+                ]}
+              >
+                <View style={styles.progressLeft}>
+                  <Text
+                    style={[
+                      styles.cardTitle,
+                      { fontSize: isSmallPhone ? 18 : 20 },
+                    ]}
+                  >
+                    Today's Progress
+                  </Text>
+
+                  <Text
+                    style={[
+                      styles.liters,
+                      { fontSize: isSmallPhone ? 40 : 52 },
+                    ]}
+                    adjustsFontSizeToFit
+                    numberOfLines={1}
+                  >
+                    {formatLiters(totalMl)} L
+                  </Text>
+
+                  <Text style={styles.goalText}>
+                    of {formatLiters(waterRDI)} L goal
+                  </Text>
+
+                  <View style={styles.goalPill}>
+                    <Ionicons
+                      name="water"
+                      size={15}
+                      color={COLORS.taguigBlue}
+                    />
+                    <Text style={styles.goalPillText}>
+                      {progressPercent}% of daily goal
+                    </Text>
+                  </View>
+                </View>
+
+                {!isVerySmallPhone && <View style={styles.divider} />}
+
+                <View
+                  style={[
+                    styles.ringWrap,
+                    isVerySmallPhone && styles.ringWrapStacked,
+                  ]}
+                >
+                  <ProgressRing
+                    percent={ringPercent}
+                    color={COLORS.taguigBlue}
+                  />
+                </View>
+              </View>
+
+              <Text style={styles.sectionTitle}>Quick Add</Text>
+
+              <View style={[styles.quickRow, { gap: quickCardGap }]}>
+                {QUICK_ADD_AMOUNTS.map((ml) => (
+                  <Pressable
+                    key={ml}
+                    style={({ pressed }) => [
+                      styles.quickCard,
+                      {
+                        width: quickCardWidth,
+                        minHeight: isSmallPhone ? 88 : 98,
+                      },
+                      pressed && styles.pressed,
+                    ]}
+                    onPress={() => handleAddQuick(ml)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Add ${ml} ml of water`}
+                  >
+                    <Image
+                      source={glassMap[ml]}
+                      style={[
+                        styles.glassImage,
+                        {
+                          width: isSmallPhone ? 28 : 32,
+                          height: isSmallPhone ? 42 : 48,
+                        },
+                      ]}
+                      resizeMode="contain"
+                    />
+
+                    <Text style={styles.quickText}>
+                      {ml === 1000 ? "1 L" : `${ml} ml`}
+                    </Text>
+                  </Pressable>
+                ))}
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.quickCard,
+                    {
+                      width: quickCardWidth,
+                      minHeight: isSmallPhone ? 88 : 98,
+                    },
+                    showCustomInput && styles.quickCardActive,
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => setShowCustomInput((prev) => !prev)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Add custom water amount"
+                >
+                  <Ionicons
+                    name="create-outline"
+                    size={isSmallPhone ? 28 : 32}
+                    color={COLORS.taguigBlue}
+                  />
+                  <Text style={styles.quickText}>Custom</Text>
+                </Pressable>
+              </View>
+
+              {showCustomInput && (
+                <View
+                  style={[
+                    styles.customRow,
+                    { flexDirection: isVerySmallPhone ? "column" : "row" },
+                  ]}
+                >
+                  <TextInput
+                    value={customMl}
+                    onChangeText={setCustomMl}
+                    placeholder="Enter amount in ml"
+                    placeholderTextColor="#8B95A7"
+                    keyboardType="numeric"
+                    returnKeyType="done"
+                    onSubmitEditing={handleAddCustom}
+                    style={styles.customInput}
+                  />
 
                   <Pressable
-                    style={styles.checkIcon}
-                    onPress={() => removeEntry(e.id)}
+                    style={({ pressed }) => [
+                      styles.addBtn,
+                      isVerySmallPhone && styles.addBtnFull,
+                      !canAddCustom && styles.disabled,
+                      pressed && canAddCustom && styles.pressed,
+                    ]}
+                    disabled={!canAddCustom}
+                    onPress={handleAddCustom}
+                    accessibilityRole="button"
+                    accessibilityLabel="Add custom water amount"
                   >
-                    <Feather name="x" size={18} color={COLORS.taguigRed} />
+                    <Text style={styles.addBtnText}>Add</Text>
                   </Pressable>
                 </View>
-              ))
-            )}
-          </View>
+              )}
 
-          {/* <Image
-            source={require("../assets/images/water/bottom_banner.png")}
-            style={[
-              styles.banner,
-              {
-                width: width * 0.92,
-                height: width * 0.38,
-              },
-            ]}
-            resizeMode="contain"
-          /> */}
+              <View style={styles.logHeader}>
+                <Text style={styles.sectionTitle}>Today's Log</Text>
+              </View>
 
-          <View style={{ height: 110 }} />
-        </ScrollView>
+              <View style={styles.logCard}>
+                {isLoading ? (
+                  <Text style={styles.muted}>Loading...</Text>
+                ) : todayEntries.length === 0 ? (
+                  <Text style={styles.muted}>No water entries yet today.</Text>
+                ) : (
+                  todayEntries.map((e) => (
+                    <View key={e.id} style={styles.logRow}>
+                      <View style={styles.logIcon}>
+                        <Ionicons
+                          name="water"
+                          size={22}
+                          color={COLORS.taguigBlue}
+                        />
+                      </View>
+
+                      <View style={styles.logTextGroup}>
+                        <Text style={styles.logTime}>
+                          {new Date(e.timestamp).toLocaleTimeString([], {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
+                        </Text>
+
+                        <Text style={styles.logAmount}>{e.amount_ml} ml</Text>
+                      </View>
+
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.deleteIcon,
+                          pressed && styles.pressed,
+                        ]}
+                        onPress={() => removeEntry(e.id)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove ${e.amount_ml} ml entry`}
+                        hitSlop={8}
+                      >
+                        <Feather name="x" size={18} color={COLORS.taguigRed} />
+                      </Pressable>
+                    </View>
+                  ))
+                )}
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </ImageBackground>
   );
@@ -306,23 +442,31 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
 
+  keyboardView: {
+    flex: 1,
+  },
+
   content: {
-    paddingHorizontal: 22,
+    flexGrow: 1,
+  },
+
+  contentInner: {
+    width: "100%",
+    alignSelf: "center",
   },
 
   topBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
+    minHeight: 54,
+    justifyContent: "center",
+    alignItems: "flex-start",
   },
 
   circleBtn: {
+    width: 48,
+    height: 48,
     marginLeft: 18,
     marginTop: 18,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    borderRadius: 24,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
@@ -342,17 +486,18 @@ const styles = StyleSheet.create({
 
   heroText: {
     zIndex: 3,
-    maxWidth: "64%",
   },
 
   title: {
     fontWeight: "900",
+    lineHeight: 38,
   },
 
   subtitle: {
     marginTop: 8,
     fontWeight: "700",
     color: COLORS.textSecondary,
+    lineHeight: 20,
   },
 
   waterImage: {
@@ -369,11 +514,9 @@ const styles = StyleSheet.create({
   },
 
   progressCard: {
-    marginTop: -10,
+    marginTop: -6,
     borderRadius: 26,
     backgroundColor: "#FFFFFF",
-    flexDirection: "row",
-    alignItems: "center",
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 14,
@@ -384,28 +527,28 @@ const styles = StyleSheet.create({
 
   progressLeft: {
     flex: 1,
+    minWidth: 0,
   },
 
   cardTitle: {
-    fontSize: 20,
     fontWeight: "900",
     color: COLORS.textPrimary,
   },
 
   liters: {
-    marginTop: 20,
+    marginTop: 14,
     fontWeight: "900",
     color: COLORS.taguigBlue,
   },
 
   goalText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
     color: COLORS.textSecondary,
   },
 
   goalPill: {
-    marginTop: 20,
+    marginTop: 16,
     alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
@@ -424,19 +567,18 @@ const styles = StyleSheet.create({
 
   divider: {
     width: 1,
-    height: 120,
+    height: 118,
     backgroundColor: "#EEF1F7",
-    marginHorizontal: 20,
+    marginHorizontal: 18,
   },
 
-  circleProgress: {
-    width: 138,
-    height: 138,
-    borderRadius: 69,
-    borderWidth: 10,
-    borderColor: COLORS.taguigBlue,
+  ringWrap: {
     alignItems: "center",
     justifyContent: "center",
+  },
+
+  ringWrapStacked: {
+    marginTop: 18,
   },
 
   sectionTitle: {
@@ -448,13 +590,12 @@ const styles = StyleSheet.create({
   },
 
   quickRow: {
+    width: "100%",
     flexDirection: "row",
-    gap: 12,
+    flexWrap: "wrap",
   },
 
   quickCard: {
-    flex: 1,
-    minHeight: 96,
     borderRadius: 16,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
@@ -481,20 +622,17 @@ const styles = StyleSheet.create({
   },
 
   glassImage: {
-    width: 32,
-    height: 48,
     resizeMode: "contain",
   },
 
   customRow: {
     marginTop: 16,
-    flexDirection: "row",
     gap: 10,
   },
 
   customInput: {
     flex: 1,
-    height: 52,
+    minHeight: 52,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "#D8DDEA",
@@ -507,11 +645,15 @@ const styles = StyleSheet.create({
 
   addBtn: {
     width: 92,
-    height: 52,
+    minHeight: 52,
     borderRadius: 14,
     backgroundColor: COLORS.taguigBlue,
     alignItems: "center",
     justifyContent: "center",
+  },
+
+  addBtnFull: {
+    width: "100%",
   },
 
   addBtnText: {
@@ -526,14 +668,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
 
-  editText: {
-    marginTop: 28,
-    marginBottom: 14,
-    fontSize: 18,
-    fontWeight: "900",
-    color: COLORS.taguigBlue,
-  },
-
   logCard: {
     borderRadius: 18,
     backgroundColor: "#FFFFFF",
@@ -546,10 +680,11 @@ const styles = StyleSheet.create({
   },
 
   logRow: {
-    minHeight: 58,
+    minHeight: 64,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 14,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#EEF1F7",
   },
@@ -561,36 +696,35 @@ const styles = StyleSheet.create({
     backgroundColor: "#EAF2FF",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 16,
+    marginRight: 14,
+  },
+
+  logTextGroup: {
+    flex: 1,
+    minWidth: 0,
   },
 
   logTime: {
-    flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
     color: COLORS.textSecondary,
   },
 
   logAmount: {
-    flex: 1,
+    marginTop: 3,
     fontSize: 16,
     fontWeight: "900",
     color: COLORS.textPrimary,
   },
 
-  checkIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: "#f5caca",
+  deleteIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#FDE8E8",
     alignItems: "center",
     justifyContent: "center",
-  },
-
-  banner: {
-    marginTop: 18,
-    marginBottom: 24,
-    alignSelf: "center",
+    marginLeft: 12,
   },
 
   muted: {
@@ -598,5 +732,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: COLORS.textSecondary,
+  },
+
+  disabled: {
+    opacity: 0.4,
+  },
+
+  pressed: {
+    opacity: 0.78,
   },
 });
