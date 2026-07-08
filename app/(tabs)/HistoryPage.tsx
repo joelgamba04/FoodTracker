@@ -2,6 +2,7 @@
 import AppHeader from "@/components/AppHeader";
 import { LoggedItem } from "@/components/LoggedItem";
 import { useFoodLog } from "@/context/FoodLogContext";
+import { calculateNutrition, NutritionTotals } from "@/hooks/useNutrition";
 import { FoodLogEntry } from "@/models/models";
 import { COLORS } from "@/theme/color";
 import { Ionicons } from "@expo/vector-icons";
@@ -31,12 +32,64 @@ const formatDate = (date: Date) =>
 
 const sumBy = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
-const dayTotals = (entries: FoodLogEntry[]) => {
+const isEmptySummary = (summary?: Partial<NutritionTotals> | null) => {
+  if (!summary) return true;
+
+  return (
+    (summary.calories ?? 0) === 0 &&
+    (summary.protein ?? 0) === 0 &&
+    (summary.carbs ?? 0) === 0 &&
+    (summary.fat ?? 0) === 0
+  );
+};
+
+const shouldRecalculateSummary = (entry: FoodLogEntry) => {
+  if (!entry.food) return false;
+
+  const foodHasNutrition =
+    (entry.food.calories ?? 0) > 0 ||
+    (entry.food.protein ?? 0) > 0 ||
+    (entry.food.carbs ?? 0) > 0 ||
+    (entry.food.fat ?? 0) > 0;
+
+  return foodHasNutrition && isEmptySummary(entry.nutrientSummary);
+};
+
+const getEntryNutrition = (entry: FoodLogEntry): NutritionTotals => {
+  if (!shouldRecalculateSummary(entry) && entry.nutrientSummary) {
+    return {
+      calories: entry.nutrientSummary.calories ?? 0,
+      protein: entry.nutrientSummary.protein ?? 0,
+      carbs: entry.nutrientSummary.carbs ?? 0,
+      fat: entry.nutrientSummary.fat ?? 0,
+    };
+  }
+
+  return calculateNutrition(
+    entry.food ?? null,
+    entry.quantity ?? 1,
+    entry.useGrams ?? false,
+    entry.grams ?? 0,
+  );
+};
+
+const withResolvedNutrition = (entry: FoodLogEntry): FoodLogEntry => {
+  const nutrientSummary = getEntryNutrition(entry);
+
   return {
-    kcal: sumBy(entries.map((entry) => entry.nutrientSummary?.calories ?? 0)),
-    protein: sumBy(entries.map((entry) => entry.nutrientSummary?.protein ?? 0)),
-    carbs: sumBy(entries.map((entry) => entry.nutrientSummary?.carbs ?? 0)),
-    fat: sumBy(entries.map((entry) => entry.nutrientSummary?.fat ?? 0)),
+    ...entry,
+    nutrientSummary,
+  };
+};
+
+const dayTotals = (entries: FoodLogEntry[]) => {
+  const nutrients = entries.map(getEntryNutrition);
+
+  return {
+    kcal: sumBy(nutrients.map((n) => n.calories)),
+    protein: sumBy(nutrients.map((n) => n.protein)),
+    carbs: sumBy(nutrients.map((n) => n.carbs)),
+    fat: sumBy(nutrients.map((n) => n.fat)),
   };
 };
 
@@ -50,7 +103,7 @@ const groupByDay = (all: FoodLogEntry[]) => {
     )}-${String(date.getDate()).padStart(2, "0")}`;
 
     const arr = map.get(key) ?? [];
-    arr.push(e);
+    arr.push(withResolvedNutrition(e));
     map.set(key, arr);
   }
 
@@ -187,7 +240,9 @@ export const HistoryPage = () => {
 
         <SectionList
           sections={filteredSections}
-          keyExtractor={(item: FoodLogEntry) => item.localId}
+          keyExtractor={(item: FoodLogEntry, index) =>
+            item.localId ?? `${item.timestamp}-${index}`
+          }
           contentContainerStyle={styles.listPad}
           showsVerticalScrollIndicator={false}
           renderSectionHeader={({ section }) => (
