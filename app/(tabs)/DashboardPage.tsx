@@ -106,6 +106,11 @@ export const DashboardPage = () => {
     return Math.min(Math.max(size * scale, min), max);
   };
   const isSmallPhone = width < 370;
+  const isVerySmallPhone = width < 345;
+  const horizontalPadding = isVerySmallPhone ? 12 : 16;
+  const cardMaxWidth = 680;
+  const cardWidth = Math.min(width - horizontalPadding * 2, cardMaxWidth);
+  const chartWidth = cardWidth - 24;
 
   const burnedCalories = useMemo(() => {
     if (todaySteps === null || todaySteps === undefined) return 0;
@@ -115,8 +120,6 @@ export const DashboardPage = () => {
 
   const burnedCaloriesDisplay =
     burnedCalories === null ? "Unavailable" : `${burnedCalories} kcal`;
-
-  const chartWidth = Math.min(width - 58, 680);
 
   const todaysFood = useMemo(() => {
     return (log ?? []).filter((e) => {
@@ -253,7 +256,10 @@ export const DashboardPage = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.content,
-            { paddingBottom: 110 + insets.bottom },
+            {
+              paddingHorizontal: horizontalPadding,
+              paddingBottom: 110 + insets.bottom,
+            },
           ]}
           refreshControl={
             <RefreshControl
@@ -264,7 +270,7 @@ export const DashboardPage = () => {
             />
           }
         >
-          <View style={styles.hero}>
+          <View style={[styles.hero, { marginHorizontal: -horizontalPadding }]}>
             <View style={styles.heroImages}>
               <Image
                 source={require("../../assets/images/header_asset_left.png")}
@@ -296,7 +302,7 @@ export const DashboardPage = () => {
               style={[
                 styles.greetingSub,
                 {
-                  fontSize: rf(16, 12, 18),
+                  fontSize: rf(14, 12, 18),
                 },
               ]}
             >
@@ -336,6 +342,9 @@ export const DashboardPage = () => {
             style={[
               styles.calorieCard,
               {
+                width: cardWidth,
+                maxWidth: cardMaxWidth,
+                alignSelf: "center",
                 padding: rs(16, 12, 18),
                 gap: isSmallPhone ? 8 : 12,
               },
@@ -385,7 +394,7 @@ export const DashboardPage = () => {
                 color={COLORS.dashboardRing}
                 image={require("../../assets/images/apple.png")}
                 imageScale={0.7}
-                size={rs(112, 92, 120)}
+                size={isVerySmallPhone ? 82 : rs(112, 92, 120)}
                 strokeWidth={9}
                 label=""
                 showPercent={false}
@@ -393,14 +402,28 @@ export const DashboardPage = () => {
             </View>
           </Pressable>
 
-          <View style={styles.smallCardsRow}>
+          <View
+            style={[
+              styles.smallCardsRow,
+              {
+                width: cardWidth,
+                maxWidth: cardMaxWidth,
+                alignSelf: "center",
+                flexDirection: isVerySmallPhone ? "column" : "row",
+              },
+            ]}
+          >
             <SmallMetricCard
               color={COLORS.taguigBlue}
               icon="water"
               title="Water Intake"
               value={waterRDI > 0 ? `${(totalMl / 1000).toFixed(1)} L` : "0 L"}
               subtitle={`/ ${(goalMl / 1000).toFixed(1)} L goal`}
-              percent={Math.min(100, Math.round((totalMl / goalMl) * 100))}
+              percent={
+                goalMl > 0
+                  ? Math.min(100, Math.round((totalMl / goalMl) * 100))
+                  : 0
+              }
               onPress={() => router.push("/HydrationPage")}
             />
 
@@ -434,7 +457,16 @@ export const DashboardPage = () => {
           </View>
 
           <Pressable onPress={() => router.push("/StepsTrackerPage")}>
-            <View style={styles.chartCard}>
+            <View
+              style={[
+                styles.chartCard,
+                {
+                  width: cardWidth,
+                  maxWidth: cardMaxWidth,
+                  alignSelf: "center",
+                },
+              ]}
+            >
               <View style={styles.chartHeader}>
                 <View
                   style={[
@@ -444,7 +476,9 @@ export const DashboardPage = () => {
                 >
                   <Ionicons name="stats-chart" size={22} color="#FFFFFF" />
                 </View>
-                <Text style={styles.chartTitle}>Steps</Text>
+                <Text style={styles.chartTitle} numberOfLines={1}>
+                  Steps
+                </Text>
                 <Text style={styles.chartPeriod}>7 Days</Text>
               </View>
 
@@ -456,7 +490,7 @@ export const DashboardPage = () => {
                 <StepsChart
                   data={stepsChartData}
                   width={chartWidth}
-                  height={isSmallPhone ? 155 : 180}
+                  height={isSmallPhone ? 150 : 180}
                   maxValue={20000}
                   color={COLORS.taguigRed}
                   goal={10000}
@@ -465,7 +499,16 @@ export const DashboardPage = () => {
             </View>
           </Pressable>
           <Pressable onPress={() => router.push("/SleepPage")}>
-            <View style={styles.chartCard}>
+            <View
+              style={[
+                styles.chartCard,
+                {
+                  width: cardWidth,
+                  maxWidth: cardMaxWidth,
+                  alignSelf: "center",
+                },
+              ]}
+            >
               <View style={styles.chartHeader}>
                 <View
                   style={[
@@ -475,8 +518,13 @@ export const DashboardPage = () => {
                 >
                   <Ionicons name="stats-chart" size={22} color="#FFFFFF" />
                 </View>
-                <Text style={styles.chartTitle}>Sleep Quality</Text>
-                <Text style={styles.chartTitle}>Sleep Quality</Text>
+                <Text
+                  style={styles.chartTitle}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
+                  Sleep Quality
+                </Text>
 
                 <Text style={styles.chartPeriod}>7 Days</Text>
               </View>
@@ -489,7 +537,7 @@ export const DashboardPage = () => {
                 <SleepQualityChart
                   data={sleepChartData}
                   width={chartWidth}
-                  height={170}
+                  height={isSmallPhone ? 150 : 170}
                   maxValue={100}
                 />
               )}
@@ -512,11 +560,10 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   screen: { flex: 1, backgroundColor: "transparent" },
-  content: { padding: 16 },
+  content: { paddingVertical: 16 },
 
   hero: {
     minHeight: 150,
-    marginHorizontal: -16,
     overflow: "hidden",
     justifyContent: "center",
   },
@@ -581,7 +628,6 @@ const styles = StyleSheet.create({
   },
 
   smallCardsRow: {
-    flexDirection: "row",
     gap: 8,
     marginTop: 12,
   },
@@ -623,7 +669,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 4,
   },
-  calorieLeft: { flex: 0.9 },
+  calorieLeft: { flex: 0.9, minWidth: 86, marginRight: 4, gap: 2 },
   cardTitle: { fontWeight: "900", color: COLORS.textPrimary },
   caloriesLeft: { fontWeight: "900", color: COLORS.taguigRed },
   smallMuted: { color: COLORS.textSecondary, fontWeight: "600" },
@@ -641,12 +687,14 @@ const styles = StyleSheet.create({
 
   calorieMiddle: {
     flex: 1.05,
+    minWidth: 78,
     justifyContent: "center",
     gap: 10,
   },
 
   calorieRingWrap: {
     flex: 0.9,
+    minWidth: 82,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -714,6 +762,7 @@ const styles = StyleSheet.create({
   },
 
   chartTitle: {
+    flexShrink: 1,
     fontSize: 16,
     fontWeight: "900",
     color: COLORS.textPrimary,
