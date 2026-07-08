@@ -1,6 +1,7 @@
 // app/HydrationPage.tsx
 
 import { Ionicons } from "@expo/vector-icons";
+import Feather from "@expo/vector-icons/Feather";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -154,7 +155,7 @@ export const HydrationPage = () => {
             <View style={styles.progressLeft}>
               <Text style={styles.cardTitle}>Today's Progress</Text>
               <Text
-                style={[styles.liters, { fontSize: isSmallPhone ? 38 : 52 }]}
+                style={[styles.liters, { fontSize: isSmallPhone ? 35 : 52 }]}
               >
                 {(totalMl / 1000).toFixed(1)} L
               </Text>
@@ -235,7 +236,6 @@ export const HydrationPage = () => {
 
           <View style={styles.logHeader}>
             <Text style={styles.sectionTitle}>Today's Log</Text>
-            <Text style={styles.editText}>Edit</Text>
           </View>
 
           <View style={styles.logCard}>
@@ -267,11 +267,7 @@ export const HydrationPage = () => {
                     style={styles.checkIcon}
                     onPress={() => removeEntry(e.id)}
                   >
-                    <Ionicons
-                      name="checkmark"
-                      size={18}
-                      color={COLORS.taguigBlue}
-                    />
+                    <Feather name="x" size={18} color={COLORS.taguigRed} />
                   </Pressable>
                 </View>
               ))
@@ -318,6 +314,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 10,
   },
 
   circleBtn: {
@@ -585,7 +582,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: "#EAF2FF",
+    backgroundColor: "#f5caca",
     alignItems: "center",
     justifyContent: "center",
   },
