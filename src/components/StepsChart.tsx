@@ -87,35 +87,15 @@ const StepsChart = ({
         strokeDasharray="7 6"
       />
 
-      <Rect
-        x={width - 54}
-        y={goalY - 24}
-        width={44}
-        height={38}
-        rx={8}
+      <SvgText
+        x={width - chartRight}
+        y={14}
+        fontSize="11"
+        fontWeight="800"
         fill={COLORS.taguigBlue}
-      />
-
-      <SvgText
-        x={width - 32}
-        y={goalY - 8}
-        fontSize="10"
-        fontWeight="700"
-        fill="#FFFFFF"
-        textAnchor="middle"
+        textAnchor="end"
       >
-        Goal
-      </SvgText>
-
-      <SvgText
-        x={width - 32}
-        y={goalY + 5}
-        fontSize="10"
-        fontWeight="700"
-        fill="#FFFFFF"
-        textAnchor="middle"
-      >
-        {Math.round(goal / 1000)}K
+        {`Goal ${Math.round(goal / 1000)}K`}
       </SvgText>
 
       {safeData.map((item, index) => {
