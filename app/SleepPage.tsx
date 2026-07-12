@@ -1,7 +1,8 @@
 // app/SleepPage.tsx
 
 import { Ionicons } from "@expo/vector-icons";
-import React, { useCallback, useEffect, useState } from "react";
+import { useRouter } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Image,
   ImageBackground,
@@ -18,18 +19,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import ProgressRing from "@/components/ProgressRing";
 import { useHealth } from "@/hooks/useHealth";
-import {
-  checkAndroidHealthConnectAvailability,
-  openHealthConnectStorePage,
-} from "@/services/health/healthConnectInstall";
-
+import { SleepDay } from "@/models/sleepModel";
 import {
   getHealthConnected,
   setHealthConnected,
 } from "@/services/health/healthCache";
+import {
+  checkAndroidHealthConnectAvailability,
+  openHealthConnectStorePage,
+} from "@/services/health/healthConnectInstall";
 import { ensureSleepAccess } from "@/services/health/sleepService";
 import { COLORS } from "@/theme/color";
-import { useRouter } from "expo-router";
 
 type PageState =
   | "connect_prompt"
@@ -41,20 +41,78 @@ type PageState =
   | "ready"
   | "error";
 
-const SleepMetric = ({ image, title, value, status }: any) => (
-  <View style={styles.sleepMetric}>
-    <Image source={image} style={styles.metricImage} resizeMode="contain" />
+type SleepMetricProps = {
+  image: any;
+  title: string;
+  value: string;
+  status: string;
+  compact?: boolean;
+};
 
-    <Text style={styles.metricTitle}>{title}</Text>
-    <Text style={styles.metricValue}>{value}</Text>
+const USE_SAMPLE_SLEEP_DATA = __DEV__;
+
+const SAMPLE_SLEEP = {
+  lastNightHours: 7.75,
+  last7Days: [
+    { date: "Mon", hours: 7 },
+    { date: "Tue", hours: 6 },
+    { date: "Wed", hours: 9 },
+    { date: "Thu", hours: 7 },
+    { date: "Fri", hours: 5 },
+    { date: "Sat", hours: 10 },
+    { date: "Sun", hours: 4.995 },
+  ],
+};
+
+const formatSleepTime = (hoursValue: number) => {
+  const safeHours = Number.isFinite(hoursValue) ? Math.max(hoursValue, 0) : 0;
+  const hours = Math.floor(safeHours);
+  const minutes = Math.round((safeHours % 1) * 60);
+
+  if (minutes === 60) {
+    return `${hours + 1}h 0m`;
+  }
+
+  return `${hours}h ${minutes}m`;
+};
+
+const getSleepStatus = (hoursValue: number) => {
+  if (hoursValue >= 7 && hoursValue <= 9) return "Good";
+  if (hoursValue >= 6) return "Average";
+  return "Needs rest";
+};
+
+const SleepMetric = ({
+  image,
+  title,
+  value,
+  status,
+  compact = false,
+}: SleepMetricProps) => (
+  <View style={[styles.sleepMetric, compact && styles.sleepMetricCompact]}>
+    <Image
+      source={image}
+      style={[styles.metricImage, compact && styles.metricImageCompact]}
+      resizeMode="contain"
+    />
+
+    <Text style={[styles.metricTitle, compact && styles.metricTitleCompact]}>
+      {title}
+    </Text>
+    <Text style={[styles.metricValue, compact && styles.metricValueCompact]}>
+      {value}
+    </Text>
     <Text style={styles.metricStatus}>{status}</Text>
   </View>
 );
 
 const SleepPage = () => {
   const { width, height } = useWindowDimensions();
+  const router = useRouter();
 
-  const isSmallPhone = width < 380;
+  const isTinyPhone = width < 360;
+  const isSmallPhone = width < 390;
+  const isTablet = width >= 768;
   const scale = Math.min(width / 390, height / 844);
 
   const rf = (size: number, min = size * 0.82, max = size * 1.15) =>
@@ -63,28 +121,43 @@ const SleepPage = () => {
   const rs = (size: number, min = size * 0.85, max = size * 1.2) =>
     Math.min(Math.max(size * scale, min), max);
 
-  const sleepHeroWidth = isSmallPhone ? width * 0.5 : width * 0.58;
-  const sleepHeroHeight = sleepHeroWidth * 0.67;
+  const contentMaxWidth = isTablet ? 560 : 430;
+  const ringSize = isTinyPhone ? 88 : isSmallPhone ? 96 : 112;
+  const shouldStackSummary = width < 370;
+  const metricCompact = width < 390;
 
-  const router = useRouter();
-  const [state, setState] = useState<PageState>("connect_prompt");
+  const [state, setState] = useState<PageState>(
+    USE_SAMPLE_SLEEP_DATA ? "ready" : "connect_prompt",
+  );
   const [error, setError] = useState<string | null>(null);
   const { refreshHealth, data, loading, error: healthError } = useHealth();
 
   const sleepGoal = 8;
-  const lastNightHours = data?.sleep?.lastNightHours ?? 0;
+
+  const sleepData = useMemo(() => {
+    if (USE_SAMPLE_SLEEP_DATA) {
+      return SAMPLE_SLEEP;
+    }
+
+    return data?.sleep ?? null;
+  }, [data?.sleep]);
+
+  const lastNightHours = sleepData?.lastNightHours ?? 0;
+  const last7Days: SleepDay[] = sleepData?.last7Days ?? [];
+
   const sleepPercent = Math.min(
     100,
-    Math.round((lastNightHours / sleepGoal) * 100),
-  );
-  const sleepScore = Math.min(
-    100,
-    Math.round((lastNightHours / sleepGoal) * 100),
+    Math.max(0, Math.round((lastNightHours / sleepGoal) * 100)),
   );
 
-  const sleepText = `${Math.floor(lastNightHours)}h ${Math.round(
-    (lastNightHours % 1) * 60,
-  )}m`;
+  const sleepScore = sleepPercent;
+  const sleepText = formatSleepTime(lastNightHours);
+  const sleepStatus = getSleepStatus(lastNightHours);
+
+  const averageSleep = last7Days.length
+    ? last7Days.reduce((sum, item) => sum + (item.hours || 0), 0) /
+      last7Days.length
+    : 0;
 
   const waitForInteractions = () =>
     new Promise<void>((resolve) => {
@@ -94,23 +167,20 @@ const SleepPage = () => {
     });
 
   const load = useCallback(async () => {
+    if (USE_SAMPLE_SLEEP_DATA) {
+      setState("ready");
+      return;
+    }
+
     try {
       setError(null);
 
       if (Platform.OS === "android") {
-        // console.log("Checking Android Health Connect availability...");
         setState("checking_availability");
 
         const availability = await checkAndroidHealthConnectAvailability();
 
-        // console.log("Health Connect availability:", availability);
-
-        if (availability.needsInstall) {
-          setState("missing_provider");
-          return;
-        }
-
-        if (!availability.available) {
+        if (availability.needsInstall || !availability.available) {
           setState("missing_provider");
           return;
         }
@@ -118,7 +188,7 @@ const SleepPage = () => {
 
       setState("requesting_permission");
 
-      await waitForInteractions(); // Wait for interactions to finish before requesting permissions
+      await waitForInteractions();
 
       const access = await ensureSleepAccess();
 
@@ -129,7 +199,7 @@ const SleepPage = () => {
       }
 
       setState("loading_data");
-      await setHealthConnected(); // Mark as connected to avoid showing connect prompt again
+      await setHealthConnected();
       await refreshHealth();
       setState("ready");
     } catch (err: any) {
@@ -139,6 +209,11 @@ const SleepPage = () => {
   }, [refreshHealth]);
 
   useEffect(() => {
+    if (USE_SAMPLE_SLEEP_DATA) {
+      setState("ready");
+      return;
+    }
+
     if (loading) return;
 
     if (healthError) {
@@ -163,7 +238,11 @@ const SleepPage = () => {
   }, [loading, healthError, data]);
 
   useEffect(() => {
-    // On initial load, check if we've already connected to Health Connect before and skip straight to loading data if so
+    if (USE_SAMPLE_SLEEP_DATA) {
+      setState("ready");
+      return;
+    }
+
     let active = true;
 
     const bootstrap = async () => {
@@ -185,7 +264,6 @@ const SleepPage = () => {
     };
   }, [load]);
 
-  // console.log("SleepPage: data loaded", { data, state, error });
   return (
     <ImageBackground
       source={require("../assets/images/foodlogbg.png")}
@@ -193,18 +271,44 @@ const SleepPage = () => {
       resizeMode="cover"
     >
       <SafeAreaView style={styles.screen}>
-        {/* header */}
-        <View style={styles.topBar}>
-          <Pressable style={styles.circleBtn} onPress={() => router.back()}>
+        <View style={[styles.topBar, { maxWidth: contentMaxWidth }]}>
+          <Pressable
+            style={[
+              styles.circleBtn,
+              {
+                width: rs(48, 42, 52),
+                height: rs(48, 42, 52),
+                borderRadius: rs(24, 21, 26),
+              },
+            ]}
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
             <Ionicons
               name="chevron-back"
-              size={28}
+              size={isSmallPhone ? 24 : 28}
               color={COLORS.textPrimary}
             />
           </Pressable>
+
+          {USE_SAMPLE_SLEEP_DATA ? (
+            <View style={styles.devPill}>
+              <Text style={styles.devPillText}>Dev sample</Text>
+            </View>
+          ) : null}
         </View>
 
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.content,
+            {
+              paddingHorizontal: isSmallPhone ? 16 : 22,
+              maxWidth: contentMaxWidth,
+            },
+          ]}
+        >
           {state === "checking_availability" ? (
             <View style={styles.centerCard}>
               <Text style={styles.title}>Connect Health Data</Text>
@@ -291,9 +395,8 @@ const SleepPage = () => {
               <Text style={styles.infoText}>
                 We couldn't find any sleep data for the past 7 days. Make sure
                 your device is tracking sleep and that you've granted permission
-                to smart watch or health app to write sleep data to Health
-                Connect. Sleep data should start appearing here within 24 hours
-                after you get it set up.
+                to a smart watch or health app to write sleep data to Health
+                Connect.
               </Text>
 
               <Text style={styles.infoText}>
@@ -308,14 +411,14 @@ const SleepPage = () => {
 
           {state === "ready" ? (
             <>
-              <View style={[styles.hero, { minHeight: rs(215, 165, 240) }]}>
+              <View style={[styles.hero, { minHeight: rs(190, 155, 220) }]}>
                 <View style={styles.heroText}>
                   <Text
                     style={[
                       styles.heroTitle,
                       {
-                        fontSize: rf(42, 30, 46),
-                        lineHeight: rf(46, 34, 50),
+                        fontSize: rf(40, 30, 46),
+                        lineHeight: rf(44, 34, 50),
                       },
                     ]}
                   >
@@ -324,7 +427,7 @@ const SleepPage = () => {
                   </Text>
 
                   <Text
-                    style={[styles.heroSubText, { fontSize: rf(17, 12, 18) }]}
+                    style={[styles.heroSubText, { fontSize: rf(16, 12, 18) }]}
                   >
                     Good sleep, better you.
                   </Text>
@@ -337,26 +440,38 @@ const SleepPage = () => {
                   style={[
                     styles.heroImage,
                     {
-                      width: sleepHeroWidth,
-                      height: sleepHeroHeight,
-                      right: isSmallPhone ? -30 : -42,
-                      top: isSmallPhone ? 46 : 34,
+                      width: isSmallPhone ? width * 0.45 : width * 0.52,
+                      height:
+                        (isSmallPhone ? width * 0.45 : width * 0.52) * 0.67,
+                      right: isSmallPhone ? -18 : -30,
+                      top: isSmallPhone ? 50 : 36,
+                      opacity: isTinyPhone ? 0.9 : 1,
                     },
                   ]}
                   resizeMode="contain"
                 />
               </View>
 
-              <View style={[styles.summaryCard, { padding: rs(18, 12, 20) }]}>
+              <View
+                style={[
+                  styles.summaryCard,
+                  {
+                    padding: rs(18, 14, 20),
+                    flexDirection: shouldStackSummary ? "column" : "row",
+                    alignItems: shouldStackSummary ? "stretch" : "center",
+                    gap: shouldStackSummary ? 16 : 0,
+                  },
+                ]}
+              >
                 <View style={styles.scoreCol}>
                   <Text
-                    style={[styles.cardTitle, { fontSize: rf(16, 12, 18) }]}
+                    style={[styles.cardTitle, { fontSize: rf(16, 13, 18) }]}
                   >
                     Sleep Score
                   </Text>
 
                   <Text
-                    style={[styles.scoreValue, { fontSize: rf(48, 34, 52) }]}
+                    style={[styles.scoreValue, { fontSize: rf(46, 34, 52) }]}
                   >
                     {sleepScore}
                   </Text>
@@ -364,27 +479,27 @@ const SleepPage = () => {
                   <Text
                     style={[styles.scoreStatus, { fontSize: rf(20, 15, 22) }]}
                   >
-                    Good
+                    {sleepStatus}
                   </Text>
 
                   {!isSmallPhone && (
                     <Text style={styles.scoreNote}>
-                      You slept better than 78% of users
+                      Average this week: {formatSleepTime(averageSleep)}
                     </Text>
                   )}
                 </View>
 
-                <View style={styles.divider} />
+                {!shouldStackSummary ? <View style={styles.divider} /> : null}
 
                 <View style={styles.durationCol}>
                   <Text
-                    style={[styles.cardTitle, { fontSize: rf(16, 12, 18) }]}
+                    style={[styles.cardTitle, { fontSize: rf(16, 13, 18) }]}
                   >
                     Sleep Duration
                   </Text>
 
                   <Text
-                    style={[styles.durationValue, { fontSize: rf(34, 24, 38) }]}
+                    style={[styles.durationValue, { fontSize: rf(32, 24, 38) }]}
                   >
                     {sleepText}
                   </Text>
@@ -392,25 +507,36 @@ const SleepPage = () => {
                   <Text style={styles.goalText}>of 8h goal</Text>
                 </View>
 
-                <ProgressRing
-                  percent={sleepPercent}
-                  color={COLORS.taguigBlue}
-                  image={require("../assets/images/sleep/moon.png")}
-                  imageScale={0.32}
-                  size={rs(112, 88, 120)}
-                  strokeWidth={isSmallPhone ? 8 : 9}
-                  label="of goal"
-                />
+                <View
+                  style={[
+                    styles.ringWrap,
+                    shouldStackSummary && styles.ringWrapStacked,
+                  ]}
+                >
+                  <ProgressRing
+                    percent={sleepPercent}
+                    color={COLORS.taguigBlue}
+                    image={require("../assets/images/sleep/moon.png")}
+                    imageScale={0.32}
+                    size={ringSize}
+                    strokeWidth={isSmallPhone ? 8 : 9}
+                    label="of goal"
+                  />
+                </View>
               </View>
 
-              <View style={styles.tipPill}>
+              <Pressable
+                style={styles.tipPill}
+                accessibilityRole="button"
+                accessibilityLabel="Sleep tip"
+              >
                 <Image
                   source={require("../assets/images/sleep/bed.png")}
                   style={styles.tipImage}
                   resizeMode="contain"
                 />
 
-                <View style={{ flex: 1 }}>
+                <View style={styles.tipCopy}>
                   <Text style={styles.tipTitle}>
                     Maintain a consistent sleep schedule
                   </Text>
@@ -419,50 +545,74 @@ const SleepPage = () => {
                   </Text>
                 </View>
 
-                <Ionicons
+                {/* <Ionicons
                   name="chevron-forward"
                   size={22}
                   color={COLORS.taguigBlue}
-                />
-              </View>
-
+                /> */}
+              </Pressable>
+              {/* 
               <View style={styles.metricsCard}>
                 <SleepMetric
                   image={require("../assets/images/sleep/moon.png")}
                   title="Time in Bed"
-                  value="7h 45m"
-                  status="Good"
+                  value={sleepText}
+                  status={sleepStatus}
+                  compact={metricCompact}
                 />
                 <SleepMetric
                   image={require("../assets/images/sleep/bed.png")}
                   title="Deep Sleep"
                   value="2h 15m"
                   status="Good"
+                  compact={metricCompact}
                 />
                 <SleepMetric
                   image={require("../assets/images/sleep/zzz.png")}
                   title="Light Sleep"
                   value="3h 45m"
                   status="Average"
+                  compact={metricCompact}
                 />
                 <SleepMetric
                   image={require("../assets/images/sleep/sun.png")}
                   title="Awake"
                   value="45m"
                   status="Good"
+                  compact={metricCompact}
                 />
-              </View>
+              </View> */}
 
               <View style={styles.chartCard}>
                 <View style={styles.chartHeader}>
-                  <Text style={styles.sectionTitle}>Sleep Stages</Text>
-                  <Text style={styles.learnMore}>ⓘ Learn more</Text>
+                  <Text style={styles.sectionTitle}>Last 7 Days</Text>
+                  <Text style={styles.learnMore}>Goal 8h</Text>
                 </View>
 
-                <View style={styles.sleepStagePlaceholder}>
-                  <Text style={styles.placeholderText}>
-                    Sleep stages chart placeholder
-                  </Text>
+                <View style={styles.weekChart}>
+                  {last7Days.map((item) => {
+                    const barPercent = Math.min(
+                      100,
+                      (item.hours / sleepGoal) * 100,
+                    );
+
+                    return (
+                      <View key={item.date} style={styles.dayColumn}>
+                        <View style={styles.barTrack}>
+                          <View
+                            style={[
+                              styles.barFill,
+                              { height: `${Math.max(barPercent, 6)}%` },
+                            ]}
+                          />
+                        </View>
+                        <Text style={styles.barValue}>
+                          {item.hours > 0 ? `${item.hours.toFixed(1)}h` : "0h"}
+                        </Text>
+                        <Text style={styles.dayLabel}>{item.date}</Text>
+                      </View>
+                    );
+                  })}
                 </View>
               </View>
 
@@ -475,6 +625,14 @@ const SleepPage = () => {
   );
 };
 
+const cardShadow = {
+  shadowColor: "#000",
+  shadowOpacity: 0.08,
+  shadowRadius: 14,
+  shadowOffset: { width: 0, height: 6 },
+  elevation: 5,
+};
+
 const styles = StyleSheet.create({
   bg: {
     flex: 1,
@@ -485,39 +643,49 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   topBar: {
+    width: "100%",
+    alignSelf: "center",
+    paddingHorizontal: 16,
+    paddingTop: 12,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
   circleBtn: {
-    marginLeft: 18,
-    marginTop: 18,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    ...cardShadow,
+  },
+  devPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "#EAF2FF",
+    borderWidth: 1,
+    borderColor: "#D8E6FF",
+  },
+  devPillText: {
+    fontSize: 11,
+    fontWeight: "900",
+    color: COLORS.taguigBlue,
   },
   content: {
-    paddingHorizontal: 22,
+    width: "100%",
+    alignSelf: "center",
     paddingTop: 14,
     paddingBottom: 120,
     gap: 14,
   },
   centerCard: {
-    backgroundColor: COLORS.surfaceMuted,
+    backgroundColor: "#FFFFFF",
     borderRadius: 20,
     padding: 20,
     borderWidth: 1,
     borderColor: COLORS.surfaceBorder,
     alignItems: "center",
     gap: 12,
+    ...cardShadow,
   },
   title: {
     fontSize: 18,
@@ -527,12 +695,14 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 14,
+    lineHeight: 20,
     textAlign: "center",
     color: COLORS.textPrimary,
     opacity: 0.75,
   },
   errorText: {
     fontSize: 14,
+    lineHeight: 20,
     textAlign: "center",
     color: COLORS.dangerRed,
   },
@@ -541,6 +711,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 14,
+    minHeight: 44,
+    justifyContent: "center",
   },
   primaryBtnText: {
     color: COLORS.textInverse,
@@ -549,87 +721,35 @@ const styles = StyleSheet.create({
   secondaryBtn: {
     paddingHorizontal: 16,
     paddingVertical: 12,
+    minHeight: 44,
+    justifyContent: "center",
   },
   secondaryBtnText: {
     color: COLORS.primary,
     fontWeight: "800",
   },
-  heroCard: {
-    backgroundColor: COLORS.surfaceMuted,
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceBorder,
-  },
-  heroLabel: {
-    fontSize: 14,
-    opacity: 0.7,
-    marginBottom: 6,
-  },
-  heroValue: {
-    fontSize: 34,
-    fontWeight: "900",
-    color: COLORS.textPrimary,
-  },
-  heroSub: {
-    marginTop: 4,
-    fontSize: 14,
-    opacity: 0.7,
-  },
-  section: {
-    backgroundColor: COLORS.surfaceMuted,
-    borderRadius: 20,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceBorder,
-  },
-
-  row: {
-    paddingVertical: 14,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.surfaceBorder,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  dayText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: COLORS.textPrimary,
-  },
-  countText: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: COLORS.textPrimary,
-  },
-
   hero: {
     justifyContent: "center",
     position: "relative",
+    overflow: "hidden",
   },
-
   heroText: {
     zIndex: 3,
   },
-
   heroTitle: {
     fontWeight: "900",
   },
-
   blue: {
     color: COLORS.taguigBlue,
   },
-
   red: {
     color: COLORS.taguigRed,
   },
-
   heroSubText: {
     marginTop: 8,
     fontWeight: "700",
     color: COLORS.textSecondary,
   },
-
   yellowLine: {
     marginTop: 12,
     width: 54,
@@ -637,48 +757,43 @@ const styles = StyleSheet.create({
     borderRadius: 99,
     backgroundColor: COLORS.taguigYellow,
   },
-
   heroImage: {
     position: "absolute",
     zIndex: 2,
   },
-
   summaryCard: {
     borderRadius: 26,
     backgroundColor: "#FFFFFF",
-    flexDirection: "row",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 5,
+    ...cardShadow,
   },
-
   scoreCol: {
     flex: 0.9,
+    minWidth: 82,
   },
-
   durationCol: {
     flex: 1,
+    minWidth: 94,
   },
-
+  ringWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ringWrapStacked: {
+    alignSelf: "center",
+  },
   cardTitle: {
     fontWeight: "900",
     color: COLORS.textPrimary,
   },
-
   scoreValue: {
     marginTop: 8,
     fontWeight: "900",
     color: COLORS.taguigBlue,
   },
-
   scoreStatus: {
     fontWeight: "900",
     color: COLORS.taguigBlue,
   },
-
   scoreNote: {
     marginTop: 8,
     fontSize: 11,
@@ -686,88 +801,81 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: COLORS.textSecondary,
   },
-
   durationValue: {
     marginTop: 8,
     fontWeight: "900",
     color: COLORS.textPrimary,
   },
-
   goalText: {
     fontSize: 12,
     fontWeight: "700",
     color: COLORS.textSecondary,
   },
-
   divider: {
     width: 1,
-    height: 100,
+    height: 96,
     backgroundColor: "#EEF1F7",
     marginHorizontal: 12,
   },
-
   tipPill: {
-    marginTop: 14,
-    borderRadius: 14,
+    borderRadius: 16,
     backgroundColor: "#EAF2FF",
     padding: 12,
+    minHeight: 64,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
   },
-
   tipImage: {
     width: 42,
     height: 42,
   },
-
-  tipIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.taguigBlue,
-    alignItems: "center",
-    justifyContent: "center",
+  tipCopy: {
+    flex: 1,
+    minWidth: 0,
   },
-
   tipTitle: {
     fontSize: 15,
     fontWeight: "900",
     color: COLORS.textPrimary,
   },
-
   tipText: {
     marginTop: 2,
     fontSize: 11,
+    lineHeight: 15,
     fontWeight: "700",
     color: COLORS.textSecondary,
   },
-
   metricsCard: {
     borderRadius: 24,
     backgroundColor: "#FFFFFF",
-    paddingVertical: 14,
+    padding: 12,
     flexDirection: "row",
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 3,
+    flexWrap: "wrap",
+    gap: 10,
+    ...cardShadow,
   },
-
   sleepMetric: {
-    flex: 1,
+    flexBasis: "22%",
+    flexGrow: 1,
+    minWidth: 72,
     alignItems: "center",
-    paddingHorizontal: 4,
-    borderRightWidth: 1,
-    borderRightColor: "#EEF1F7",
+    padding: 8,
+    borderRadius: 18,
+    backgroundColor: "#F8FAFF",
   },
-
+  sleepMetricCompact: {
+    flexBasis: "45%",
+    minWidth: 130,
+  },
   metricImage: {
     width: 42,
     height: 42,
   },
-
+  metricImageCompact: {
+    width: 36,
+    height: 36,
+  },
   metricTitle: {
     marginTop: 6,
     fontSize: 10,
@@ -775,114 +883,93 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     textAlign: "center",
   },
-
+  metricTitleCompact: {
+    fontSize: 11,
+  },
   metricValue: {
     marginTop: 4,
     fontSize: 16,
     fontWeight: "900",
     color: COLORS.textPrimary,
   },
-
+  metricValueCompact: {
+    fontSize: 15,
+  },
   metricStatus: {
     marginTop: 2,
     fontSize: 9,
     fontWeight: "800",
+    color: COLORS.textSecondary,
   },
-
   chartCard: {
     borderRadius: 24,
     backgroundColor: "#FFFFFF",
     padding: 14,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 3,
+    ...cardShadow,
   },
   chartHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: 12,
     marginBottom: 12,
   },
-
   sectionTitle: {
     fontSize: 17,
     fontWeight: "900",
     color: COLORS.textPrimary,
   },
-
   learnMore: {
     fontSize: 12,
     fontWeight: "900",
     color: COLORS.taguigBlue,
   },
-
-  sleepStagePlaceholder: {
-    height: 135,
+  weekChart: {
+    height: 180,
     borderRadius: 16,
-    backgroundColor: "#F3F6FB",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  placeholderText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: COLORS.textSecondary,
-  },
-
-  bottomGrid: {
-    marginTop: 18,
+    backgroundColor: "#F8FAFF",
+    paddingHorizontal: 10,
+    paddingTop: 16,
+    paddingBottom: 10,
     flexDirection: "row",
-    gap: 10,
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 6,
   },
-
-  smallCard: {
+  dayColumn: {
     flex: 1,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    padding: 12,
+    height: "100%",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 3,
+    justifyContent: "flex-end",
+    minWidth: 0,
   },
-
-  smallTitle: {
-    fontSize: 13,
+  barTrack: {
+    flex: 1,
+    width: "72%",
+    maxWidth: 28,
+    minWidth: 14,
+    borderRadius: 999,
+    backgroundColor: "#E6ECF8",
+    justifyContent: "flex-end",
+    overflow: "hidden",
+  },
+  barFill: {
+    width: "100%",
+    borderRadius: 999,
+    backgroundColor: COLORS.taguigBlue,
+  },
+  barValue: {
+    marginTop: 6,
+    fontSize: 9,
     fontWeight: "900",
     color: COLORS.textPrimary,
   },
-
-  smallSub: {
-    marginTop: 3,
+  dayLabel: {
+    marginTop: 4,
     fontSize: 10,
     fontWeight: "700",
     color: COLORS.textSecondary,
-    textAlign: "center",
-  },
-
-  smallValue: {
-    marginTop: 8,
-    fontSize: 22,
-    fontWeight: "900",
-    color: COLORS.taguigBlue,
-  },
-
-  greenText: {
-    marginTop: 4,
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#16A34A",
-    textAlign: "center",
-  },
-
-  banner: {
-    marginTop: 20,
-    alignSelf: "center",
   },
 });
+
 export default SleepPage;
