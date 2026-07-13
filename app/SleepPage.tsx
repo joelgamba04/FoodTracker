@@ -127,9 +127,7 @@ const SleepPage = () => {
   const shouldStackSummary = width < 370;
   const metricCompact = width < 390;
 
-  const [state, setState] = useState<PageState>(
-    USE_SAMPLE_SLEEP_DATA ? "ready" : "connect_prompt",
-  );
+  const [state, setState] = useState<PageState>("connect_prompt");
   const [error, setError] = useState<string | null>(null);
   const { refreshHealth, data, loading, error: healthError } = useHealth();
 
@@ -168,11 +166,6 @@ const SleepPage = () => {
     });
 
   const load = useCallback(async () => {
-    if (USE_SAMPLE_SLEEP_DATA) {
-      setState("ready");
-      return;
-    }
-
     try {
       setError(null);
 
@@ -210,11 +203,6 @@ const SleepPage = () => {
   }, [refreshHealth]);
 
   useEffect(() => {
-    if (USE_SAMPLE_SLEEP_DATA) {
-      setState("ready");
-      return;
-    }
-
     if (loading) return;
 
     if (healthError) {
@@ -239,11 +227,6 @@ const SleepPage = () => {
   }, [loading, healthError, data]);
 
   useEffect(() => {
-    if (USE_SAMPLE_SLEEP_DATA) {
-      setState("ready");
-      return;
-    }
-
     let active = true;
 
     const bootstrap = async () => {
@@ -410,7 +393,7 @@ const SleepPage = () => {
             </View>
           ) : null}
 
-          {state === "ready" ? (
+          {state === "ready" || USE_SAMPLE_SLEEP_DATA ? (
             <>
               <View style={[styles.hero, { minHeight: rs(190, 155, 220) }]}>
                 <View style={styles.heroText}>
