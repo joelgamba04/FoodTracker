@@ -161,18 +161,30 @@ export const HistoryPage = () => {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.center}>
-        <ActivityIndicator />
-        <Text style={styles.dim}>Loading history…</Text>
-      </SafeAreaView>
+      <ImageBackground
+        source={require("../../assets/images/foodlogbg.png")}
+        style={styles.bg}
+        resizeMode="cover"
+      >
+        <SafeAreaView style={styles.center}>
+          <ActivityIndicator />
+          <Text style={styles.dim}>Loading history…</Text>
+        </SafeAreaView>
+      </ImageBackground>
     );
   }
 
   if (!log || log.length === 0) {
     return (
-      <SafeAreaView style={styles.center}>
-        <Text style={styles.h1}>No history yet</Text>
-      </SafeAreaView>
+      <ImageBackground
+        source={require("../../assets/images/foodlogbg.png")}
+        style={styles.bg}
+        resizeMode="cover"
+      >
+        <SafeAreaView style={styles.center}>
+          <Text style={styles.h1}>No history yet</Text>
+        </SafeAreaView>
+      </ImageBackground>
     );
   }
 
@@ -303,7 +315,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
-    backgroundColor: COLORS.background,
+    backgroundColor: "transparent",
   },
   dim: { opacity: 0.7, marginTop: 6, color: COLORS.textSecondary },
   h1: {

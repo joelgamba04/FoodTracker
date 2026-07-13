@@ -81,22 +81,29 @@ export const NutritionPage = () => {
   // Better empty state: no food AND no water
   if (!hasFood && !hasWater) {
     return (
-      <SafeAreaView
-        style={[
-          styles.container,
-          {
-            alignItems: "center",
-            justifyContent: "center",
-            paddingBottom: insets.bottom,
-          },
-        ]}
+      <ImageBackground
+        source={require("../../assets/images/foodlogbg.png")}
+        style={styles.bg}
+        resizeMode="cover"
       >
-        <Text style={styles.emptyHeading}>Today’s Logs</Text>
-        <Text style={styles.emptyText}>Nothing to analyze yet!</Text>
-        <Text style={styles.emptyText}>
-          Add water from the Water icon, or log food to see totals and progress.
-        </Text>
-      </SafeAreaView>
+        <SafeAreaView
+          style={[
+            styles.container,
+            {
+              alignItems: "center",
+              justifyContent: "center",
+              paddingBottom: insets.bottom,
+            },
+          ]}
+        >
+          <Text style={styles.emptyHeading}>Today’s Logs</Text>
+          <Text style={styles.emptyText}>Nothing to analyze yet!</Text>
+          <Text style={styles.emptyText}>
+            Add water from the Water icon, or log food to see totals and
+            progress.
+          </Text>
+        </SafeAreaView>
+      </ImageBackground>
     );
   }
 
