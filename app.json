@@ -2,7 +2,7 @@
   "expo": {
     "name": "Taguig NutriApp",
     "slug": "Taguig-NutriApp",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/images/FixedSquareNoBg.png",
     "scheme": "taguig-nutriapp",
@@ -27,8 +27,7 @@
       "permissions": [
         "android.permission.health.READ_STEPS",
         "android.permission.health.READ_SLEEP"
-      ],
-      "versionCode": 2
+      ]
     },
     "web": {
       "output": "static",
