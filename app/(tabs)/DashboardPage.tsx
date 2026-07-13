@@ -29,7 +29,7 @@ import { getTodayWindow } from "@/utils/date";
 
 import MetricLine from "@/components/MetricLine";
 import ProgressRing from "@/components/ProgressRing";
-import SleepQualityChart from "@/components/SleepChart";
+import SleepChart from "@/components/SleepChart";
 import SmallMetricCard from "@/components/SmallMetricCard";
 import StepsChart from "@/components/StepsChart";
 
@@ -92,6 +92,7 @@ export const DashboardPage = () => {
 
   const hasStepsData = typeof todaySteps === "number" && todaySteps > 0;
   const hasSleepData = typeof lastNightHours === "number" && lastNightHours > 0;
+  const sleepGoal = 8;
 
   // refresh
   const [refreshing, setRefreshing] = useState(false);
@@ -221,23 +222,7 @@ export const DashboardPage = () => {
       return [];
     }
 
-    return weeklySleep.map((item: any) => {
-      const hours =
-        typeof item.hours === "number"
-          ? item.hours
-          : typeof item.durationHours === "number"
-            ? item.durationHours
-            : typeof item.totalHours === "number"
-              ? item.totalHours
-              : 0;
-
-      return {
-        label: new Date(item.date).toLocaleDateString("en-US", {
-          weekday: "short",
-        }),
-        value: Math.min(100, Math.round((hours / 8) * 100)),
-      };
-    });
+    return weeklySleep;
   }, [health?.sleep?.last7Days, healthConnected]);
 
   const onRefresh = useCallback(async () => {
@@ -530,7 +515,7 @@ export const DashboardPage = () => {
                   numberOfLines={1}
                   adjustsFontSizeToFit
                 >
-                  Sleep Quality
+                  Sleep
                 </Text>
 
                 <Text style={styles.chartPeriod}>7 Days</Text>
@@ -541,11 +526,10 @@ export const DashboardPage = () => {
                   <Text style={styles.placeholderText}>No Sleep Data</Text>
                 </View>
               ) : (
-                <SleepQualityChart
+                <SleepChart
                   data={sleepChartData}
-                  width={chartWidth}
-                  height={isSmallPhone ? 150 : 170}
-                  maxValue={100}
+                  goal={sleepGoal}
+                  compact={isSmallPhone}
                 />
               )}
             </View>

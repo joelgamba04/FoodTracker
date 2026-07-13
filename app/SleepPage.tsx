@@ -18,6 +18,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import ProgressRing from "@/components/ProgressRing";
+import SleepChart from "@/components/SleepChart";
 import { useHealth } from "@/hooks/useHealth";
 import { SleepDay } from "@/models/sleepModel";
 import {
@@ -54,7 +55,7 @@ const USE_SAMPLE_SLEEP_DATA = __DEV__;
 const SAMPLE_SLEEP = {
   lastNightHours: 7.75,
   last7Days: [
-    { date: "Mon", hours: 7 },
+    { date: "Mon", hours: 8 },
     { date: "Tue", hours: 6 },
     { date: "Wed", hours: 9 },
     { date: "Thu", hours: 7 },
@@ -516,11 +517,9 @@ const SleepPage = () => {
                   <ProgressRing
                     percent={sleepPercent}
                     color={COLORS.taguigBlue}
-                    image={require("../assets/images/sleep/moon.png")}
-                    imageScale={0.32}
                     size={ringSize}
                     strokeWidth={isSmallPhone ? 8 : 9}
-                    label="of goal"
+                    label="of 8h goal"
                   />
                 </View>
               </View>
@@ -584,36 +583,11 @@ const SleepPage = () => {
               </View> */}
 
               <View style={styles.chartCard}>
-                <View style={styles.chartHeader}>
-                  <Text style={styles.sectionTitle}>Last 7 Days</Text>
-                  <Text style={styles.learnMore}>Goal 8h</Text>
-                </View>
-
-                <View style={styles.weekChart}>
-                  {last7Days.map((item) => {
-                    const barPercent = Math.min(
-                      100,
-                      (item.hours / sleepGoal) * 100,
-                    );
-
-                    return (
-                      <View key={item.date} style={styles.dayColumn}>
-                        <View style={styles.barTrack}>
-                          <View
-                            style={[
-                              styles.barFill,
-                              { height: `${Math.max(barPercent, 6)}%` },
-                            ]}
-                          />
-                        </View>
-                        <Text style={styles.barValue}>
-                          {item.hours > 0 ? `${item.hours.toFixed(1)}h` : "0h"}
-                        </Text>
-                        <Text style={styles.dayLabel}>{item.date}</Text>
-                      </View>
-                    );
-                  })}
-                </View>
+                <SleepChart
+                  data={last7Days}
+                  goal={sleepGoal}
+                  compact={isSmallPhone}
+                />
               </View>
 
               <View style={{ height: 110 }} />
@@ -903,8 +877,8 @@ const styles = StyleSheet.create({
   },
   chartCard: {
     borderRadius: 24,
+    overflow: "hidden",
     backgroundColor: "#FFFFFF",
-    padding: 14,
     ...cardShadow,
   },
   chartHeader: {

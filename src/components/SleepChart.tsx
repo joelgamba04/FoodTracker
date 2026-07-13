@@ -1,107 +1,185 @@
-import React from "react";
-import Svg, {
-  Circle,
-  Defs,
-  LinearGradient,
-  Path,
-  Stop,
-  Text as SvgText,
-} from "react-native-svg";
+// src/components/SleepChart.tsx
 
-export type ChartPoint = {
-  label: string;
-  value: number;
+import { SleepDay } from "@/models/sleepModel";
+import { COLORS } from "@/theme/color";
+import React, { memo, useMemo } from "react";
+import { StyleSheet, Text, View } from "react-native";
+
+type SleepChartProps = {
+  data: SleepDay[];
+  goal?: number;
+  showHeader?: boolean;
+  compact?: boolean;
 };
 
-type SleepQualityChartProps = {
-  data: ChartPoint[];
-  width?: number;
-  height?: number;
-  maxValue?: number;
+const formatDayLabel = (value: string) => {
+  // Supports both "Mon" and ISO/date strings such as "2026-07-07".
+  if (/^[A-Za-z]{3}$/.test(value)) return value;
+
+  const date = new Date(`${value}T00:00:00`);
+
+  if (Number.isNaN(date.getTime())) {
+    return value.slice(0, 3);
+  }
+
+  return date.toLocaleDateString("en-US", { weekday: "short" });
 };
 
-const SleepQualityChart = ({
+const SleepChart = ({
   data,
-  width = 320,
-  height = 170,
-  maxValue = 100,
-}: SleepQualityChartProps) => {
-  const min = 0;
-  const chartTop = 15;
-  const chartBottom = 32;
-  const chartHeight = height - chartTop - chartBottom;
-  const chartLeft = 32;
-  const chartWidth = width - chartLeft - 10;
-
-  const points = data.map((item, index) => {
-    const x = chartLeft + (index / (data.length - 1)) * chartWidth;
-    const y =
-      chartTop +
-      chartHeight -
-      ((item.value - min) / (maxValue - min)) * chartHeight;
-
-    return { ...item, x, y };
-  });
-
-  const linePath = points
-    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
-    .join(" ");
-
-  const areaPath = `
-    ${linePath}
-    L ${points[points.length - 1].x} ${chartTop + chartHeight}
-    L ${points[0].x} ${chartTop + chartHeight}
-    Z
-  `;
+  goal = 8,
+  showHeader = true,
+  compact = false,
+}: SleepChartProps) => {
+  const chartData = useMemo(
+    () =>
+      data.slice(-7).map((item) => ({
+        ...item,
+        hours: Number.isFinite(item.hours) ? Math.max(item.hours, 0) : 0,
+        dayLabel: formatDayLabel(item.date),
+      })),
+    [data],
+  );
 
   return (
-    <Svg width={width} height={height}>
-      <Defs>
-        <LinearGradient id="sleepFill" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#0B3D91" stopOpacity="0.22" />
-          <Stop offset="1" stopColor="#0B3D91" stopOpacity="0.02" />
-        </LinearGradient>
-      </Defs>
+    <View style={[styles.container, compact && styles.containerCompact]}>
+      {showHeader ? (
+        <View style={styles.header}>
+          <Text style={styles.title}>Last 7 Days</Text>
+          <Text style={styles.goal}>Goal {goal}h</Text>
+        </View>
+      ) : null}
 
-      {[0, 25, 50, 75, 100].map((tick) => {
-        const y = chartTop + chartHeight - (tick / maxValue) * chartHeight;
+      <View style={[styles.chart, compact && styles.chartCompact]}>
+        {chartData.map((item, index) => {
+          const percent =
+            goal > 0 ? Math.min(100, (item.hours / goal) * 100) : 0;
 
-        return (
-          <React.Fragment key={tick}>
-            <SvgText x={0} y={y + 4} fontSize="9" fill="#9CA3AF">
-              {tick}
-            </SvgText>
+          return (
+            <View
+              key={`${item.date}-${index}`}
+              style={styles.dayColumn}
+              accessible
+              accessibilityLabel={`${item.dayLabel}: ${item.hours.toFixed(1)} hours`}
+            >
+              <View style={styles.track}>
+                {item.hours > 0 ? (
+                  <View
+                    style={[
+                      styles.fill,
+                      {
+                        height: `${Math.max(percent, 7)}%`,
+                      },
+                    ]}
+                  />
+                ) : null}
+              </View>
 
-            <Path
-              d={`M ${chartLeft} ${y} L ${width} ${y}`}
-              stroke="#DCEAFF"
-              strokeWidth={1}
-              strokeDasharray="5 5"
-            />
-          </React.Fragment>
-        );
-      })}
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+                style={styles.value}
+              >
+                {item.hours > 0 ? `${item.hours.toFixed(1)}h` : "0h"}
+              </Text>
 
-      <Path d={areaPath} fill="url(#sleepFill)" />
-      <Path d={linePath} stroke="#0B3D91" strokeWidth={3} fill="none" />
-
-      {points.map((point) => (
-        <React.Fragment key={point.label}>
-          <Circle cx={point.x} cy={point.y} r={4} fill="#0B3D91" />
-
-          <SvgText
-            x={point.x}
-            y={height - 8}
-            fontSize="10"
-            fill="#6B7280"
-            textAnchor="middle"
-          >
-            {point.label}
-          </SvgText>
-        </React.Fragment>
-      ))}
-    </Svg>
+              <Text numberOfLines={1} style={styles.day}>
+                {item.dayLabel}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
   );
 };
 
-export default SleepQualityChart;
+const styles = StyleSheet.create({
+  container: {
+    width: "100%",
+    borderRadius: 18,
+    backgroundColor: "#FFFFFF",
+    padding: 14,
+  },
+  containerCompact: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  header: {
+    minHeight: 24,
+    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  title: {
+    flexShrink: 1,
+    fontSize: 16,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+  goal: {
+    flexShrink: 0,
+    fontSize: 11,
+    fontWeight: "900",
+    color: COLORS.taguigBlue,
+  },
+  chart: {
+    height: 170,
+    borderRadius: 16,
+    backgroundColor: "#F8FAFF",
+    paddingTop: 14,
+    paddingBottom: 10,
+    paddingHorizontal: 8,
+    flexDirection: "row",
+    alignItems: "stretch",
+    gap: 5,
+  },
+  chartCompact: {
+    height: 150,
+    paddingHorizontal: 6,
+    gap: 3,
+  },
+  dayColumn: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "center",
+  },
+  track: {
+    flex: 1,
+    width: "70%",
+    minWidth: 12,
+    maxWidth: 24,
+    borderRadius: 999,
+    overflow: "hidden",
+    justifyContent: "flex-end",
+    backgroundColor: "#E6ECF8",
+  },
+  fill: {
+    width: "100%",
+    borderRadius: 999,
+    backgroundColor: COLORS.taguigBlue,
+  },
+  value: {
+    width: "100%",
+    marginTop: 6,
+    fontSize: 9,
+    lineHeight: 12,
+    fontWeight: "900",
+    textAlign: "center",
+    color: COLORS.textPrimary,
+  },
+  day: {
+    width: "100%",
+    marginTop: 2,
+    fontSize: 9,
+    lineHeight: 12,
+    fontWeight: "700",
+    textAlign: "center",
+    color: COLORS.textSecondary,
+  },
+});
+
+export default memo(SleepChart);
