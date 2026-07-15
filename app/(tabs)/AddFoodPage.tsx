@@ -76,14 +76,22 @@ const MealCard = ({ item, index, onPress }: any) => {
           {item?.name ?? "Food"}
         </Text>
 
-        <View style={styles.mealPill}>
-          <Text style={styles.mealPillText}>{item?.category ?? "New"}</Text>
-        </View>
+        {!!item?.english_name && (
+          <Text style={styles.mealPillText}>{item?.english_name ?? ""}</Text>
+        )}
+
+        {!!item?.category && (
+          <View style={styles.mealPill}>
+            <Text style={styles.mealPillText}>{item?.category ?? ""}</Text>
+          </View>
+        )}
 
         <View style={styles.mealMetaRow}>
           <Text style={styles.mealMeta}>🔥 {item.calories ?? 100} kcal</Text>
           <Text style={styles.mealDivider}>|</Text>
-          <Text style={styles.mealMeta}>⚖️ {item?.servingSize ?? "160 g"}</Text>
+          <Text style={styles.mealMeta}>
+            ⚖️ per {item?.servingSize ?? "100 g"}
+          </Text>
         </View>
       </View>
 
@@ -459,6 +467,20 @@ export const AddFoodPage = () => {
                       {selected?.name ?? selected?.name ?? "Food"}
                     </Text>
                   </Text>
+                  {!!selected?.english_name &&
+                    selected.english_name !== selected.name && (
+                      <Text style={styles.foodsubtitle}>
+                        {selected.english_name}
+                      </Text>
+                    )}
+
+                  {!!selected?.category && (
+                    <View style={styles.categoryPill}>
+                      <Text style={styles.foodsubtitle}>
+                        {selected.category}
+                      </Text>
+                    </View>
+                  )}
 
                   <View style={{ flexDirection: "row", marginVertical: 12 }}>
                     <Pressable onPress={() => setUseGrams(false)}>
@@ -490,7 +512,6 @@ export const AddFoodPage = () => {
                       </Text>
                     </Pressable>
                   </View>
-
                   {useGrams ? (
                     <TextInput
                       value={String(grams)}
@@ -566,7 +587,6 @@ export const AddFoodPage = () => {
                       </View>
                     </View>
                   </View>
-
                   <Pressable
                     style={[styles.addMealBtn, !canLog && { opacity: 0.5 }]}
                     disabled={!canLog}
@@ -864,6 +884,12 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "900",
     color: COLORS.textPrimary,
+  },
+
+  foodsubtitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: COLORS.textSecondary,
   },
 
   categoryPill: {
