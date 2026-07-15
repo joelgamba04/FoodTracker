@@ -110,9 +110,9 @@ export const AddFoodPage = () => {
   const compactMode = hasQuery || !!selected;
 
   const [useGrams, setUseGrams] = useState(false);
-  const [grams, setGrams] = useState<number>(0);
+  const [grams, setGrams] = useState<number>(100);
 
-  const canLog = !!selected && (qty > 0 || (useGrams && grams > 0));
+  const canLog = !!selected && (!useGrams || (useGrams && grams > 0));
   const [isFocused, setIsFocused] = useState(false);
 
   const formatServing = (value: number) => {
@@ -155,8 +155,12 @@ export const AddFoodPage = () => {
         nutrientSummary,
       });
 
+      // Reset state after logging
       setSelected(null);
       setSearch("");
+      setQty(1);
+      setUseGrams(false);
+      setGrams(100);
 
       router.back();
     } catch (error) {
