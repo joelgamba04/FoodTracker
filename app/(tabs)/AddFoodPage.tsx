@@ -312,6 +312,21 @@ export const AddFoodPage = () => {
     setGrams(Number(sanitized) || 0);
   };
 
+  const handleSearchChange = (text: string) => {
+    // As soon as the user starts another search, leave the selected-food view
+    // and show the search state/results immediately.
+    if (selected) {
+      setSelected(null);
+      setQty(1);
+      setUseGrams(false);
+      setGrams(100);
+    }
+
+    setSearch(text);
+    setPauseAutoSearch(false);
+    setSearchError(null);
+  };
+
   return (
     <ImageBackground
       source={require("../../assets/images/foodlogbg.png")}
@@ -387,11 +402,7 @@ export const AddFoodPage = () => {
               <View style={compactMode && styles.searchHeaderInput}>
                 <SearchBox
                   search={search}
-                  setSearch={(t: string) => {
-                    setSearch(t);
-                    setPauseAutoSearch(false);
-                    setSearchError(null);
-                  }}
+                  setSearch={handleSearchChange}
                   onSubmit={() => {
                     setPauseAutoSearch(false);
                     handleSearch(search);
