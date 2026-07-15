@@ -25,7 +25,8 @@ export const calculateNutrition = (
 ): NutritionTotals => {
   if (!food) return emptyNutrition;
 
-  const baseGrams = food.serving?.grams ?? 100;
+  // const baseGrams = food.serving?.grams ?? 100;
+  const baseGrams = 100;
   const totalGrams = useGrams ? grams : qty * baseGrams;
   const factor = baseGrams ? totalGrams / baseGrams : qty;
 
@@ -35,7 +36,7 @@ export const calculateNutrition = (
     fat: Math.round((food.fat ?? 0) * factor * 10) / 10,
     carbs: Math.round((food.carbs ?? 0) * factor * 10) / 10,
   };
-};
+};;
 
 // React hook: keep this for pages that calculate one selected food item.
 export const useNutrition = (

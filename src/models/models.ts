@@ -1,6 +1,5 @@
 // Internal models for FoodTracker
 // src/models/models.ts
-import { FoodMeasure } from "./foodModels";
 export type SyncStatus = "pending" | "synced" | "failed";
 
 export interface Nutrient {
@@ -17,7 +16,7 @@ export interface Food {
   servingSize: string; // e.g., "100g", "1 cup"
   nutrients: Nutrient[];
   englishName?: string; // Optional English name for the food
-  measures: FoodMeasure[];
+  // measures: FoodMeasure[];
 }
 
 export interface FoodServing {
@@ -35,12 +34,12 @@ export interface FoodItem {
   protein: number;
   fat: number;
   carbs: number;
-  serving: {
-    label?: string;
-    grams: number;
-    dimension?: string;
-    isDefault: boolean;
-  };
+  // serving: {
+  //   label?: string;
+  //   grams: number;
+  //   dimension?: string;
+  //   isDefault: boolean;
+  // };
 }
 export interface FoodLogEntry {
   localId: string;
