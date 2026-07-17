@@ -65,6 +65,14 @@ const getTimestampMs = (timestamp: unknown): number => {
   return NaN;
 };
 
+const getGreeting = () => {
+  const hour = new Date().getHours();
+
+  if (hour < 12) return "Morning";
+  if (hour < 18) return "Afternoon";
+  return "Evening";
+};
+
 // ---------- main screen ----------
 export const DashboardPage = () => {
   const { width, height } = useWindowDimensions();
@@ -287,7 +295,7 @@ export const DashboardPage = () => {
               ]}
             >
               <Text style={styles.redText}>Good </Text>
-              <Text style={styles.blueText}>Morning!</Text> 👋
+              <Text style={styles.blueText}>{getGreeting()}</Text> 👋
             </Text>
 
             <Text
