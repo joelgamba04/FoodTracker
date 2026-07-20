@@ -343,7 +343,7 @@ export const AddFoodPage = () => {
               style={compactMode ? styles.compactHeader : styles.fullHeader}
             >
               <Pressable
-                style={compactMode ? styles.searchBackBtn : styles.backBtn}
+                style={styles.backBtn}
                 onPress={() => {
                   if (selected) {
                     setSelected(null);
@@ -639,7 +639,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: "rgba(239, 27, 36, 0.12)",
+    backgroundColor: "white",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -757,15 +757,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
     marginBottom: 22,
-  },
-
-  searchBackBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(239, 27, 36, 0.12)",
-    alignItems: "center",
-    justifyContent: "center",
   },
 
   searchInput: {
