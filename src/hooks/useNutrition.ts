@@ -25,8 +25,8 @@ export const calculateNutrition = (
 ): NutritionTotals => {
   if (!food) return emptyNutrition;
 
-  // const baseGrams = food.serving?.grams ?? 100;
-  const baseGrams = 100;
+  const baseGrams = food.serving?.grams ?? 100;
+  // const baseGrams = 100;
   const totalGrams = useGrams ? grams : qty * baseGrams;
   const factor = baseGrams ? totalGrams / baseGrams : qty;
 

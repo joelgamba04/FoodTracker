@@ -16,7 +16,7 @@ export interface FoodDetail {
   protein_g: string;
   fat_g: string;
   energy_kcal: number;
-  // measures: FoodMeasure[];
+  measures: FoodMeasure[];
 }
 
 export interface FoodSearchResult {
