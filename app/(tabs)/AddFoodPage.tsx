@@ -29,6 +29,8 @@ import { FoodItem } from "@/models/models";
 import { searchFoods } from "@/services/foodSearchService";
 import { COLORS } from "@/theme/color";
 
+const isDevMode = __DEV__;
+
 const makeLocalId = () => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
@@ -60,7 +62,9 @@ const SearchBox = ({ search, setSearch, onSubmit, scan = false }: any) => (
 const MealCard = ({ item, index, onPress }: any) => {
   const colors = [COLORS.taguigRed, COLORS.taguigBlue, COLORS.taguigYellow];
 
-  // console.log("MealCard item:", item);
+  if (isDevMode){
+    console.log("MealCard item:", item);
+  }
 
   return (
     <Pressable style={styles.mealCard} onPress={onPress}>
@@ -90,7 +94,7 @@ const MealCard = ({ item, index, onPress }: any) => {
           <Text style={styles.mealMeta}>🔥 {item.calories ?? 100} kcal</Text>
           <Text style={styles.mealDivider}>|</Text>
           <Text style={styles.mealMeta}>
-            ⚖️ per {item?.servingSize ?? "100 g"}
+            ⚖️ per {item?.serving?.grams ?? "100"}g
           </Text>
         </View>
       </View>
@@ -198,7 +202,9 @@ export const AddFoodPage = () => {
 
     try {
       const res = await searchFoods(query);
-      // console.log("Search response:", res);
+      if (isDevMode) {
+        console.log("Search response:", res);
+      }
 
       if (seq !== searchSequence.current) {
         // A newer search has started, ignore this result
