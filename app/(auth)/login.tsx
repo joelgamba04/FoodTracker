@@ -1,4 +1,7 @@
 // app/(auth)/login.tsx
+import InfoPopupModal, {
+  type InfoPopupItem,
+} from "@/components/InfoPopupModal";
 import PrivacyPolicyModal from "@/components/PrivacyPolicyModal";
 import { PRIVACY_POLICY_ACCEPTED_KEY } from "@/constants/storageKeys";
 import { useAuth } from "@/context/AuthContext";
@@ -29,6 +32,39 @@ import {
 const { width } = Dimensions.get("window");
 const CARD_MAX_WIDTH = Math.min(420, width - 36);
 
+const GUEST_INFO_ITEMS: InfoPopupItem[] = [
+  {
+    icon: "person-outline",
+    title: "Limited features",
+    description:
+      "Some app features may be unavailable while using Taguig NutriApp as a guest.",
+  },
+  {
+    icon: "phone-portrait-outline",
+    title: "Data stays on this device",
+    description:
+      "Guest data is stored locally on your device and is not linked to a registered account.",
+  },
+  {
+    icon: "cloud-offline-outline",
+    title: "No account backup",
+    description:
+      "Your guest data may be lost if the app is removed, its data is cleared, or you change devices.",
+  },
+  {
+    icon: "sync-outline",
+    title: "No cross-device sync",
+    description:
+      "Guest information does not automatically sync between multiple devices.",
+  },
+  {
+    icon: "shield-checkmark-outline",
+    title: "Create an account later",
+    description:
+      "A registered account can provide access to account-based features, backup, and synchronization when available.",
+  },
+];
+
 export const LoginScreen = () => {
   const { login, loginAsGuest } = useAuth();
   const insets = useSafeAreaInsets();
@@ -44,6 +80,8 @@ export const LoginScreen = () => {
 
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [privacyVisible, setPrivacyVisible] = useState(false);
+
+  const [guestInfoVisible, setGuestInfoVisible] = useState(false);
 
   const canSubmit = useMemo(() => {
     const e = email.trim();
@@ -294,16 +332,28 @@ export const LoginScreen = () => {
                 </Text>
               </TouchableOpacity> */}
 
-                <TouchableOpacity
-                  onPress={onGuest}
-                  style={[
-                    styles.guestBtn,
-                    loading && styles.primaryBtnDisabled,
-                  ]}
-                  disabled={loading}
-                >
-                  <Text style={styles.guestText}>Continue as Guest</Text>
-                </TouchableOpacity>
+                <View style={styles.guestRow}>
+                  <TouchableOpacity
+                    onPress={onGuest}
+                    style={[
+                      styles.guestBtn,
+                      loading && styles.primaryBtnDisabled,
+                    ]}
+                    disabled={loading}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.guestText}>Continue as Guest</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => setGuestInfoVisible(true)}
+                    style={styles.guestInfoButton}
+                    accessibilityRole="button"
+                    accessibilityLabel="Learn about guest access"
+                  >
+                    <Text style={styles.guestInfoText}>?</Text>
+                  </TouchableOpacity>
+                </View>
 
                 <Text style={styles.legal}>
                   By continuing, you agree to the app’s terms and disclaimers.
@@ -320,6 +370,15 @@ export const LoginScreen = () => {
         <PrivacyPolicyModal
           visible={privacyVisible}
           onClose={() => setPrivacyVisible(false)}
+        />
+
+        <InfoPopupModal
+          visible={guestInfoVisible}
+          title="Continue as Guest"
+          description="What does continuing as a guest entail?"
+          items={GUEST_INFO_ITEMS}
+          buttonText="Got it"
+          onClose={() => setGuestInfoVisible(false)}
         />
       </SafeAreaView>
     </ImageBackground>
@@ -475,13 +534,44 @@ const styles = StyleSheet.create({
   },
   primaryBtnTextDisabled: { color: COLORS.disabledText },
 
-  guestBtn: {
+  guestRow: {
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 14,
+  },
+
+  guestBtn: {
+    flex: 1,
+
+    minHeight: 50,
+
     paddingVertical: 14,
+
     borderRadius: 16,
     borderWidth: 1,
     borderColor: COLORS.border,
+
     backgroundColor: COLORS.surfaceMuted,
+
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  guestInfoButton: {
+    width: 36,
+    height: 36,
+
+    marginLeft: 10,
+
+    alignItems: "center",
+    justifyContent: "center",
+
+    borderRadius: 18,
+  },
+
+  guestInfoText: {
+    fontSize: 18,
+    color: COLORS.textPrimary,
   },
   guestText: {
     textAlign: "center",
