@@ -7,6 +7,7 @@ import { PRIVACY_POLICY_ACCEPTED_KEY } from "@/constants/storageKeys";
 import { useAuth } from "@/context/AuthContext";
 import { isApiError } from "@/lib/apiClient";
 import { COLORS } from "@/theme/color";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useMemo, useRef, useState } from "react";
 import {
@@ -351,7 +352,11 @@ export const LoginScreen = () => {
                     accessibilityRole="button"
                     accessibilityLabel="Learn about guest access"
                   >
-                    <Text style={styles.guestInfoText}>?</Text>
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={24}
+                      color={COLORS.textMuted}
+                    />
                   </TouchableOpacity>
                 </View>
 
