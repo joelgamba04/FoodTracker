@@ -111,8 +111,10 @@ const SleepPage = () => {
   const { width, height } = useWindowDimensions();
   const router = useRouter();
 
-  const isTinyPhone = width < 360;
+  const isTinyPhone = width <= 360;
   const isSmallPhone = width < 390;
+  const isShortPhone = height <= 700;
+  const isCompactPhone = isSmallPhone && isShortPhone;
   const isTablet = width >= 768;
   const scale = Math.min(width / 390, height / 844);
 
@@ -123,9 +125,16 @@ const SleepPage = () => {
     Math.min(Math.max(size * scale, min), max);
 
   const contentMaxWidth = isTablet ? 560 : 430;
-  const ringSize = isTinyPhone ? 88 : isSmallPhone ? 96 : 112;
-  const shouldStackSummary = width < 370;
+  const ringSize = isCompactPhone
+    ? 74
+    : isTinyPhone
+      ? 82
+      : isSmallPhone
+        ? 94
+        : 112;
+  const shouldStackSummary = width < 335;
   const metricCompact = width < 390;
+  const horizontalPadding = isCompactPhone ? 14 : isSmallPhone ? 16 : 22;
 
   const [state, setState] = useState<PageState>("connect_prompt");
   const [error, setError] = useState<string | null>(null);
@@ -288,7 +297,7 @@ const SleepPage = () => {
           contentContainerStyle={[
             styles.content,
             {
-              paddingHorizontal: isSmallPhone ? 16 : 22,
+              paddingHorizontal: horizontalPadding,
               maxWidth: contentMaxWidth,
             },
           ]}
@@ -395,14 +404,19 @@ const SleepPage = () => {
 
           {state === "ready" || USE_SAMPLE_SLEEP_DATA ? (
             <>
-              <View style={[styles.hero, { minHeight: rs(190, 155, 220) }]}>
+              <View
+                style={[
+                  styles.hero,
+                  { minHeight: isCompactPhone ? 112 : rs(190, 155, 220) },
+                ]}
+              >
                 <View style={styles.heroText}>
                   <Text
                     style={[
                       styles.heroTitle,
                       {
-                        fontSize: rf(40, 30, 46),
-                        lineHeight: rf(44, 34, 50),
+                        fontSize: isCompactPhone ? 28 : rf(40, 30, 46),
+                        lineHeight: isCompactPhone ? 31 : rf(44, 34, 50),
                       },
                     ]}
                   >
@@ -411,7 +425,10 @@ const SleepPage = () => {
                   </Text>
 
                   <Text
-                    style={[styles.heroSubText, { fontSize: rf(16, 12, 18) }]}
+                    style={[
+                      styles.heroSubText,
+                      { fontSize: isCompactPhone ? 11 : rf(16, 12, 18) },
+                    ]}
                   >
                     Good sleep, better you.
                   </Text>
@@ -424,11 +441,19 @@ const SleepPage = () => {
                   style={[
                     styles.heroImage,
                     {
-                      width: isSmallPhone ? width * 0.45 : width * 0.52,
+                      width: isCompactPhone
+                        ? width * 0.34
+                        : isSmallPhone
+                          ? width * 0.45
+                          : width * 0.52,
                       height:
-                        (isSmallPhone ? width * 0.45 : width * 0.52) * 0.67,
-                      right: isSmallPhone ? -18 : -30,
-                      top: isSmallPhone ? 50 : 36,
+                        (isCompactPhone
+                          ? width * 0.34
+                          : isSmallPhone
+                            ? width * 0.45
+                            : width * 0.52) * 0.67,
+                      right: isCompactPhone ? -8 : isSmallPhone ? -18 : -30,
+                      top: isCompactPhone ? 32 : isSmallPhone ? 50 : 36,
                       opacity: isTinyPhone ? 0.9 : 1,
                     },
                   ]}
@@ -440,28 +465,37 @@ const SleepPage = () => {
                 style={[
                   styles.summaryCard,
                   {
-                    padding: rs(18, 14, 20),
+                    padding: isCompactPhone ? 12 : rs(18, 14, 20),
                     flexDirection: shouldStackSummary ? "column" : "row",
                     alignItems: shouldStackSummary ? "stretch" : "center",
-                    gap: shouldStackSummary ? 16 : 0,
+                    gap: shouldStackSummary ? 12 : 0,
                   },
                 ]}
               >
                 <View style={styles.scoreCol}>
                   <Text
-                    style={[styles.cardTitle, { fontSize: rf(16, 13, 18) }]}
+                    style={[
+                      styles.cardTitle,
+                      { fontSize: isCompactPhone ? 12 : rf(16, 13, 18) },
+                    ]}
                   >
                     Sleep Score
                   </Text>
 
                   <Text
-                    style={[styles.scoreValue, { fontSize: rf(46, 34, 52) }]}
+                    style={[
+                      styles.scoreValue,
+                      { fontSize: isCompactPhone ? 31 : rf(46, 34, 52) },
+                    ]}
                   >
                     {sleepScore}
                   </Text>
 
                   <Text
-                    style={[styles.scoreStatus, { fontSize: rf(20, 15, 22) }]}
+                    style={[
+                      styles.scoreStatus,
+                      { fontSize: isCompactPhone ? 14 : rf(20, 15, 22) },
+                    ]}
                   >
                     {sleepStatus}
                   </Text>
@@ -477,13 +511,19 @@ const SleepPage = () => {
 
                 <View style={styles.durationCol}>
                   <Text
-                    style={[styles.cardTitle, { fontSize: rf(16, 13, 18) }]}
+                    style={[
+                      styles.cardTitle,
+                      { fontSize: isCompactPhone ? 12 : rf(16, 13, 18) },
+                    ]}
                   >
                     Sleep Duration
                   </Text>
 
                   <Text
-                    style={[styles.durationValue, { fontSize: rf(32, 24, 38) }]}
+                    style={[
+                      styles.durationValue,
+                      { fontSize: isCompactPhone ? 22 : rf(32, 24, 38) },
+                    ]}
                   >
                     {sleepText}
                   </Text>
@@ -501,7 +541,7 @@ const SleepPage = () => {
                     percent={sleepPercent}
                     color={COLORS.taguigBlue}
                     size={ringSize}
-                    strokeWidth={isSmallPhone ? 8 : 9}
+                    strokeWidth={isCompactPhone ? 7 : isSmallPhone ? 8 : 9}
                     label="of 8h goal"
                   />
                 </View>
@@ -630,9 +670,9 @@ const styles = StyleSheet.create({
   content: {
     width: "100%",
     alignSelf: "center",
-    paddingTop: 14,
-    paddingBottom: 120,
-    gap: 14,
+    paddingTop: 10,
+    paddingBottom: 100,
+    gap: 12,
   },
   centerCard: {
     backgroundColor: "#FFFFFF",
@@ -719,17 +759,17 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   summaryCard: {
-    borderRadius: 26,
+    borderRadius: 22,
     backgroundColor: "#FFFFFF",
     ...cardShadow,
   },
   scoreCol: {
-    flex: 0.9,
-    minWidth: 82,
+    flex: 0.82,
+    minWidth: 68,
   },
   durationCol: {
     flex: 1,
-    minWidth: 94,
+    minWidth: 82,
   },
   ringWrap: {
     alignItems: "center",
@@ -743,7 +783,7 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
   scoreValue: {
-    marginTop: 8,
+    marginTop: 5,
     fontWeight: "900",
     color: COLORS.taguigBlue,
   },
@@ -759,20 +799,20 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   durationValue: {
-    marginTop: 8,
+    marginTop: 5,
     fontWeight: "900",
     color: COLORS.textPrimary,
   },
   goalText: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "700",
     color: COLORS.textSecondary,
   },
   divider: {
     width: 1,
-    height: 96,
+    height: 78,
     backgroundColor: "#EEF1F7",
-    marginHorizontal: 12,
+    marginHorizontal: 8,
   },
   tipPill: {
     borderRadius: 16,
