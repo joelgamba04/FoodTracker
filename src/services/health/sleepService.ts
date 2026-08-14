@@ -8,7 +8,12 @@ import {
 } from "./sleepAndroidService";
 import { ensureIosSleepAccess, readIOSSleep } from "./sleepiOSService";
 
-export const ensureSleepAccess = async () => {
+export type SleepAccessResult = {
+  ok: boolean;
+  reason?: string;
+};
+
+export const ensureSleepAccess = async (): Promise<SleepAccessResult> => {
   if (Platform.OS === "android") {
     // console.log("Checking Android sleep access...");
     return ensureAndroidSleepAccess();
@@ -20,12 +25,12 @@ export const ensureSleepAccess = async () => {
   }
 
   return {
-    ok: false as const,
+    ok: false,
     reason: "Unsupported platform",
   };
 };
 
-export async function readSleepSummary(): Promise<SleepSummary> {
+export const readSleepSummary = async (): Promise<SleepSummary> => {
   if (Platform.OS === "android") {
     return readAndroidSleep();
   }
@@ -35,4 +40,4 @@ export async function readSleepSummary(): Promise<SleepSummary> {
   }
 
   throw new Error("Unsupported platform");
-}
+};
