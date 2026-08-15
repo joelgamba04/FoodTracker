@@ -27,11 +27,14 @@ import { getHealthConnected } from "@/services/health/healthCache";
 import { COLORS } from "@/theme/color";
 import { getTodayWindow } from "@/utils/date";
 
+import InfoPopupModal, { InfoPopupItem } from "@/components/InfoPopupModal";
 import MetricLine from "@/components/MetricLine";
 import ProgressRing from "@/components/ProgressRing";
 import SleepChart from "@/components/SleepChart";
 import SmallMetricCard from "@/components/SmallMetricCard";
 import StepsChart from "@/components/StepsChart";
+
+const USE_SAMPLE_DATA = __DEV__;
 
 // Sample data for testing UI
 const sampleSleepQuality = [
@@ -73,6 +76,162 @@ const getGreeting = () => {
   return "Evening";
 };
 
+type DashboardInfoKey =
+  | "calories"
+  | "water"
+  | "steps"
+  | "sleep"
+  | "stepsChart"
+  | "sleepChart";
+
+type DashboardInfoContent = {
+  title: string;
+  description: string;
+  items: InfoPopupItem[];
+};
+
+const DASHBOARD_INFO: Record<DashboardInfoKey, DashboardInfoContent> = {
+  calories: {
+    title: "Calories",
+    description:
+      "A quick summary of your estimated calorie progress for today.",
+    items: [
+      {
+        icon: "restaurant-outline",
+        title: "Food calories",
+        description: "Shows the estimated calories from food you logged today.",
+      },
+      {
+        icon: "flame-outline",
+        title: "Calories left",
+        description:
+          "Shows how many calories remain based on your daily calorie goal.",
+      },
+      {
+        icon: "walk-outline",
+        title: "Estimated calories burned",
+        description:
+          "Burned calories are temporarily estimated using your recorded step count.",
+      },
+    ],
+  },
+
+  water: {
+    title: "Water Intake",
+    description: "Tracks your daily hydration progress.",
+    items: [
+      {
+        icon: "water-outline",
+        title: "Daily intake",
+        description: "Shows how much water you have recorded today.",
+      },
+      {
+        icon: "flag-outline",
+        title: "Hydration goal",
+        description:
+          "Your intake is compared with your current daily water goal.",
+      },
+    ],
+  },
+
+  steps: {
+    title: "Steps",
+    description:
+      "Displays your daily physical activity from available health data.",
+    items: [
+      {
+        icon: "footsteps-outline",
+        title: "Today's steps",
+        description:
+          "Shows step data available from your connected health provider.",
+      },
+      {
+        icon: "flag-outline",
+        title: "Daily goal",
+        description:
+          "Progress is currently compared with a 10,000-step daily goal.",
+      },
+    ],
+  },
+
+  sleep: {
+    title: "Sleep",
+    description: "Displays your latest available sleep duration.",
+    items: [
+      {
+        icon: "moon-outline",
+        title: "Latest sleep",
+        description:
+          "Shows your most recent sleep duration from Apple Health or Health Connect.",
+      },
+      {
+        icon: "time-outline",
+        title: "Sleep goal",
+        description:
+          "Your sleep progress is currently compared with an 8-hour goal.",
+      },
+    ],
+  },
+
+  stepsChart: {
+    title: "7-Day Steps",
+    description: "Shows your recent step activity over the past seven days.",
+    items: [
+      {
+        icon: "bar-chart-outline",
+        title: "Daily activity",
+        description: "Each bar represents available step data for that day.",
+      },
+      {
+        icon: "refresh-outline",
+        title: "Health data",
+        description:
+          "The chart updates when new step records become available.",
+      },
+    ],
+  },
+
+  sleepChart: {
+    title: "7-Day Sleep",
+    description: "Shows your recent sleep duration over the past seven days.",
+    items: [
+      {
+        icon: "bed-outline",
+        title: "Daily sleep",
+        description:
+          "Each day represents available sleep duration from your health provider.",
+      },
+      {
+        icon: "analytics-outline",
+        title: "Sleep pattern",
+        description:
+          "Use the chart to compare your recent sleep duration from night to night.",
+      },
+    ],
+  },
+};
+
+const DashboardInfoButton = ({ onPress }: { onPress: () => void }) => {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.infoButton,
+        pressed && styles.infoButtonPressed,
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel="More information"
+      hitSlop={8}
+    >
+      <Ionicons
+        name="information-circle-outline"
+        size={20}
+        color={COLORS.taguigBlue}
+      />
+    </Pressable>
+  );
+};
+
 // ---------- main screen ----------
 export const DashboardPage = () => {
   const { width, height } = useWindowDimensions();
@@ -101,6 +260,14 @@ export const DashboardPage = () => {
   const hasStepsData = typeof todaySteps === "number" && todaySteps > 0;
   const hasSleepData = typeof lastNightHours === "number" && lastNightHours > 0;
   const sleepGoal = 8;
+
+  const [activeInfo, setActiveInfo] = useState<DashboardInfoContent | null>(
+    null,
+  );
+
+  const openInfo = useCallback((key: DashboardInfoKey) => {
+    setActiveInfo(DASHBOARD_INFO[key]);
+  }, []);
 
   // refresh
   const [refreshing, setRefreshing] = useState(false);
@@ -337,70 +504,84 @@ export const DashboardPage = () => {
             })}
           </View> */}
 
-          <Pressable
-            onPress={goToAddFood}
+          <View
             style={[
-              styles.calorieCard,
+              styles.cardWithInfo,
               {
                 width: cardWidth,
                 maxWidth: cardMaxWidth,
                 alignSelf: "center",
-                padding: rs(16, 12, 18),
-                gap: isSmallPhone ? 8 : 12,
               },
             ]}
           >
-            <View style={styles.calorieLeft}>
-              <Text style={[styles.cardTitle, { fontSize: rf(15, 12, 16) }]}>
-                Calories Left
-              </Text>
-              <Text style={[styles.caloriesLeft, { fontSize: rf(35, 28, 58) }]}>
-                {caloriesLeft}
-              </Text>
-              <Text style={styles.smallMuted}>food left</Text>
-
-              <View style={styles.goalPill}>
-                <Ionicons name="flame" size={14} color={COLORS.taguigBlue} />
-                <Text style={[styles.goalText, { fontSize: rf(12, 10, 13) }]}>
-                  {calorieRDI.toLocaleString()} kcal goal
+            <Pressable
+              onPress={goToAddFood}
+              style={[
+                styles.calorieCard,
+                {
+                  width: "100%",
+                  alignSelf: "center",
+                  padding: rs(16, 12, 18),
+                  gap: isSmallPhone ? 8 : 12,
+                },
+              ]}
+            >
+              <View style={styles.calorieLeft}>
+                <Text style={[styles.cardTitle, { fontSize: rf(15, 12, 16) }]}>
+                  Calories Left
                 </Text>
-              </View>
-            </View>
+                <Text
+                  style={[styles.caloriesLeft, { fontSize: rf(35, 28, 58) }]}
+                >
+                  {caloriesLeft}
+                </Text>
+                <Text style={styles.smallMuted}>food left</Text>
 
-            <View style={styles.calorieMiddle}>
-              <MetricLine
-                icon="disc-outline"
-                color={COLORS.taguigRed}
-                label="Food"
-                value={`${todaysTotals.calories} kcal`}
-              />
-              <MetricLine
-                icon="water"
-                color={COLORS.taguigBlue}
-                label="Burned"
-                value={burnedCaloriesDisplay}
-              />
-              {/* <MetricLine
+                <View style={styles.goalPill}>
+                  <Ionicons name="flame" size={14} color={COLORS.taguigBlue} />
+                  <Text style={[styles.goalText, { fontSize: rf(12, 10, 13) }]}>
+                    {calorieRDI.toLocaleString()} kcal goal
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.calorieMiddle}>
+                <MetricLine
+                  icon="disc-outline"
+                  color={COLORS.taguigRed}
+                  label="Food"
+                  value={`${todaysTotals.calories} kcal`}
+                />
+                <MetricLine
+                  icon="water"
+                  color={COLORS.taguigBlue}
+                  label="Burned"
+                  value={burnedCaloriesDisplay}
+                />
+                {/* <MetricLine
                 icon="flame"
                 color={COLORS.taguigYellow}
                 label="Remaining"
                 value={`${Math.max(0, calorieRDI - kmj.calories + burnedCalories)} kcal`}
               /> */}
-            </View>
+              </View>
 
-            <View style={styles.calorieRingWrap}>
-              <ProgressRing
-                percent={caloriePercent}
-                color={COLORS.dashboardRing}
-                image={require("../../assets/images/apple.png")}
-                imageScale={0.7}
-                size={isVerySmallPhone ? 82 : rs(112, 92, 120)}
-                strokeWidth={9}
-                label=""
-                showPercent={false}
-              />
-            </View>
-          </Pressable>
+              <View style={styles.calorieRingWrap}>
+                <ProgressRing
+                  percent={caloriePercent}
+                  color={COLORS.dashboardRing}
+                  image={require("../../assets/images/apple.png")}
+                  imageScale={0.7}
+                  size={isVerySmallPhone ? 82 : rs(112, 92, 120)}
+                  strokeWidth={9}
+                  label=""
+                  showPercent={false}
+                />
+              </View>
+            </Pressable>
+
+            <DashboardInfoButton onPress={() => openInfo("calories")} />
+          </View>
 
           <View
             style={[
@@ -413,136 +594,207 @@ export const DashboardPage = () => {
               },
             ]}
           >
-            <SmallMetricCard
-              color={COLORS.taguigBlue}
-              icon="water"
-              title="Water Intake"
-              value={waterRDI > 0 ? `${(totalMl / 1000).toFixed(1)} L` : "0 L"}
-              subtitle={`/ ${(goalMl / 1000).toFixed(1)} L goal`}
-              percent={
-                goalMl > 0
-                  ? Math.min(100, Math.round((totalMl / goalMl) * 100))
-                  : 0
-              }
-              onPress={() => router.push("/HydrationPage")}
-            />
+            <View style={styles.smallCardWithInfo}>
+              <SmallMetricCard
+                color={COLORS.taguigBlue}
+                icon="water"
+                title="Water Intake"
+                value={
+                  waterRDI > 0 ? `${(totalMl / 1000).toFixed(1)} L` : "0 L"
+                }
+                subtitle={`/ ${(goalMl / 1000).toFixed(1)} L goal`}
+                percent={
+                  goalMl > 0
+                    ? Math.min(100, Math.round((totalMl / goalMl) * 100))
+                    : 0
+                }
+                onPress={() => router.push("/HydrationPage")}
+              />
+              <DashboardInfoButton onPress={() => openInfo("water")} />
+            </View>
 
-            <SmallMetricCard
-              color={COLORS.taguigBlue}
-              icon="walk"
-              title="Steps"
-              value={hasStepsData ? todaySteps.toLocaleString() : "0"}
-              subtitle="/ 10,000 steps"
-              percent={
-                hasStepsData
-                  ? Math.min(100, Math.round((todaySteps / 10000) * 100))
-                  : 0
-              }
-              onPress={() => router.push("/StepsTrackerPage")}
-            />
+            <View style={styles.smallCardWithInfo}>
+              <SmallMetricCard
+                color={COLORS.taguigBlue}
+                icon="walk"
+                title="Steps"
+                value={hasStepsData ? todaySteps.toLocaleString() : "0"}
+                subtitle="/ 10,000 steps"
+                percent={
+                  hasStepsData
+                    ? Math.min(100, Math.round((todaySteps / 10000) * 100))
+                    : 0
+                }
+                onPress={() => router.push("/StepsTrackerPage")}
+              />
 
-            <SmallMetricCard
-              color="#0B3D91"
-              icon="moon"
-              title="Sleep"
-              value={hasSleepData ? `${lastNightHours.toFixed(1)}h` : "0h"}
-              subtitle="/ 8 h goal"
-              percent={
-                hasSleepData
-                  ? Math.min(100, Math.round((lastNightHours / 8) * 100))
-                  : 0
-              }
-              onPress={() => router.push("/SleepPage")}
-            />
+              <DashboardInfoButton onPress={() => openInfo("steps")} />
+            </View>
+
+            <View style={styles.smallCardWithInfo}>
+              <SmallMetricCard
+                color="#0B3D91"
+                icon="moon"
+                title="Sleep"
+                value={hasSleepData ? `${lastNightHours.toFixed(1)}h` : "0h"}
+                subtitle="/ 8 h goal"
+                percent={
+                  hasSleepData
+                    ? Math.min(100, Math.round((lastNightHours / 8) * 100))
+                    : 0
+                }
+                onPress={() => router.push("/SleepPage")}
+              />
+
+              <DashboardInfoButton onPress={() => openInfo("sleep")} />
+            </View>
           </View>
 
-          <Pressable onPress={() => router.push("/StepsTrackerPage")}>
-            <View
-              style={[
-                styles.chartCard,
-                {
-                  width: cardWidth,
-                  maxWidth: cardMaxWidth,
-                  alignSelf: "center",
-                },
-              ]}
-            >
-              <View style={styles.chartHeader}>
-                <View
-                  style={[
-                    styles.chartIcon,
-                    { backgroundColor: COLORS.taguigBlue },
-                  ]}
-                >
-                  <Ionicons name="stats-chart" size={22} color="#FFFFFF" />
+          <View style={styles.cardWithInfo}>
+            <Pressable onPress={() => router.push("/StepsTrackerPage")}>
+              <View
+                style={[
+                  styles.chartCard,
+                  {
+                    width: cardWidth,
+                    maxWidth: cardMaxWidth,
+                    alignSelf: "center",
+                  },
+                ]}
+              >
+                <View style={styles.chartHeader}>
+                  <View
+                    style={[
+                      styles.chartIcon,
+                      { backgroundColor: COLORS.taguigBlue },
+                    ]}
+                  >
+                    <Ionicons name="stats-chart" size={22} color="#FFFFFF" />
+                  </View>
+
+                  <Text style={styles.chartTitle} numberOfLines={1}>
+                    Steps
+                  </Text>
+
+                  <View style={styles.chartHeaderActions}>
+                    <Pressable
+                      onPress={() => openInfo("stepsChart")}
+                      style={({ pressed }) => [
+                        styles.chartInfoButton,
+                        pressed && styles.infoButtonPressed,
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel="More information about weekly steps"
+                      hitSlop={6}
+                    >
+                      <Ionicons
+                        name="information-circle-outline"
+                        size={20}
+                        color={COLORS.taguigBlue}
+                      />
+                    </Pressable>
+
+                    <View style={styles.chartPeriod}>
+                      <Text style={styles.chartPeriodText}>7 Days</Text>
+                    </View>
+                  </View>
                 </View>
-                <Text style={styles.chartTitle} numberOfLines={1}>
-                  Steps
-                </Text>
-                <Text style={styles.chartPeriod}>7 Days</Text>
+
+                {stepsChartData.length === 0 ? (
+                  <View style={styles.chartPlaceholder}>
+                    <Text style={styles.placeholderText}>No Steps Data</Text>
+                  </View>
+                ) : (
+                  <StepsChart
+                    data={stepsChartData}
+                    width={chartWidth}
+                    height={isSmallPhone ? 150 : 180}
+                    maxValue={20000}
+                    color={COLORS.taguigRed}
+                    goal={10000}
+                  />
+                )}
               </View>
+            </Pressable>
+          </View>
+          <View style={styles.cardWithInfo}>
+            <Pressable onPress={() => router.push("/SleepPage")}>
+              <View
+                style={[
+                  styles.chartCard,
+                  {
+                    width: cardWidth,
+                    maxWidth: cardMaxWidth,
+                    alignSelf: "center",
+                  },
+                ]}
+              >
+                <View style={styles.chartHeader}>
+                  <View
+                    style={[
+                      styles.chartIcon,
+                      { backgroundColor: COLORS.taguigBlue },
+                    ]}
+                  >
+                    <Ionicons name="stats-chart" size={22} color="#FFFFFF" />
+                  </View>
 
-              {stepsChartData.length === 0 ? (
-                <View style={styles.chartPlaceholder}>
-                  <Text style={styles.placeholderText}>No Steps Data</Text>
-                </View>
-              ) : (
-                <StepsChart
-                  data={stepsChartData}
-                  width={chartWidth}
-                  height={isSmallPhone ? 150 : 180}
-                  maxValue={20000}
-                  color={COLORS.taguigRed}
-                  goal={10000}
-                />
-              )}
-            </View>
-          </Pressable>
-          <Pressable onPress={() => router.push("/SleepPage")}>
-            <View
-              style={[
-                styles.chartCard,
-                {
-                  width: cardWidth,
-                  maxWidth: cardMaxWidth,
-                  alignSelf: "center",
-                },
-              ]}
-            >
-              <View style={styles.chartHeader}>
-                <View
-                  style={[
-                    styles.chartIcon,
-                    { backgroundColor: COLORS.taguigBlue },
-                  ]}
-                >
-                  <Ionicons name="stats-chart" size={22} color="#FFFFFF" />
-                </View>
-                <Text
-                  style={styles.chartTitle}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                >
-                  Sleep
-                </Text>
+                  <Text
+                    style={styles.chartTitle}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
+                    Sleep
+                  </Text>
 
-                <Text style={styles.chartPeriod}>7 Days</Text>
+                  <View style={styles.chartHeaderActions}>
+                    <Pressable
+                      onPress={() => openInfo("sleepChart")}
+                      style={({ pressed }) => [
+                        styles.chartInfoButton,
+                        pressed && styles.infoButtonPressed,
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel="More information about weekly sleep"
+                      hitSlop={6}
+                    >
+                      <Ionicons
+                        name="information-circle-outline"
+                        size={20}
+                        color={COLORS.taguigBlue}
+                      />
+                    </Pressable>
+
+                    <View style={styles.chartPeriod}>
+                      <Text style={styles.chartPeriodText}>7 Days</Text>
+                    </View>
+                  </View>
+                </View>
+
+                {sleepChartData.length === 0 ? (
+                  <View style={styles.chartPlaceholder}>
+                    <Text style={styles.placeholderText}>No Sleep Data</Text>
+                  </View>
+                ) : (
+                  <SleepChart
+                    data={sleepChartData}
+                    goal={sleepGoal}
+                    compact={isSmallPhone}
+                  />
+                )}
               </View>
-
-              {sleepChartData.length === 0 ? (
-                <View style={styles.chartPlaceholder}>
-                  <Text style={styles.placeholderText}>No Sleep Data</Text>
-                </View>
-              ) : (
-                <SleepChart
-                  data={sleepChartData}
-                  goal={sleepGoal}
-                  compact={isSmallPhone}
-                />
-              )}
-            </View>
-          </Pressable>
+            </Pressable>
+          </View>
         </ScrollView>
+
+        <InfoPopupModal
+          visible={activeInfo !== null}
+          title={activeInfo?.title ?? ""}
+          description={activeInfo?.description}
+          items={activeInfo?.items ?? []}
+          buttonText="Got it"
+          onClose={() => setActiveInfo(null)}
+        />
       </SafeAreaView>
     </ImageBackground>
   );
@@ -774,8 +1026,7 @@ const styles = StyleSheet.create({
   },
 
   chartPeriod: {
-    marginLeft: "auto",
-    height: 32,
+    minHeight: 32,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#EEF1F7",
@@ -788,13 +1039,60 @@ const styles = StyleSheet.create({
   chartPeriodText: {
     fontSize: 12,
     fontWeight: "900",
-    color: COLORS.taguigBlue,
+    color: COLORS.textPrimary,
   },
 
   chartBody: {
     marginTop: 4,
     marginLeft: -10,
     overflow: "hidden",
+  },
+
+  cardWithInfo: {
+    position: "relative",
+  },
+
+  smallCardWithInfo: {
+    flex: 1,
+    minWidth: 0,
+    position: "relative",
+  },
+
+  infoButton: {
+    position: "absolute",
+
+    top: 8,
+    right: 8,
+
+    zIndex: 20,
+
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+
+    backgroundColor: "rgba(255,255,255,0.92)",
+
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  infoButtonPressed: {
+    opacity: 0.6,
+  },
+
+  chartHeaderActions: {
+    marginLeft: "auto",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+
+  chartInfoButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 
