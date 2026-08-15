@@ -62,7 +62,7 @@ const SearchBox = ({ search, setSearch, onSubmit, scan = false }: any) => (
 const MealCard = ({ item, index, onPress }: any) => {
   const colors = [COLORS.taguigRed, COLORS.taguigBlue, COLORS.taguigYellow];
 
-  if (isDevMode){
+  if (isDevMode) {
     console.log("MealCard item:", item);
   }
 
@@ -94,7 +94,7 @@ const MealCard = ({ item, index, onPress }: any) => {
           <Text style={styles.mealMeta}>🔥 {item.calories ?? 100} kcal</Text>
           <Text style={styles.mealDivider}>|</Text>
           <Text style={styles.mealMeta}>
-            ⚖️ per {item?.serving?.grams ?? "100"}g
+            ⚖️ per {item?.serving?.label ?? "serving"}
           </Text>
         </View>
       </View>
@@ -509,7 +509,10 @@ export const AddFoodPage = () => {
                             : COLORS.textSecondaryDark,
                         }}
                       >
-                        Per Serving
+                        Per{" "}
+                        {!!selected?.serving?.label
+                          ? selected.serving.label
+                          : "serving"}
                       </Text>
                     </Pressable>
 
@@ -566,7 +569,9 @@ export const AddFoodPage = () => {
                         />
                         <Text style={styles.servingBadgeText}>
                           {" "}
-                          {formatServing(qty)} SERVING
+                          {formatServing(qty)}
+                          {" x "}
+                          {selected?.serving?.label ?? "serving"}
                         </Text>
                       </View>
                     </>
@@ -1043,6 +1048,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "900",
     color: "#FFFFFF",
+    paddingHorizontal: 6,
+    textAlign: "center",
   },
 
   noteInputWrap: {
