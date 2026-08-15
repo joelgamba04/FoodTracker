@@ -303,14 +303,35 @@ const SleepPage = () => {
           ]}
         >
           {state === "checking_availability" ? (
-            <View style={styles.centerCard}>
-              <Text style={styles.title}>Connect Health Data</Text>
-
-              <Text style={styles.infoText}>
-                Connect Health Connect to read your steps and sleep data.
+            <View
+              style={[
+                styles.centerCard,
+                isCompactPhone && styles.centerCardCompact,
+              ]}
+            >
+              <Text
+                style={[styles.title, isCompactPhone && styles.titleCompact]}
+              >
+                Connect Health Data
               </Text>
 
-              <Pressable style={styles.primaryBtn} onPress={load}>
+              <Text
+                style={[
+                  styles.infoText,
+                  isCompactPhone && styles.infoTextCompact,
+                ]}
+              >
+                Connect Health Connect to display your sleep data from supported
+                health apps and devices.
+              </Text>
+
+              <Pressable
+                style={[
+                  styles.primaryBtn,
+                  isCompactPhone && styles.primaryBtnCompact,
+                ]}
+                onPress={load}
+              >
                 <Text style={styles.primaryBtnText}>Continue</Text>
               </Pressable>
             </View>
@@ -442,7 +463,7 @@ const SleepPage = () => {
                     styles.heroImage,
                     {
                       width: isCompactPhone
-                        ? width * 0.34
+                        ? width * 0.29
                         : isSmallPhone
                           ? width * 0.45
                           : width * 0.52,
@@ -452,8 +473,8 @@ const SleepPage = () => {
                           : isSmallPhone
                             ? width * 0.45
                             : width * 0.52) * 0.67,
-                      right: isCompactPhone ? -8 : isSmallPhone ? -18 : -30,
-                      top: isCompactPhone ? 32 : isSmallPhone ? 50 : 36,
+                      right: isCompactPhone ? 2 : isSmallPhone ? -18 : -30,
+                      top: isCompactPhone ? 38 : isSmallPhone ? 50 : 36,
                       opacity: isTinyPhone ? 0.9 : 1,
                     },
                   ]}
@@ -672,7 +693,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     paddingTop: 10,
     paddingBottom: 100,
-    gap: 12,
+    gap: 10,
   },
   centerCard: {
     backgroundColor: "#FFFFFF",
@@ -684,12 +705,24 @@ const styles = StyleSheet.create({
     gap: 12,
     ...cardShadow,
   },
+
+  centerCardCompact: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 8,
+    borderRadius: 18,
+  },
+
   title: {
     fontSize: 18,
     fontWeight: "900",
     color: COLORS.textPrimary,
     textAlign: "center",
   },
+  titleCompact: {
+    fontSize: 15,
+  },
+
   infoText: {
     fontSize: 14,
     lineHeight: 20,
@@ -697,6 +730,11 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     opacity: 0.75,
   },
+  infoTextCompact: {
+    fontSize: 12,
+    lineHeight: 17,
+  },
+
   errorText: {
     fontSize: 14,
     lineHeight: 20,
@@ -710,6 +748,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     minHeight: 44,
     justifyContent: "center",
+  },
+  primaryBtnCompact: {
+    minHeight: 40,
+    paddingVertical: 9,
+    paddingHorizontal: 18,
   },
   primaryBtnText: {
     color: COLORS.textInverse,
