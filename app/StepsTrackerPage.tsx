@@ -353,7 +353,7 @@ const StepsTrackerPage = () => {
                 </Text>
 
                 <Text style={styles.infoText}>
-                  Make sure another app is WRITING SLEEP data to Health Connect:
+                  Make sure another app is WRITING STEP data to Health Connect:
                   {"\n\n"}• Google Health (Fitbit trackers, Pixel Watch)
                   {"\n"}• Samsung Health ( Galaxy Watch)
                   {"\n"}• Garmin Connect (Garmin watches)
