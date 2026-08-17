@@ -414,11 +414,10 @@ const SleepPage = () => {
               </Text>
 
               <Text style={styles.infoText}>
-                Make sure another app is writing data to Health Connect:
-                {"\n\n"}• Google Fit
-                {"\n"}• Samsung Health
-                {"\n"}• Fitbit
-                {"\n"}• Smartwatch apps
+                Make sure another app is WRITING SLEEP data to Health Connect:
+                {"\n\n"}• Google Health (Fitbit trackers, Pixel Watch)
+                {"\n"}• Samsung Health ( Galaxy Watch)
+                {"\n"}• Garmin Connect (Garmin watches)
               </Text>
             </View>
           ) : null}
